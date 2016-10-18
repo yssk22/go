@@ -1,3 +1,10 @@
+# See the guide: https://circleci.com/docs/language-go/
+# but $HOME/.go_project is not included in $GOPATH actually
+machine:
+  environment:
+    # GOROOT is not set by default
+    GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${HOME}/.go_project"
+
 dependencies:
   override:
     - mkdir -p "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}"
