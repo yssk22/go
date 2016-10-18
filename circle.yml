@@ -2,7 +2,6 @@
 # but $HOME/.go_project is not included in $GOPATH actually
 machine:
   environment:
-    # GOROOT is not set by default
     GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${HOME}/.go_project"
 
 dependencies:
