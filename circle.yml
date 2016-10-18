@@ -11,3 +11,14 @@ dependencies:
 test:
   override:
     - go test -race ./...
+
+deployment:
+  develop:
+    branch: develop
+    commands:
+      - git config --global user.name "yssk22"
+      - git config --global user.email "yssk22@gmail.com"
+      - git pull origin master
+      - git checkout master
+      - git merge develop --no-ff -m "Merge 'develop' (CI auto merge)'
+      - git push origin master
