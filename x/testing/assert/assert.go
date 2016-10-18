@@ -1,19 +1,5 @@
-// Copyright (C) 2015 SPEEDLAND Project
-package assert
-
-import (
-	"fmt"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"testing"
-	"time"
-
-	"github.com/speedland/go/x/value"
-)
-
-// Assert is a helper for testing assersion
-// You can use assert functions by casting *testing.T to Assert
+// Package assert provides the assersion feature for *testing.T
+// You can use assert functions by `assert.New(t)`
 //
 //    import (
 //        "testing"
@@ -27,6 +13,20 @@ import (
 //        assert.EqStr("Expects", "Got", "Somthing wrong!")
 //    }
 //
+package assert
+
+import (
+	"fmt"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/speedland/go/x/value"
+)
+
+// Assert is a helper struct for testing assersion
 type Assert struct {
 	*testing.T
 }

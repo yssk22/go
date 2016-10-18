@@ -1,3 +1,4 @@
+// Package xjson provides extended utility functions for encoding/json
 package xjson
 
 import (
