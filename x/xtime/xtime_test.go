@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	"x/testing/assert"
+	"github.com/speedland/go/x/testing/assert"
 )
 
 func ExampleRunAt() {

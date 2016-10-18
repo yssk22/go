@@ -8,7 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"x/value"
+
+	"github.com/speedland/go/x/value"
 )
 
 // Assert is a helper for testing assersion
@@ -16,7 +17,7 @@ import (
 //
 //    import (
 //        "testing"
-//        "x/testing/assert"
+//        "github.com/speedland/go/x/testing/assert"
 //    )
 //
 //    func TestSomething(t *testing.T){

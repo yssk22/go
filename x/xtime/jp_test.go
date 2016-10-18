@@ -2,7 +2,7 @@ package xtime
 
 import (
 	"testing"
-	"x/testing/assert"
+	"github.com/speedland/go/x/testing/assert"
 )
 
 func TestParseJPDate(t *testing.T) {

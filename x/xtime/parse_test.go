@@ -3,7 +3,7 @@ package xtime
 import (
 	"testing"
 	"time"
-	"x/testing/assert"
+	"github.com/speedland/go/x/testing/assert"
 )
 
 func TestParseDate(t *testing.T) {
