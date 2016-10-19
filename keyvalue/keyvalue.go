@@ -19,6 +19,17 @@ func (e KeyError) Error() string {
 	return fmt.Sprintf("key %q is not found", string(e))
 }
 
+// Map is an alias for map[string]interface{} that implements Getter interface
+type Map map[string]interface{}
+
+// Get implements Getter#Get
+func (m Map) Get(key string) (interface{}, error) {
+	if v, ok := m[key]; ok {
+		return v, nil
+	}
+	return nil, KeyError(key)
+}
+
 // GetgOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key string, or interface{}) interface{} {
 	v, e := g.Get(key)
@@ -60,59 +71,3 @@ func GetIntOr(g Getter, key string, or int) int {
 		return or
 	}
 }
-
-// // GetterList is a list of Getter to fallback if
-// type GetterList struct {
-//     list []Getter
-// }
-
-// // Get implements `Getter.Get(string)` to try getting config value from the head of list.
-// // If a Getter item returns the value, it would be returned.
-// // If a Getter item returns an error other than KeyError, it fails and return that error immediately.
-// func (c *GetterList) Get(key string) (interface{}, error) {
-// 	for _, getter := range c.list {
-// 		v, e := getter.Get(key)
-// 		if e != nil {
-// 			if _, ok := e.(KeyError); !ok {
-// 				return nil, e
-// 			}
-// 		}
-// 		if v != nil {
-// 			return v, nil
-// 		}
-// 	}
-// 	return nil, KeyError(key)
-// }
-
-// // GetStringOr is like Get and returns a string value or default value if not found.
-// func (c *GetterList) GetStringOr(key string, or string) (string) {
-//     v, e := c.Get(key)
-//     if e != nil {
-//         return or
-//     }
-//     return fmt.Sprintf("%s", v)
-// }
-
-// // GetStringOr is like Get and returns a string value or default value if not found.
-// func (c *GetterList) GetIntOr(key string, or string) (string) {
-//     v, e := c.Get(key)
-//     if e != nil {
-//         return or
-//     }
-//     return fmt.Sprintf("%s", v)
-// }
-
-// // Add adds a Getter to the list
-// func (c *GetterList) Add(g Getter) {
-//     c.list = append(c.list, g)
-// }
-
-// var defaultGetterList = &GetterList{}
-
-// func Get(key string) (interface{}, error) {
-//     return defaultGetterList.Get(key)
-// }
-
-// func AddGetter(g Getter) {
-//     defaultGetterList.Add(g)
-// }
