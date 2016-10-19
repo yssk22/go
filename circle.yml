@@ -13,10 +13,8 @@ test:
   override:
     - go get -u github.com/jstemmer/go-junit-report
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
-    - |
-      { go test -v -race $(go list ./...|grep -v vendor); echo $? > /tmp/status;} | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml;
-      exit `cat /tmp/status`;
-        pwd: "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+    - go test -v -race ./...
+      pwd: ${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
 
 deployment:
   develop:
