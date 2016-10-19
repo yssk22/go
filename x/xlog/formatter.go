@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/speedland/go/x/ansi"
+	"github.com/speedland/go/ansi"
 )
 
 // Formatter is an inerface to convert *Record to []byte

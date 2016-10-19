@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/speedland/go/x/ansi"
+	"github.com/speedland/go/ansi"
 	"github.com/speedland/go/x/xtime"
 )
 

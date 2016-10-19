@@ -3,7 +3,8 @@ package iterator
 import (
 	"fmt"
 	"testing"
-	"github.com/speedland/go/x/testing/assert"
+
+	"github.com/speedland/go/x/xtesting/assert"
 )
 
 func ExampleParallelSlice() {

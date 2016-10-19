@@ -3,7 +3,7 @@ package ansi
 import (
 	"testing"
 
-	"github.com/speedland/go/x/testing/assert"
+	"github.com/speedland/go/x/xtesting/assert"
 )
 
 func TestColor(t *testing.T) {
