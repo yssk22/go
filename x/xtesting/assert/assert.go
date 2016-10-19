@@ -3,7 +3,7 @@
 //
 //    import (
 //        "testing"
-//        "github.com/speedland/go/x/testing/assert"
+//        "github.com/speedland/go/x/xtesting/assert"
 //    )
 //
 //    func TestSomething(t *testing.T){
@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/speedland/go/x/value"
+	"github.com/speedland/go/x/xreflect"
 )
 
 // Assert is a helper struct for testing assersion
@@ -52,28 +52,28 @@ func (a *Assert) Not(ok bool, msgContext ...interface{}) {
 
 // Nil for nil assertion
 func (a *Assert) Nil(v interface{}, msgContext ...interface{}) {
-	if !value.IsNil(v) {
+	if !xreflect.IsNil(v) {
 		a.failure("<nil>", v, msgContext...)
 	}
 }
 
 // NotNil for non-nil assertion
 func (a *Assert) NotNil(v interface{}, msgContext ...interface{}) {
-	if value.IsNil(v) {
+	if xreflect.IsNil(v) {
 		a.failure("<non-nil>", v, msgContext...)
 	}
 }
 
 // Zero for Zero value assertion
 func (a *Assert) Zero(v interface{}, msgContext ...interface{}) {
-	if !value.IsZero(v) {
+	if !xreflect.IsZero(v) {
 		a.failure("<zero>", v, msgContext...)
 	}
 }
 
 // NotZero for non Zero assertion
 func (a *Assert) NotZero(v interface{}, msgContext ...interface{}) {
-	if value.IsZero(v) {
+	if xreflect.IsZero(v) {
 		a.failure("<not-zero>", v, msgContext...)
 	}
 }

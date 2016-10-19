@@ -14,7 +14,7 @@ func ExampleFormatDateTimeString() {
 	// 2015/05/04 02:10
 }
 
-func ExampleHumanize() {
+func ExampleFormatter_Humanize() {
 	t := time.Date(
 		2015, 5, 4, 2, 10, 0, 0, time.UTC,
 	)
