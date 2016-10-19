@@ -8,9 +8,14 @@ dependencies:
   override:
     - mkdir -p "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}"
     - ln -sf "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+
 test:
   override:
-    - go test -race ./...
+    - go get -u github.com/jstemmer/go-junit-report
+    - mkdir -p $CIRCLE_TEST_REPORTS/golang
+    - |
+      { go test -v -race $(go list ./...|grep -v vendor); echo $? > /tmp/status;} | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml;
+      exit `cat /tmp/status`;
 
 deployment:
   develop:
