@@ -3,9 +3,9 @@ package xlog
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 
+	"github.com/speedland/go/x/xruntime"
 	"github.com/speedland/go/x/xtime"
 )
 
@@ -29,21 +29,24 @@ type Record struct {
 	Level     Level
 	Data      interface{}
 
-	SourceFile  string   // file path that generates the record
-	SourceLine  int      // line number that generates the record
-	SourceStack []string // Stack trace
-	Goroutine   int      // Goroutine number
+	Stack     []*xruntime.Frame
+	Goroutine int // Goroutine number
 }
 
 // Logger the logger
 type Logger struct {
-	sink Sink
+	sink              Sink
+	MinStackCaptureOn Level // Minimum Level where logger captures stacks. Strongly recommend to set LevelFatal.
+	StackCaptureDepth int   // # of stack frames to be captured on logging.
 }
 
 // New returns a new Logger
 func New(s Sink) *Logger {
+	const maxDepth = 50
 	return &Logger{
-		sink: s,
+		sink:              s,
+		MinStackCaptureOn: LevelError,
+		StackCaptureDepth: maxDepth,
 	}
 }
 
@@ -113,19 +116,8 @@ func (l *Logger) write(level Level, data interface{}) {
 		Data:      data,
 		Timestamp: xtime.Now(),
 	}
-	// Set sourcefile and sourceline info.
-	// This function would be called by public API like Trace(), Debug(),...
-	// so that 2 levels upper caller would be actual file and line.
-	_, file, line, ok := runtime.Caller(2)
-	if ok {
-		r.SourceFile = file
-		r.SourceLine = line
-	} else {
-		// OK for testing not covered here
-		r.SourceFile = "unknown"
-		r.SourceLine = 0
+	if l.MinStackCaptureOn <= r.Level {
+		r.Stack = xruntime.CaptureStackFrom(2, l.StackCaptureDepth)
 	}
-	r.Goroutine = runtime.NumGoroutine()
-	// TODO: capture Stack
 	l.sink.Write(r)
 }
