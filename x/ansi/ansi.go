@@ -12,7 +12,8 @@ type Code int
 
 // Available ANSI decorators
 const (
-	Bold Code = 1 + iota
+	Reset Code = iota
+	Bold
 	Faint
 	Italic
 	Underline
