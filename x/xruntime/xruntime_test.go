@@ -28,7 +28,7 @@ func (*T) F() *Frame {
 	return CaptureFrame()
 }
 
-func ExampleCaptureFrameForStructFunc() {
+func ExampleCaptureFrame_forStructFunc() {
 	f := (&T{}).F()
 	fmt.Printf("PackageName: %s\n", f.PackageName)
 	fmt.Printf("FunctionName: %s\n", f.FunctionName)

@@ -36,7 +36,7 @@ func ExampleLogger() {
 	// 2016-01-01T12:10:25Z [info] T{1}
 }
 
-func ExampleLoggerWithLevelFilter() {
+func ExampleLogger_withLevelFilter() {
 	formatter := NewTextFormatter(
 		`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 	)
@@ -57,7 +57,7 @@ func ExampleLoggerWithLevelFilter() {
 	// 2016-01-01T12:10:25Z [info] This is a log
 }
 
-func ExampleLoggerWithConfigurationByLevel() {
+func ExampleLogger_withConfigurationByLevel() {
 	formatter := NewTextFormatter(
 		`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 	)
@@ -74,9 +74,11 @@ func ExampleLoggerWithConfigurationByLevel() {
 			logger.Errorf("This is a log")
 		},
 	)
-	// Output:
-	// 2016-01-01T12:10:25Z [error] This is a log
-	//	github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel.func1 (at github.com/speedland/go/x/xlog/xlog_test.go#74)
-	//	github.com/speedland/go/x/xtime.RunAt (at github.com/speedland/go/x/xtime/xtime.go#33)
-	//	github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel (at github.com/speedland/go/x/xlog/xlog_test.go#76)
+	// Do not run tests since line number may differ in each environment.
+	// Sample output is like follows:
+	//
+	//  2016-01-01T12:10:25Z [error] This is a log
+	// 	    github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel.func1 (at github.com/speedland/go/x/xlog/xlog_test.go#75)
+	// 	    github.com/speedland/go/x/xtime.RunAt (at github.com/speedland/go/x/xtime/xtime.go#33)
+	//  	github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel (at github.com/speedland/go/x/xlog/xlog_test.go#82)
 }

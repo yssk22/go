@@ -32,7 +32,7 @@ func ExampleParallelSlice_Struct() {
 	// Output: [{0} {1} {2} {3}]
 }
 
-func TestParallelSliceWithMaxConcurrency(t *testing.T) {
+func TestParallelSlice_withMaxMaxConcurrency(t *testing.T) {
 	assert := assert.New(t)
 	var opts = &ParallelOption{
 		MaxConcurrency: 3,
