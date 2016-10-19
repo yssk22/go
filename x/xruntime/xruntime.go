@@ -45,7 +45,7 @@ func CaptureStack(maxDepth int) []*Frame {
 
 // CaptureFrame to capture the current stack frame
 func CaptureFrame() *Frame {
-	return CaptureStack(10)[1]
+	return CaptureStack(2)[1]
 }
 
 func (f *Frame) String() string {
