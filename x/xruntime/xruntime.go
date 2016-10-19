@@ -19,9 +19,27 @@ type Frame struct {
 
 // CaptureStack returns a list of stack frames as []*Frame
 func CaptureStack(maxDepth int) []*Frame {
+	return captureFrames(1, maxDepth)
+}
+
+// CaptureStackFrom is like CaptureStack but skip the given number of frames
+func CaptureStackFrom(skip int, maxDepth int) []*Frame {
+	return captureFrames(1+skip, maxDepth)
+}
+
+// CaptureFrame to capture the current stack frame
+func CaptureFrame() *Frame {
+	return captureFrames(1, 1)[0]
+}
+
+func (f *Frame) String() string {
+	return fmt.Sprintf("%s.%s (at %s#%d)", f.PackageName, f.FunctionName, f.ShortFilePath, f.LineNumber)
+}
+
+func captureFrames(skip int, maxDepth int) []*Frame {
 	counters := make([]uintptr, maxDepth)
 	stack := make([]*Frame, maxDepth)
-	runtime.Callers(2, counters)
+	runtime.Callers(2+skip, counters)
 	for i, pc := range counters {
 		f := runtime.FuncForPC(pc)
 		if f == nil {
@@ -41,15 +59,6 @@ func CaptureStack(maxDepth int) []*Frame {
 		stack[i] = frame
 	}
 	return stack
-}
-
-// CaptureFrame to capture the current stack frame
-func CaptureFrame() *Frame {
-	return CaptureStack(2)[1]
-}
-
-func (f *Frame) String() string {
-	return fmt.Sprintf("%s.%s (at %s#%d)", f.PackageName, f.FunctionName, f.ShortFilePath, f.LineNumber)
 }
 
 func getPackageAndFunction(f *runtime.Func) (string, string) {
