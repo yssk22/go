@@ -7,18 +7,9 @@ import (
 	"github.com/speedland/go/x/xtesting/assert"
 )
 
-type MyMap map[string]interface{}
-
-func (m MyMap) Get(key string) (interface{}, error) {
-	if v, ok := m[key]; ok {
-		return v, nil
-	}
-	return nil, KeyError(key)
-}
-
 func TestGetStringOr(t *testing.T) {
 	a := assert.New(t)
-	m := MyMap{
+	m := Map{
 		"Foo": "1",
 	}
 	a.EqStr("1", GetStringOr(m, "Foo", "2"))
@@ -27,7 +18,7 @@ func TestGetStringOr(t *testing.T) {
 
 func TestGetIntOr(t *testing.T) {
 	a := assert.New(t)
-	m := MyMap{
+	m := Map{
 		"Foo":              1,
 		"Int8":             int8(1),
 		"StringNum":        "1",
@@ -40,15 +31,7 @@ func TestGetIntOr(t *testing.T) {
 }
 
 func ExampleGetIntOr() {
-	// type MyMap map[string]interface{}
-	//
-	// func (m MyMap) Get(key string) (interface{}, error) {
-	// 	if v, ok := m[key]; ok {
-	// 		return v, nil
-	// 	}
-	// 	return nil, KeyError(key)
-	// }
-	m := MyMap{
+	m := Map{
 		"Foo":              1,
 		"Int8":             int8(1),
 		"StringNum":        "1",
