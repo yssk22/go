@@ -17,12 +17,14 @@ func (u UUID) String() string {
 
 // New generates uuid v4 following RFC4122 Section 4.4
 func New() UUID {
-	uuid := make([]byte, 16)
+	uuid := make([]byte, 16, 16)
 	_, err := io.ReadFull(rand.Reader, uuid)
 	if err != nil {
 		panic(err) // should never fail in rand
 	}
 	uuid[8] = uuid[8]&^0xc0 | 0x80 // (4.1.1) 10xxxxxx, The variant specified in this document.
 	uuid[6] = uuid[6]&^0xf0 | 0x40 // (4.1.3) 0100xxxx, set version 4
-	return UUID(uuid)
+	var _uuid [16]byte
+	copy(_uuid[:], uuid)
+	return UUID(_uuid)
 }
