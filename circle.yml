@@ -11,6 +11,7 @@ dependencies:
 
 test:
   override:
+    - go build ./... # Check packages are buildable (go-junit-report doesn't check it)
     - go get -u github.com/jstemmer/go-junit-report
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
     - go test -v $(go list ./... | grep -v vendor) | go-junit-report -set-exit-code=true > $CIRCLE_TEST_REPORTS/golang/junit.xml:
