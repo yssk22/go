@@ -24,5 +24,5 @@ func New() UUID {
 	}
 	uuid[8] = uuid[8]&^0xc0 | 0x80 // (4.1.1) 10xxxxxx, The variant specified in this document.
 	uuid[6] = uuid[6]&^0xf0 | 0x40 // (4.1.3) 0100xxxx, set version 4
-	return uuid
+	return UUID(uuid)
 }
