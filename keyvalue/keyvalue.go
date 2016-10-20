@@ -30,6 +30,11 @@ func (m Map) Get(key string) (interface{}, error) {
 	return nil, KeyError(key)
 }
 
+// NewMap returns a new Map (shorthand for `Map(make(map[string]interface{}))`)
+func NewMap() Map {
+	return Map(make(map[string]interface{}))
+}
+
 // GetgOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key string, or interface{}) interface{} {
 	v, e := g.Get(key)
