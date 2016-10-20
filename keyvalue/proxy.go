@@ -27,6 +27,11 @@ func NewGetProxy(g Getter) *GetProxy {
 	}
 }
 
+// Get shorthand accses to underling Getter.Get.
+func (p *GetProxy) Get(key string) (interface{}, error) {
+	return p.g.Get(key)
+}
+
 // GetOr is shorthand for keyvalue.GetOr.
 func (p *GetProxy) GetOr(key string, or interface{}) interface{} {
 	return GetOr(p.g, key, or)
