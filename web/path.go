@@ -70,7 +70,7 @@ func CompilePathPattern(pattern string) (*PathPattern, error) {
 }
 
 // Match execute the matching with the given path and return the parameter values or nil
-func (pattern *PathPattern) Match(path string) (keyvalue.Getter, bool) {
+func (pattern *PathPattern) Match(path string) (*keyvalue.GetProxy, bool) {
 	var matched = pattern.compiled.FindStringSubmatch(path)
 	if matched == nil {
 		return nil, false
@@ -97,5 +97,5 @@ func (pattern *PathPattern) Match(path string) (keyvalue.Getter, bool) {
 			m[names[i]] = v
 		}
 	}
-	return m, true
+	return keyvalue.NewGetProxy(m), true
 }
