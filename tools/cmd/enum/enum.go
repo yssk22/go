@@ -66,7 +66,7 @@ func main() {
 		src := g.format()
 		outputName := *output
 		if outputName == "" {
-			outputName = filepath.Join(directory, fmt.Sprintf("%s_enum.go", snakeCase(types[0])))
+			outputName = filepath.Join(directory, fmt.Sprintf("%s_enum.go", xstrings.ToSnakeCase(types[0])))
 		}
 		err := ioutil.WriteFile(outputName, src, 0644)
 		if err != nil {
