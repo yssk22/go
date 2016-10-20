@@ -10,10 +10,14 @@ import (
 func TestGetStringOr(t *testing.T) {
 	a := assert.New(t)
 	m := Map{
-		"Foo": "1",
+		"Foo":  "1",
+		"Bar":  []string{"a"},
+		"Hoge": []string{},
 	}
 	a.EqStr("1", GetStringOr(m, "Foo", "2"))
-	a.EqStr("2", GetStringOr(m, "Bar", "2"))
+	a.EqStr("a", GetStringOr(m, "Bar", "2"))
+	a.EqStr("2", GetStringOr(m, "Hoge", "2"))
+	a.EqStr("2", GetStringOr(m, "Me", "2"))
 }
 
 func TestGetIntOr(t *testing.T) {

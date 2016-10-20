@@ -18,7 +18,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"unicode"
+
+	"github.com/speedland/go/x/xstrings"
 )
 
 const defaultOutput = "enum_helper.go"
@@ -65,7 +66,7 @@ func main() {
 		src := g.format()
 		outputName := *output
 		if outputName == "" {
-			outputName = filepath.Join(directory, fmt.Sprintf("%s_enum.go", snakeCase(types[0])))
+			outputName = filepath.Join(directory, fmt.Sprintf("%s_enum.go", xstrings.ToSnakeCase(types[0])))
 		}
 		err := ioutil.WriteFile(outputName, src, 0644)
 		if err != nil {
@@ -304,52 +305,11 @@ func (f *File) genDecl(node ast.Node) bool {
 	return false
 }
 
-var specialUpperCaseWords = []string{
-	"API", "URL", "ID",
-}
-
-func snakeCase(s string) string {
-	var str []rune
-	var runes = []rune(s)
-	str = append(str, unicode.ToLower(runes[0]))
-	i := 1
-	for i < len(runes) {
-		if unicode.IsUpper(runes[i]) {
-			if l := getSpecialUpperCaseWordLen(runes, i); l > 0 {
-				str = append(str, '_')
-				for j := 0; j < l; j++ {
-					str = append(str, unicode.ToLower(runes[i+j]))
-				}
-				i += l
-			} else {
-				str = append(str, '_', unicode.ToLower(runes[i]))
-				i++
-			}
-		} else {
-			str = append(str, runes[i])
-			i++
-		}
-	}
-	return string(str)
-}
-
-func getSpecialUpperCaseWordLen(runes []rune, i int) int {
-	for _, word := range specialUpperCaseWords {
-		l := len(word)
-		if i+l < len(runes) {
-			if string(runes[i:i+l]) == word {
-				return l
-			}
-		}
-	}
-	return -1
-}
-
 func nameToString(name string, typeName string) (string, error) {
 	if !strings.HasPrefix(name, typeName) {
 		return "", fmt.Errorf("Naming violation: %s must starts with %s", name, typeName)
 	}
-	return snakeCase(strings.TrimPrefix(name, typeName)), nil
+	return xstrings.ToSnakeCase(strings.TrimPrefix(name, typeName)), nil
 }
 
 // Value represents a declared constant.
