@@ -67,7 +67,17 @@ func GetStringOr(g Getter, key string, or string) string {
 	if e != nil {
 		return or
 	}
-	return fmt.Sprintf("%s", v)
+	switch v.(type) {
+	case []string:
+		// Take the first element follwoing to url.Values implementation
+		l := v.([]string)
+		if len(l) > 0 {
+			return l[0]
+		}
+		return or
+	default:
+		return fmt.Sprintf("%s", v)
+	}
 }
 
 // GetIntOr is int version of GetOr.
