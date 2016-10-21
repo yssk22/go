@@ -192,4 +192,10 @@ var defaultFuncMap = map[string]interface{}{
 		}
 		return buff.String()
 	},
+	"context": func(r *Record, key string) string {
+		if r.ctx == nil {
+			return ""
+		}
+		return fmt.Sprintf("%s", r.ctx.Value(key))
+	},
 }
