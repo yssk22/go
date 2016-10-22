@@ -24,7 +24,11 @@
 
 package xlog
 
-import "os"
+import (
+	"os"
+
+	"golang.org/x/net/context"
+)
 
 // var defaultSink Sink = NewIOSink(os.Stderr)
 
@@ -45,35 +49,36 @@ var defaultOption = &Option{
 	StackCaptureDepth: 0,
 }
 
+var defaultKeyFilters = map[interface{}]Level{}
+
 var defaultIOFormatter = NewTextFormatter(
 	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 )
 
-var defaultSink = NewIOSinkWithFormatter(
-	os.Stderr, defaultIOFormatter,
+var defaultLogger = New(
+	KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
+		NewIOSinkWithFormatter(
+			os.Stderr, defaultIOFormatter,
+		),
+	),
 )
 
-// // SetOption sets the option for the global logger
-// func SetOption(o *Option) {
-// 	defaultOption = o
-// }
+// SetKeyFilter sets the specific filter level for `key`.
+func SetKeyFilter(key interface{}, level Level) {
+	defaultKeyFilters[key] = level
+}
 
-// // WithContext returns a shallow copy of global Logger with its context changed to ctx.
-// // The provided ctx must be non-nil.
-// func WithContext(ctx context.Context) *Logger {
-// 	return defaultLogger().WithContext(ctx)
-// }
+// SetOption sets the option for the global logger
+func SetOption(o *Option) {
+	defaultOption = o
+}
 
-// // WithName returns a shallow copy of global Logger with its name changed to ctx.
-// func WithName(name string) *Logger {
-// 	return defaultLogger().WithName(name)
-// }
+// WithKey returns a shallow copy of global Logger with its name changed to name.
+func WithKey(name string) *Logger {
+	return defaultLogger.WithKey(name)
+}
 
-// func defaultLogger() *Logger {
-// 	return New(
-// 		defaultFilter.NewSink(
-// 			defaultSink,
-// 		),
-// 		defaultOption,
-// 	)
-// }
+// WithContext returns a shallow copy of global Logger with its context changed to ctx.
+func WithContext(ctx context.Context) *Logger {
+	return defaultLogger.WithContext(ctx)
+}

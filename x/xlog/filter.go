@@ -31,3 +31,14 @@ var LevelFilter = func(min Level) FilterFunc {
 		return r.Level >= min
 	}
 }
+
+// KeyLevelFilter is like LevelFilter but more flexible by key matching.
+// If key is not found in `keyLevels`, default level l is used as fallback.
+var KeyLevelFilter = func(keyLevels map[interface{}]Level, l Level) FilterFunc {
+	return func(r *Record) bool {
+		if lvl, ok := keyLevels[r.LoggerKey]; ok {
+			return r.Level >= lvl
+		}
+		return r.Level >= l
+	}
+}

@@ -16,15 +16,16 @@ type Record struct {
 	Timestamp time.Time
 	Data      interface{}
 
-	Level Level             // Log Levell
-	Name  string            // Log Name
-	Stack []*xruntime.Frame // Log Source Stack
+	Level Level // Log Levell
+
+	LoggerKey interface{}       // Logger Key
+	Stack     []*xruntime.Frame // Log Source BenchmarkLoggerFewStackCapture
 
 	ctx context.Context // used for application context
 }
 
 // ContextValue returns the context value
-func (r *Record) ContextValue(key string) interface{} {
+func (r *Record) ContextValue(key interface{}) interface{} {
 	if r.ctx != nil {
 		return r.ctx.Value(key)
 	}
@@ -40,7 +41,7 @@ type Option struct {
 // Logger the logger
 type Logger struct {
 	*Option
-	name string
+	key  interface{}
 	sink Sink
 	ctx  context.Context
 }
@@ -53,7 +54,7 @@ func New(s Sink) *Logger {
 	return &Logger{
 		Option: option,
 		sink:   s,
-		name:   caller.PackageName,
+		key:    caller.PackageName,
 		ctx:    nil,
 	}
 }
@@ -70,11 +71,11 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 	return l2
 }
 
-// WithName returns a shallow copy of Logger with its name changed to name.
-func (l *Logger) WithName(name string) *Logger {
+// WithKey returns a shallow copy of Logger with its key changed to `key`.
+func (l *Logger) WithKey(key interface{}) *Logger {
 	l2 := new(Logger)
 	*l2 = *l
-	l2.name = name
+	l2.key = key
 	return l2
 }
 
@@ -143,7 +144,7 @@ func (l *Logger) write(level Level, data interface{}) {
 		Level:     level,
 		Data:      data,
 		Timestamp: xtime.Now(),
-		Name:      l.name,
+		LoggerKey: l.key,
 		ctx:       l.ctx,
 	}
 	if l.MinStackCaptureOn <= r.Level {
