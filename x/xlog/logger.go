@@ -11,20 +11,6 @@ import (
 	"github.com/speedland/go/x/xtime"
 )
 
-// Level is a enum for log Level
-//go:generate enum -type=Level
-type Level int
-
-// Available Level values
-const (
-	LevelTrace Level = iota
-	LevelDebug
-	LevelInfo
-	LevelWarn
-	LevelError
-	LevelFatal
-)
-
 // Record is a data set for one log line/data
 type Record struct {
 	Timestamp time.Time
@@ -35,6 +21,14 @@ type Record struct {
 	Stack []*xruntime.Frame // Log Source Stack
 
 	ctx context.Context // used for application context
+}
+
+// ContextValue returns the context value
+func (r *Record) ContextValue(key string) interface{} {
+	if r.ctx != nil {
+		return r.ctx.Value(key)
+	}
+	return nil
 }
 
 // Option is option fields for logger.
@@ -51,22 +45,16 @@ type Logger struct {
 	ctx  context.Context
 }
 
-// New is like NewWithSender but name string is automatically set as the current package name.
+// New returns a new Logger instance.
 func New(s Sink) *Logger {
-	return NewWithName(xruntime.CaptureStackFrom(1, 1)[0].PackageName, s)
-}
-
-// NewWithName returns a new Logger with name.
-func NewWithName(name string, s Sink) *Logger {
-	const maxDepth = 50
+	option := new(Option)
+	*option = *defaultOption // copy default option
+	caller := xruntime.CaptureCaller()
 	return &Logger{
-		Option: &Option{
-			MinStackCaptureOn: LevelError,
-			StackCaptureDepth: maxDepth,
-		},
-		name: name,
-		sink: s,
-		ctx:  nil,
+		Option: option,
+		sink:   s,
+		name:   caller.PackageName,
+		ctx:    nil,
 	}
 }
 

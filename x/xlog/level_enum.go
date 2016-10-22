@@ -9,20 +9,24 @@ import (
 
 var (
 	_LevelValueToString = map[Level]string{
+		LevelAll:   "all",
 		LevelTrace: "trace",
 		LevelDebug: "debug",
 		LevelInfo:  "info",
 		LevelWarn:  "warn",
 		LevelError: "error",
 		LevelFatal: "fatal",
+		LevelNone:  "none",
 	}
 	_LevelStringToValue = map[string]Level{
+		"all":   LevelAll,
 		"trace": LevelTrace,
 		"debug": LevelDebug,
 		"info":  LevelInfo,
 		"warn":  LevelWarn,
 		"error": LevelError,
 		"fatal": LevelFatal,
+		"none":  LevelNone,
 	}
 )
 

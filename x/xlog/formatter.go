@@ -147,6 +147,7 @@ func newTextFormatterTemplate(s string, code ansi.Code, funcMap template.FuncMap
 		}
 		t = t.Funcs(funcMap)
 	}
+	t = t.Option("missingkey=zero")
 	return &textFormatterTemplate{
 		t:    template.Must(t.Parse(s)),
 		code: code,
@@ -191,11 +192,5 @@ var defaultFuncMap = map[string]interface{}{
 			return buff.String()
 		}
 		return buff.String()
-	},
-	"context": func(r *Record, key string) string {
-		if r.ctx == nil {
-			return ""
-		}
-		return fmt.Sprintf("%s", r.ctx.Value(key))
 	},
 }

@@ -1,45 +1,33 @@
 package xlog
 
-// LevelFilter returns a sink to pipeline for filter logs by Level to the next sink
-func LevelFilter(level Level, s Sink) Sink {
-	return &levelFilter{
-		level: level,
-		next:  s,
-	}
-}
+// FilterFunc
+type FilterFunc func(r *Record) bool
 
-type levelFilter struct {
-	level Level
-	next  Sink
-}
-
-func (f *levelFilter) Write(r *Record) error {
-	if r.Level < f.level {
-		return nil
-	}
-	// discard
-	return f.next.Write(r)
-}
-
-// NameFilter returns a sink to pipeline for filter logs by Logger name to the next sink
-func NameFilter(cfg map[string]Level, s Sink) Sink {
-	return &nameFilter{
-		cfg:  cfg,
+// Pipe returns a *Filter that writes to Sink using FilterFunc
+func (f FilterFunc) Pipe(s Sink) *Filter {
+	return &Filter{
+		f:    f,
 		next: s,
 	}
 }
 
-type nameFilter struct {
-	cfg  map[string]Level
+// Filter is a Sink to write records by condition to the next sink.
+type Filter struct {
+	f    FilterFunc
 	next Sink
 }
 
-func (f *nameFilter) Write(r *Record) error {
-	if level, ok := f.cfg[r.Name]; ok {
-		if r.Level < level {
-			return nil
-		}
+// Write implements `Sink#Write`
+func (f *Filter) Write(r *Record) error {
+	if f.f(r) {
+		return f.next.Write(r)
 	}
-	// discard
-	return f.next.Write(r)
+	return nil
+}
+
+// LevelFilter is FilterFunc that filter records whose level is under the given level.
+var LevelFilter = func(min Level) FilterFunc {
+	return func(r *Record) bool {
+		return r.Level >= min
+	}
 }

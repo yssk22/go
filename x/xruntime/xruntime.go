@@ -17,6 +17,11 @@ type Frame struct {
 	pc            uintptr
 }
 
+// CaptureCaller returns a frame where a caller is.
+func CaptureCaller() *Frame {
+	return CaptureStackFrom(1, 1)[0]
+}
+
 // CaptureStack returns a list of stack frames as []*Frame
 func CaptureStack(maxDepth int) []*Frame {
 	return captureFrames(1, maxDepth)

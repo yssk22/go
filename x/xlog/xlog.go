@@ -1,29 +1,79 @@
-// Package xlog provides extended utility functions for log
+// Package xlog provides the logging framework for applications.
+//
+// Logger is a top level struct that writes any type of log data to Sink.
+//
+// * Name
+//
+// Each of Logger should have it's name to identify which log records are sent by which logger.
+// By default, that name is automatically resolved by the package name.
+//
+// * Level
+//
+// As other logging frameworks do, xlog supports logging level support.
+//
+// * Pipeline
+//
+// Sink is an interface that implements `Write(*Record) error` and it's easy to
+// make a pipeline from a Sink to another Sink. Filter is a such kind of Sink that creats
+// pipeline for filtering records.
+//
+// * Context
+//
+// Logger can be aware of context.Context (even we support "golang.org/x/net/context")
+// You can associate any context by *Logger.WithContext() and write it by `{{context key .}}`
+
 package xlog
 
-import (
-	"golang.org/x/net/context"
+import "os"
+
+// var defaultSink Sink = NewIOSink(os.Stderr)
+
+// // SetOutput sets the sink for the global logger
+// func SetOutput(s Sink) {
+// 	defaultSink = s
+// }
+
+// var defaultFilter = MinLevelFilter(LevelInfo)
+
+// // SetFilter sets the filter for the global logger
+// func SetFilter(f Filter) {
+// 	defaultFilter = f
+// }
+
+var defaultOption = &Option{
+	MinStackCaptureOn: LevelNone,
+	StackCaptureDepth: 0,
+}
+
+var defaultIOFormatter = NewTextFormatter(
+	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 )
 
-var defaultLogger = New(NullSink)
+var defaultSink = NewIOSinkWithFormatter(
+	os.Stderr, defaultIOFormatter,
+)
 
-// SetOption sets the option for the global logger
-func SetOption(o *Option) {
-	defaultLogger.Option = o
-}
+// // SetOption sets the option for the global logger
+// func SetOption(o *Option) {
+// 	defaultOption = o
+// }
 
-// SetOutput sets the sink for the global logger
-func SetOutput(s Sink) {
-	defaultLogger.sink = s
-}
+// // WithContext returns a shallow copy of global Logger with its context changed to ctx.
+// // The provided ctx must be non-nil.
+// func WithContext(ctx context.Context) *Logger {
+// 	return defaultLogger().WithContext(ctx)
+// }
 
-// WithContext returns a shallow copy of global Logger with its context changed to ctx.
-// The provided ctx must be non-nil.
-func WithContext(ctx context.Context) *Logger {
-	return defaultLogger.WithContext(ctx)
-}
+// // WithName returns a shallow copy of global Logger with its name changed to ctx.
+// func WithName(name string) *Logger {
+// 	return defaultLogger().WithName(name)
+// }
 
-// WithName returns a shallow copy of global Logger with its name changed to ctx.
-func WithName(name string) *Logger {
-	return defaultLogger.WithName(name)
-}
+// func defaultLogger() *Logger {
+// 	return New(
+// 		defaultFilter.NewSink(
+// 			defaultSink,
+// 		),
+// 		defaultOption,
+// 	)
+// }
