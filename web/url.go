@@ -12,9 +12,10 @@ func newURLValuesProxy(v url.Values) *keyvalue.GetProxy {
 
 type urlValuesGetProxy url.Values
 
-func (p urlValuesGetProxy) Get(key string) (interface{}, error) {
-	if v, ok := p[key]; ok {
+func (p urlValuesGetProxy) Get(key interface{}) (interface{}, error) {
+	skey := key.(string)
+	if v, ok := p[skey]; ok {
 		return v, nil
 	}
-	return nil, keyvalue.KeyError(key)
+	return nil, keyvalue.KeyError(skey)
 }

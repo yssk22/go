@@ -6,11 +6,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/speedland/go/iterator/slice"
 	"github.com/speedland/go/keyvalue"
 )
 
 // PathPattern is a struct to support path parameters and matches incoming request paths.
 type PathPattern struct {
+	source     string
 	compiled   *regexp.Regexp
 	paramNames []string
 }
@@ -41,6 +43,7 @@ func CompilePathPattern(pattern string) (*PathPattern, error) {
 	if pattern[0] != slash {
 		return nil, fmt.Errorf(invalidPathPattern, pattern)
 	}
+	var source = pattern
 	// replace regexp special chars with the escaped one.
 	// e.g: /path/ -> \\/path\\/
 	pattern = reRegexpSpecialChars.Copy().ReplaceAllStringFunc(pattern, func(name string) string {
@@ -63,9 +66,14 @@ func CompilePathPattern(pattern string) (*PathPattern, error) {
 	if err != nil {
 		return nil, err
 	}
+	names := slice.Filter(compiled.SubexpNames(), func(_ int, s string) bool {
+		return s == ""
+	}).([]string)
+
 	return &PathPattern{
+		source:     source,
 		compiled:   compiled,
-		paramNames: compiled.SubexpNames(),
+		paramNames: names,
 	}, nil
 }
 
@@ -77,25 +85,24 @@ func (pattern *PathPattern) Match(path string) (*keyvalue.GetProxy, bool) {
 	}
 	var m = keyvalue.NewMap()
 	var names = pattern.paramNames
-	if len(names) != len(matched) {
+	if len(names) != len(matched)-1 {
 		return nil, false
 	}
-	for i, val := range matched {
-		if names[i] != "" { // names[0] should be empty
-			// GAE server pass url encoded values to programs and clients should pass double-encoded values
-			//
-			// For example, the client should path /path%252Fto%252Ffoo.json
-			// if they want handle /path/to/foo.json as /:param.json (set param = "path/to/foo"),
-			v, err := url.QueryUnescape(val)
-			if err != nil {
-				return nil, false
-			}
-			v, err = url.QueryUnescape(v)
-			if err != nil {
-				return nil, false
-			}
-			m[names[i]] = v
+	for i := 1; i < len(matched); i++ {
+		val := matched[i]
+		// GAE server pass url encoded values to programs and clients should pass double-encoded values
+		//
+		// For example, the client should path /path%252Fto%252Ffoo.json
+		// if they want handle /path/to/foo.json as /:param.json (set param = "path/to/foo"),
+		v, err := url.QueryUnescape(val)
+		if err != nil {
+			return nil, false
 		}
+		v, err = url.QueryUnescape(v)
+		if err != nil {
+			return nil, false
+		}
+		m[names[i-1]] = v
 	}
 	return keyvalue.NewGetProxy(m), true
 }

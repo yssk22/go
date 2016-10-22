@@ -1,4 +1,6 @@
-// Package response provies github.com/speedland/go/web.Response implementations
+// Package response provides the specific typed response renderers.
 package response
 
-const contentTypeKey = "content-type"
+type contextKey struct {
+	key string
+}
