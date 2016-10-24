@@ -140,6 +140,9 @@ func (l *Logger) Fatal(v interface{}) {
 }
 
 func (l *Logger) write(level Level, data interface{}) {
+	if v, ok := data.(func(*Printer)); ok {
+		data = printerFunc(v)
+	}
 	r := &Record{
 		Level:     level,
 		Data:      data,

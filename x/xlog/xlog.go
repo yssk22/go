@@ -7,9 +7,18 @@
 // Each of Logger should have it's name to identify which log records are sent by which logger.
 // By default, that name is automatically resolved by the package name.
 //
-// * Level
+// * Level and lazy formatting
 //
-// As other logging frameworks do, xlog supports logging level support.
+// As other logging frameworks do, xlog supports logging level support.And we support lazy evaluated logging.
+//
+//    logger.Debug(func(fmt *Printer){
+//       result := somethingHeavy()
+//       fmt.Println(result)
+//    })
+//
+// In this semantic, somethingHeavy() is a heavy workload and only executed
+// if minimum filter level is under Debug. If the level is upper than Debug,
+// the heavy workload is not executed so that the logging cost will be reduced.
 //
 // * Pipeline
 //
@@ -21,7 +30,7 @@
 //
 // Logger can be aware of context.Context (even we support "golang.org/x/net/context")
 // You can associate any context by *Logger.WithContext() and write it by `{{context key .}}`
-
+//
 package xlog
 
 import (
