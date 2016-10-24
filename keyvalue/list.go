@@ -1,5 +1,7 @@
 package keyvalue
 
+import "fmt"
+
 // List is a list of key-value store.
 type List struct {
 	list []Getter
@@ -21,7 +23,7 @@ func NewList(g ...Getter) *List {
 //   - If a Getter item returns an error other than KeyError, it fails and return that error immediately.
 //   - If a Getter item returns KeyError, it tries the next Getter item.
 //
-func (l *List) Get(key string) (interface{}, error) {
+func (l *List) Get(key interface{}) (interface{}, error) {
 	for _, getter := range l.list {
 		v, e := getter.Get(key)
 		if e != nil {
@@ -33,5 +35,5 @@ func (l *List) Get(key string) (interface{}, error) {
 			return v, nil
 		}
 	}
-	return nil, KeyError(key)
+	return nil, KeyError(fmt.Sprintf("%s", key))
 }

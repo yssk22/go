@@ -23,15 +23,20 @@ var EnvVar = keyvalue.NewList(&envVar{})
 type envVar struct {
 }
 
-func (e envVar) Get(key string) (interface{}, error) {
-	varname := getEnvVarName(key)
+func (e envVar) Get(key interface{}) (interface{}, error) {
+	var skey string
+	var ok bool
+	if skey, ok = key.(string); !ok {
+		return nil, keyvalue.KeyError(fmt.Sprintf("%s (not string)", key))
+	}
+	varname := getEnvVarName(skey)
 	if v, ok := os.LookupEnv(varname); ok {
 		return v, nil
 	}
 	return nil, keyvalue.KeyError(
 		fmt.Sprintf(
 			"%s (%s environment variable)",
-			key, varname,
+			skey, varname,
 		),
 	)
 }
