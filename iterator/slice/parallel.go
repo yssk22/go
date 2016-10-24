@@ -1,4 +1,4 @@
-package iterator
+package slice
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ var DefaultParallelOption = &ParallelOption{
 }
 
 // ParallelSlice is like ParallelSlice but spawn goroutines up to `n` concurrency
-func ParallelSlice(list interface{}, option *ParallelOption, fun interface{}) error {
+func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	if option == nil {
 		option = DefaultParallelOption
 	}
@@ -33,7 +33,7 @@ func ParallelSlice(list interface{}, option *ParallelOption, fun interface{}) er
 
 	errors := SliceError(make([]error, l))
 	eachSize := l / n
-	a := reflect.ValueOf(SplitSliceByLength(list, eachSize))
+	a := reflect.ValueOf(SplitByLength(list, eachSize))
 
 	var wg sync.WaitGroup
 
