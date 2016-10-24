@@ -13,22 +13,21 @@ func assertSlice(v reflect.Value) {
 	}
 }
 
-func assertSliceFun(f reflect.Value) {
-	fType := f.Type()
+func assertSliceFun(fType reflect.Type) {
+	if fType.Kind() != reflect.Func {
+		panic(fmt.Errorf("SliceFuncError: not a function"))
+	}
 	if fType.NumIn() != 2 {
-		panic(fmt.Errorf("ParallelError: the second function must take two arguments"))
+		panic(fmt.Errorf("SliceFuncError: the second function must take two arguments"))
 	}
 	if fType.In(0).Kind() != reflect.Int {
-		panic(fmt.Errorf("ParallelError: the second function must take int value on the first argument"))
+		panic(fmt.Errorf("SliceFuncError: the second function must take int value on the first argument"))
 	}
 	if fType.In(1).Kind() == reflect.Struct {
 		panic(fmt.Errorf(
-			"ParallelError: the second function must not take struct value on the second argument, use %q instead",
+			"SliceFuncError: the second function must not take struct value on the second argument, use %q instead",
 			reflect.PtrTo(fType.In(1)),
 		))
-	}
-	if fType.NumOut() != 1 || !fType.Out(0).Implements(errorType) {
-		panic(fmt.Errorf("ParallelError: the second function must return an error"))
 	}
 }
 

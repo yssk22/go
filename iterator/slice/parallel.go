@@ -23,8 +23,13 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 	a1 := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
+	fType := f.Type()
 	assertSlice(a1)
-	assertSliceFun(f)
+	assertSliceFun(fType)
+	if fType.NumOut() != 1 || !fType.Out(0).Implements(errorType) {
+		panic(fmt.Errorf("SliceFuncError: the second function must return an error"))
+	}
+
 	l := a1.Len()
 	n := option.MaxConcurrency
 	if n <= 0 || l < n {
