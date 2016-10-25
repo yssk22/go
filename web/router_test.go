@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleRouter() {
-	router := NewRouter()
+	router := NewRouter(nil)
 	router.Get("/path/to/:page.html",
 		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
 			return response.NewText(req.Params.GetStringOr("page", ""))
@@ -24,7 +24,7 @@ func ExampleRouter() {
 }
 
 func ExampleRouter_multipleHandlerPipeline() {
-	router := NewRouter()
+	router := NewRouter(nil)
 	router.Get("/path/to/:page.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			if req.Params.GetStringOr("page", "") == "first" {
@@ -52,7 +52,7 @@ func ExampleRouter_multipleHandlerPipeline() {
 }
 
 func ExampleRouter_Use() {
-	router := NewRouter()
+	router := NewRouter(nil)
 	router.Use(HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 		return next(req.WithValue(
 			"my-middleware-key",

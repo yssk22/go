@@ -32,5 +32,5 @@ func GET(path string) *web.Request {
 	if err != nil {
 		panic(err)
 	}
-	return web.NewRequest(r)
+	return web.NewRequest(r, nil)
 }

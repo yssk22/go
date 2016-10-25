@@ -32,7 +32,7 @@ func Test_handlerPipeline(t *testing.T) {
 	)
 	r, _ := http.NewRequest("GET", "/", nil)
 	res := pipeline.Process(
-		NewRequest(r),
+		NewRequest(r, nil),
 		nil,
 	)
 	a.NotNil(res)
@@ -49,7 +49,7 @@ func Test_handlerPipeline_returnNil(t *testing.T) {
 	)
 	r, _ := http.NewRequest("GET", "/", nil)
 	res := pipeline.Process(
-		NewRequest(r),
+		NewRequest(r, nil),
 		nil,
 	)
 	a.Nil(res)
@@ -79,7 +79,7 @@ func Test_handlerPipeline_Multi(t *testing.T) {
 	)
 	r, _ := http.NewRequest("GET", "/", nil)
 	res := pipeline1.Process(
-		NewRequest(r),
+		NewRequest(r, nil),
 		NextHandler(func(req *Request) *response.Response {
 			return pipeline2.Process(req, nil)
 		}),

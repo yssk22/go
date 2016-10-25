@@ -18,19 +18,27 @@ type Request struct {
 	ctx context.Context
 
 	// common request scoped values
-	ID     uuid.UUID
-	Params *keyvalue.GetProxy
-	Query  *keyvalue.GetProxy
-	Form   *keyvalue.GetProxy
+	ID      uuid.UUID
+	Params  *keyvalue.GetProxy
+	Query   *keyvalue.GetProxy
+	Form    *keyvalue.GetProxy
+	Cookies *keyvalue.GetProxy
+
+	Option *Option
 }
 
 // NewRequest returns a new *Request
-func NewRequest(r *http.Request) *Request {
+func NewRequest(r *http.Request, option *Option) *Request {
+	if option == nil {
+		option = DefaultOption
+	}
 	return &Request{
 		Request: r,
 		ctx:     initContext(r),
 		ID:      uuid.New(),
 		Query:   newURLValuesProxy(r.URL.Query()),
+		Cookies: newSignedCookieProxy(r.Cookies(), option.HMACKey),
+		Option:  option,
 	}
 }
 

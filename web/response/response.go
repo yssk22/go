@@ -5,22 +5,27 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/speedland/go/x/xcrypto/xhmac"
+	"github.com/speedland/go/x/xnet/xhttp"
+
 	"golang.org/x/net/context"
 )
 
 // Response represents http response.
 type Response struct {
-	Status HTTPStatus
-	Header http.Header
-	Body   Body
+	Status  HTTPStatus
+	Header  http.Header
+	Cookies []*http.Cookie
+	Body    Body
 }
 
 // NewResponse retuurns a *Response to write body content
 func NewResponse(body Body) *Response {
 	return &Response{
-		Status: HTTPStatusOK,
-		Header: http.Header(make(map[string][]string)),
-		Body:   body,
+		Status:  HTTPStatusOK,
+		Header:  http.Header(make(map[string][]string)),
+		Cookies: []*http.Cookie{},
+		Body:    body,
 	}
 }
 
@@ -33,6 +38,11 @@ func NewResponseWithStatus(body Body, status HTTPStatus) *Response {
 	}
 }
 
+// SetCookie add a cookie on the response
+func (r *Response) SetCookie(c *http.Cookie, hmac *xhmac.Base64) {
+	r.Cookies = append(r.Cookies, xhttp.SignCookie(c, hmac))
+}
+
 // Render renders whole http contnet
 func (r *Response) Render(ctx context.Context, w http.ResponseWriter) {
 	wh := w.Header()
@@ -40,6 +50,9 @@ func (r *Response) Render(ctx context.Context, w http.ResponseWriter) {
 		for _, vv := range v {
 			wh.Add(k, vv)
 		}
+	}
+	for _, c := range r.Cookies {
+		http.SetCookie(w, c)
 	}
 	w.WriteHeader(int(r.Status))
 	r.Body.Render(ctx, w)

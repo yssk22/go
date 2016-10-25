@@ -12,13 +12,18 @@ import (
 type Router struct {
 	middleware *handlerPipeline
 	routes     map[string][]*route // (method -> []*route) mapping
+	option     *Option
 }
 
 // NewRouter returns a new *Router
-func NewRouter() *Router {
+func NewRouter(option *Option) *Router {
+	if option == nil {
+		option = DefaultOption
+	}
 	return &Router{
 		middleware: &handlerPipeline{},
 		routes:     make(map[string][]*route),
+		option:     option,
 	}
 }
 
@@ -70,7 +75,7 @@ func (r *Router) addRoute(method string, pattern string, handlers ...Handler) {
 // Dispatch dispaches *http.Request to the matched handlers and return Response
 func (r *Router) Dispatch(w http.ResponseWriter, req *http.Request) {
 	const RequestIDHeader = "X-SPEEDLAND-REQUEST-ID"
-	var request = NewRequest(req)
+	var request = NewRequest(req, r.option)
 	var logger = xlog.WithKey("web.router").WithContext(request.Context())
 	w.Header().Set(RequestIDHeader, request.ID.String())
 
