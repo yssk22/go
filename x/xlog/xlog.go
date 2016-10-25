@@ -1,123 +1,93 @@
-// Package xlog provides extended utility functions for log
+// Package xlog provides the logging framework for applications.
+//
+// Logger is a top level struct that writes any type of log data to Sink.
+//
+// * Name
+//
+// Each of Logger should have it's name to identify which log records are sent by which logger.
+// By default, that name is automatically resolved by the package name.
+//
+// * Level and lazy formatting
+//
+// As other logging frameworks do, xlog supports logging level support.And we support lazy evaluated logging.
+//
+//    logger.Debug(func(fmt *Printer){
+//       result := somethingHeavy()
+//       fmt.Println(result)
+//    })
+//
+// In this semantic, somethingHeavy() is a heavy workload and only executed
+// if minimum filter level is under Debug. If the level is upper than Debug,
+// the heavy workload is not executed so that the logging cost will be reduced.
+//
+// * Pipeline
+//
+// Sink is an interface that implements `Write(*Record) error` and it's easy to
+// make a pipeline from a Sink to another Sink. Filter is a such kind of Sink that creats
+// pipeline for filtering records.
+//
+// * Context
+//
+// Logger can be aware of context.Context (even we support "golang.org/x/net/context")
+// You can associate any context by *Logger.WithContext() and write it by `{{context key .}}`
+//
 package xlog
 
 import (
-	"fmt"
-	"time"
+	"os"
 
-	"github.com/speedland/go/x/xruntime"
-	"github.com/speedland/go/x/xtime"
+	"golang.org/x/net/context"
 )
 
-// Level is a enum for log Level
-//go:generate enum -type=Level
-type Level int
+// var defaultSink Sink = NewIOSink(os.Stderr)
 
-// Available Level values
-const (
-	LevelTrace Level = iota
-	LevelDebug
-	LevelInfo
-	LevelWarn
-	LevelError
-	LevelFatal
+// // SetOutput sets the sink for the global logger
+// func SetOutput(s Sink) {
+// 	defaultSink = s
+// }
+
+// var defaultFilter = MinLevelFilter(LevelInfo)
+
+// // SetFilter sets the filter for the global logger
+// func SetFilter(f Filter) {
+// 	defaultFilter = f
+// }
+
+var defaultOption = &Option{
+	MinStackCaptureOn: LevelNone,
+	StackCaptureDepth: 0,
+}
+
+var defaultKeyFilters = map[interface{}]Level{}
+
+var defaultIOFormatter = NewTextFormatter(
+	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 )
 
-// Record is a data set for one log line/data
-type Record struct {
-	Timestamp time.Time
-	Level     Level
-	Data      interface{}
+var defaultLogger = New(
+	KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
+		NewIOSinkWithFormatter(
+			os.Stderr, defaultIOFormatter,
+		),
+	),
+)
 
-	Stack     []*xruntime.Frame
-	Goroutine int // Goroutine number
+// SetKeyFilter sets the specific filter level for `key`.
+func SetKeyFilter(key interface{}, level Level) {
+	defaultKeyFilters[key] = level
 }
 
-// Logger the logger
-type Logger struct {
-	sink              Sink
-	MinStackCaptureOn Level // Minimum Level where logger captures stacks. Strongly recommend to set LevelFatal.
-	StackCaptureDepth int   // # of stack frames to be captured on logging.
+// SetOption sets the option for the global logger
+func SetOption(o *Option) {
+	defaultOption = o
 }
 
-// New returns a new Logger
-func New(s Sink) *Logger {
-	const maxDepth = 50
-	return &Logger{
-		sink:              s,
-		MinStackCaptureOn: LevelError,
-		StackCaptureDepth: maxDepth,
-	}
+// WithKey returns a shallow copy of global Logger with its name changed to name.
+func WithKey(name string) *Logger {
+	return defaultLogger.WithKey(name)
 }
 
-// Tracef to write text log with LevelTrace
-func (l *Logger) Tracef(s string, v ...interface{}) {
-	l.write(LevelTrace, fmt.Sprintf(s, v...))
-}
-
-// Trace to write data log with LevelTrace
-func (l *Logger) Trace(v interface{}) {
-	l.write(LevelTrace, v)
-}
-
-// Debugf to write text log with LevelDebug
-func (l *Logger) Debugf(s string, v ...interface{}) {
-	l.write(LevelDebug, fmt.Sprintf(s, v...))
-}
-
-// Debug to write data log with LevelDebug
-func (l *Logger) Debug(v interface{}) {
-	l.write(LevelDebug, v)
-}
-
-// Infof to write text log with LevelInfo
-func (l *Logger) Infof(s string, v ...interface{}) {
-	l.write(LevelInfo, fmt.Sprintf(s, v...))
-}
-
-// Info to write data log with LevelInfo
-func (l *Logger) Info(v interface{}) {
-	l.write(LevelInfo, v)
-}
-
-// Warnf to write text log with LevelWarn
-func (l *Logger) Warnf(s string, v ...interface{}) {
-	l.write(LevelError, fmt.Sprintf(s, v...))
-}
-
-// Warn to write data log with LevelWarn
-func (l *Logger) Warn(v interface{}) {
-	l.write(LevelWarn, v)
-}
-
-// Errorf to write text log with LevelError
-func (l *Logger) Errorf(s string, v ...interface{}) {
-	l.write(LevelError, fmt.Sprintf(s, v...))
-}
-
-// Error to write data log with LevelError
-func (l *Logger) Error(v interface{}) {
-	l.write(LevelWarn, v)
-}
-
-// Fatalf to write text log with LevelTrace
-func (l *Logger) Fatalf(s string, v ...interface{}) {
-	l.write(LevelFatal, fmt.Sprintf(s, v...))
-}
-
-// Fatal to write text log with LevelFatal
-func (l *Logger) Fatal(v interface{}) {
-	l.write(LevelFatal, v)
-}
-
-func (l *Logger) write(level Level, data interface{}) {
-	r := &Record{
-		Level:     level,
-		Data:      data,
-		Timestamp: xtime.Now(),
-	}
-	if l.MinStackCaptureOn <= r.Level {
-		r.Stack = xruntime.CaptureStackFrom(2, l.StackCaptureDepth)
-	}
-	l.sink.Write(r)
+// WithContext returns a shallow copy of global Logger with its context changed to ctx.
+func WithContext(ctx context.Context) *Logger {
+	return defaultLogger.WithContext(ctx)
 }

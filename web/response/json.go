@@ -2,40 +2,29 @@ package response
 
 import (
 	"encoding/json"
-	"net/http"
+	"io"
+
+	"golang.org/x/net/context"
 )
 
-// JSON implements application/json resposne.
-type JSON struct {
-	Code   HTTPStatus
-	Header *Header
-	Data   interface{}
+type _json struct {
+	data interface{}
 }
 
-// NewJSON returns *JSON reponse
-func NewJSON(v interface{}) *JSON {
-	return NewJSONWithCode(v, HTTPStatusOK)
-}
-
-const contentTypeJSON = "application/json; charset=utf-8"
-
-// NewJSONWithCode returns *JSON reponse with the given status code
-func NewJSONWithCode(v interface{}, code HTTPStatus) *JSON {
-	header := NewHeader()
-	header.Set(contentTypeKey, contentTypeJSON)
-	return &JSON{
-		Code:   code,
-		Header: header,
-		Data:   v,
-	}
-}
-
-// Render writes text response
-func (j *JSON) Render(w http.ResponseWriter) bool {
-	j.Header.Render(w)
-	w.WriteHeader(int(j.Code))
-	if err := json.NewEncoder(w).Encode(j.Data); err != nil {
+func (j _json) Render(ctx context.Context, w io.Writer) {
+	if err := json.NewEncoder(w).Encode(j.data); err != nil {
 		panic(err)
 	}
-	return true
+}
+
+// NewJSON returns a JSON response
+func NewJSON(v interface{}) *Response {
+	return NewJSONWithStatus(v, HTTPStatusOK)
+}
+
+// NewJSONWithStatus returns a JSON formatted response with the given status code
+func NewJSONWithStatus(v interface{}, code HTTPStatus) *Response {
+	res := NewResponseWithStatus(&_json{v}, code)
+	res.Header.Set(ContentType, "application/json; charset=utf-8")
+	return res
 }

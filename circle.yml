@@ -3,20 +3,20 @@
 machine:
   environment:
     GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${HOME}/.go_project"
+    SRCDIR: "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
 
 dependencies:
   override:
+    - go get -u github.com/jstemmer/go-junit-report
     - mkdir -p "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}"
     - ln -sf "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+    - cd ${SRCDIR} && go get ./...
 
 test:
   override:
-    - go build ./... # Check packages are buildable (go-junit-report doesn't check it)
-    - go get -u github.com/jstemmer/go-junit-report
+    - cd ${SRCDIR} && go build ./... # Check packages are buildable (go-junit-report doesn't check it)
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
-    - go test -v $(go list ./... | grep -v vendor) | go-junit-report -set-exit-code=true > $CIRCLE_TEST_REPORTS/golang/junit.xml:
-        pwd:
-          ../.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+    - cd ${SRCDIR} && go test -v $(go list ./... | grep -v vendor) | go-junit-report -set-exit-code=true > $CIRCLE_TEST_REPORTS/golang/junit.xml
 
 deployment:
   develop:

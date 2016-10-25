@@ -24,23 +24,18 @@ type IOSink struct {
 
 // NewIOSink returns a IOSink for w.
 func NewIOSink(w io.Writer) *IOSink {
-	return NewIOSinkWithFormatter(w, DefaultIOFormatter)
+	return NewIOSinkWithFormatter(w, defaultIOFormatter)
 }
 
 // NewIOSinkWithFormatter returns a IOSink for w with f Formatter
 func NewIOSinkWithFormatter(w io.Writer, f Formatter) *IOSink {
 	if f == nil {
-		f = DefaultIOFormatter
+		f = defaultIOFormatter
 	}
 	return &IOSink{
 		writer: w, formatter: f,
 	}
 }
-
-// DefaultIOFormatter is a default TextFormatter used for IOSink
-var DefaultIOFormatter = NewTextFormatter(
-	`{{formattimestamp .Timestamp}} [{{.Level}}] [{{.Goroutine}}] {{.Text}} ({{.SourceFile}}#{{.SourceLine}})`,
-)
 
 // Write implements Sink#Write
 func (s *IOSink) Write(r *Record) error {

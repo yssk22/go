@@ -1,2 +1,4 @@
-// Package xhttp provides extended utility functions for http
+// Package xhttp provies utility functions for net/http package
 package xhttp
+
+

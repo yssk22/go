@@ -1,34 +1,28 @@
 package response
 
-import "net/http"
+import (
+	"fmt"
+	"io"
 
-// Test implements text/plain resposne.
-type Text struct {
-	Code    HTTPStatus
-	Header  *Header
-	Content string
+	"golang.org/x/net/context"
+)
+
+type _text struct {
+	v interface{}
 }
 
-// NewText returns *Text reponse
-func NewText(content string) *Text {
-	return NewTextWithCode(content, HTTPStatusOK)
+func (t _text) Render(ctx context.Context, w io.Writer) {
+	fmt.Fprintf(w, "%s", t.v)
 }
 
-// NewTextWithCode returns *Text reponse with the given status code
-func NewTextWithCode(content string, code HTTPStatus) *Text {
-	header := NewHeader()
-	header.Set("content-type", "text/plain; charset=utf-9")
-	return &Text{
-		Code:    code,
-		Header:  header,
-		Content: content,
-	}
+// NewText returns a text response
+func NewText(s interface{}) *Response {
+	return NewTextWithStatus(s, HTTPStatusOK)
 }
 
-// Render writes text response
-func (t *Text) Render(w http.ResponseWriter) bool {
-	t.Header.Render(w)
-	w.WriteHeader(int(t.Code))
-	w.Write([]byte(t.Content))
-	return true
+// NewTextWithStatus returns a text formatted response with the given status code
+func NewTextWithStatus(s interface{}, code HTTPStatus) *Response {
+	res := NewResponseWithStatus(&_text{s}, code)
+	res.Header.Set(ContentType, "plain/text; charset=utf-8")
+	return res
 }

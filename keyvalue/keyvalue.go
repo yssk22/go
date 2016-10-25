@@ -9,51 +9,51 @@ import (
 
 // Getter is an interface to get a value by a key
 type Getter interface {
-	Get(string) (interface{}, error)
+	Get(interface{}) (interface{}, error)
 }
 
 // Setter is an interface to set a value bey a key
 type Setter interface {
-	Set(string, interface{}) error
+	Set(interface{}, interface{}) error
 }
 
 // GetterSetter is an interface to get/set a valeu by a key
 type GetterSetter interface {
-	Get(string) (interface{}, error)
-	Set(string, interface{}) error
+	Get(interface{}) (interface{}, error)
+	Set(interface{}, interface{}) error
 }
 
 // KeyError is the error when the key is not found.
 type KeyError string
 
 func (e KeyError) Error() string {
-	return fmt.Sprintf("key %q is not found", string(e))
+	return fmt.Sprintf("key %s is not found", e)
 }
 
 // Map is an alias for map[string]interface{} that implements GetterSetter interface
-type Map map[string]interface{}
+type Map map[interface{}]interface{}
 
 // Get implements Getter#Get
-func (m Map) Get(key string) (interface{}, error) {
+func (m Map) Get(key interface{}) (interface{}, error) {
 	if v, ok := m[key]; ok {
 		return v, nil
 	}
-	return nil, KeyError(key)
+	return nil, KeyError(fmt.Sprintf("%s", key))
 }
 
 // Set implements Setter#Set
-func (m Map) Set(key string, v interface{}) error {
+func (m Map) Set(key interface{}, v interface{}) error {
 	m[key] = v
 	return nil
 }
 
 // NewMap returns a new Map (shorthand for `Map(make(map[string]interface{}))`)
 func NewMap() Map {
-	return Map(make(map[string]interface{}))
+	return Map(make(map[interface{}]interface{}))
 }
 
 // GetgOr gets a value from Getter or return the defalut `or` value if not found.
-func GetOr(g Getter, key string, or interface{}) interface{} {
+func GetOr(g Getter, key interface{}, or interface{}) interface{} {
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -62,7 +62,7 @@ func GetOr(g Getter, key string, or interface{}) interface{} {
 }
 
 // GetStringOr is string version of GetOr.
-func GetStringOr(g Getter, key string, or string) string {
+func GetStringOr(g Getter, key interface{}, or string) string {
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -81,7 +81,7 @@ func GetStringOr(g Getter, key string, or string) string {
 }
 
 // GetIntOr is int version of GetOr.
-func GetIntOr(g Getter, key string, or int) int {
+func GetIntOr(g Getter, key interface{}, or int) int {
 	v, e := g.Get(key)
 	if e != nil {
 		return or

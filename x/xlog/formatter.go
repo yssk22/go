@@ -147,6 +147,7 @@ func newTextFormatterTemplate(s string, code ansi.Code, funcMap template.FuncMap
 		}
 		t = t.Funcs(funcMap)
 	}
+	t = t.Option("missingkey=zero")
 	return &textFormatterTemplate{
 		t:    template.Must(t.Parse(s)),
 		code: code,

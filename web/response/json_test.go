@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/speedland/go/x/xtesting/assert"
+	"golang.org/x/net/context"
 )
 
 func TestJSON(t *testing.T) {
@@ -13,7 +14,7 @@ func TestJSON(t *testing.T) {
 		"ok": true,
 	})
 	w := httptest.NewRecorder()
-	json.Render(w)
+	json.Render(context.Background(), w)
 
 	a.EqStr("{\"ok\":true}\n", w.Body.String())
 }
