@@ -21,4 +21,4 @@ func (c *contextKey) String() string {
 }
 
 // NotFound is the default response for 404
-var NotFound = response.NewTextWithCode("not found", response.HTTPStatusNotFound)
+var NotFound = response.NewTextWithStatus("not found", response.HTTPStatusNotFound)

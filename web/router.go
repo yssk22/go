@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/speedland/go/keyvalue"
+	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xlog"
 )
 
@@ -76,7 +77,7 @@ func (r *Router) Dispatch(w http.ResponseWriter, req *http.Request) {
 	// middleware always executed
 	res := r.middleware.Process(
 		request,
-		NextHandler(func(request *Request) Response {
+		NextHandler(func(request *Request) *response.Response {
 			// then find a route to dispatch
 			path := req.URL.EscapedPath()
 			method := req.Method

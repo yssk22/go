@@ -19,7 +19,7 @@ func TestText(t *testing.T) {
 
 func TestTextWithCode(t *testing.T) {
 	a := assert.New(t)
-	text := NewTextWithCode("Test Test", HTTPStatusNotFound)
+	text := NewTextWithStatus("Test Test", HTTPStatusNotFound)
 	w := httptest.NewRecorder()
 	text.Render(context.Background(), w)
 

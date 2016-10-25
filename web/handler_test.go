@@ -16,16 +16,16 @@ func Test_handlerPipeline(t *testing.T) {
 	const contextKey = "test"
 	pipeline := &handlerPipeline{}
 	pipeline.Append(
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			ctx := context.WithValue(req.Context(), contextKey, 1)
 			return n(req.WithContext(ctx))
 		}),
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int) + 1
 			ctx := context.WithValue(req.Context(), contextKey, i)
 			return n(req.WithContext(ctx))
 		}),
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int)
 			return response.NewText(fmt.Sprintf("%d", i))
 		}),
@@ -36,15 +36,14 @@ func Test_handlerPipeline(t *testing.T) {
 		nil,
 	)
 	a.NotNil(res)
-	text := res.(*response.Text)
-	a.EqStr("2", text.Content)
+	a.EqStr("2", res.Content())
 }
 
 func Test_handlerPipeline_returnNil(t *testing.T) {
 	a := assert.New(t)
 	pipeline := &handlerPipeline{}
 	pipeline.Append(
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			return nil
 		}),
 	)
@@ -62,18 +61,18 @@ func Test_handlerPipeline_Multi(t *testing.T) {
 	pipeline1 := &handlerPipeline{}
 	pipeline2 := &handlerPipeline{}
 	pipeline1.Append(
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			ctx := context.WithValue(req.Context(), contextKey, 1)
 			return n(req.WithContext(ctx))
 		}),
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int) + 1
 			ctx := context.WithValue(req.Context(), contextKey, i)
 			return n(req.WithContext(ctx))
 		}),
 	)
 	pipeline2.Append(
-		HandlerFunc(func(req *Request, n NextHandler) Response {
+		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int)
 			return response.NewText(fmt.Sprintf("%d", i))
 		}),
@@ -81,11 +80,10 @@ func Test_handlerPipeline_Multi(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	res := pipeline1.Process(
 		NewRequest(r),
-		NextHandler(func(req *Request) Response {
+		NextHandler(func(req *Request) *response.Response {
 			return pipeline2.Process(req, nil)
 		}),
 	)
 	a.NotNil(res)
-	text := res.(*response.Text)
-	a.EqStr("2", text.Content)
+	a.EqStr("2", res.Content())
 }

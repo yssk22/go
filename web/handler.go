@@ -2,24 +2,20 @@ package web
 
 import "github.com/speedland/go/web/response"
 
-type Pipeline interface {
-	Next(req *Request) Response
-}
-
 // NextHandler is an alias to call the next handler in pipeline
-type NextHandler func(*Request) Response
+type NextHandler func(*Request) *response.Response
 
-// Handler is an interface to process the request and make a response
+// Handler is an interface to process the request and make a *response.Response
 type Handler interface {
-	// Process serve http request and return the new http request and/or response value,
-	Process(*Request, NextHandler) Response
+	// Process serve http request and return the new http request and/or *response.Response value,
+	Process(*Request, NextHandler) *response.Response
 }
 
 // HandlerFunc is a func to implement Handler interface.
-type HandlerFunc func(*Request, NextHandler) Response
+type HandlerFunc func(*Request, NextHandler) *response.Response
 
 // Process implements Handler.Process
-func (h HandlerFunc) Process(r *Request, next NextHandler) Response {
+func (h HandlerFunc) Process(r *Request, next NextHandler) *response.Response {
 	return h(r, next)
 }
 
@@ -28,7 +24,7 @@ type handlerPipeline struct {
 	tail *handlerPipelineItem
 }
 
-func (p *handlerPipeline) Process(req *Request, next NextHandler) Response {
+func (p *handlerPipeline) Process(req *Request, next NextHandler) *response.Response {
 	// next is the next handlerPipeline to pipe
 	if p.head != nil {
 		return p.head.Process(req, next)
@@ -60,20 +56,11 @@ type handlerPipelineItem struct {
 	Next Handler
 }
 
-func (pi *handlerPipelineItem) Process(req *Request, next NextHandler) Response {
-	return pi.Node.Process(req, func(r *Request) Response {
+func (pi *handlerPipelineItem) Process(req *Request, next NextHandler) *response.Response {
+	return pi.Node.Process(req, func(r *Request) *response.Response {
 		if pi.Next == nil {
 			return next(r)
 		}
 		return pi.Next.Process(r, next)
 	})
 }
-
-// NotFoundHandler is a handler to response not found response
-var NotFoundHandler = HandlerFunc(func(*Request, NextHandler) Response {
-	return response.NewTextWithCode("not found", response.HTTPStatusNotFound)
-})
-
-var notFoundHandler = HandlerFunc(func(req *Request, next NextHandler) Response {
-	return NotFoundHandler(req, next)
-})
