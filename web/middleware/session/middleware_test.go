@@ -10,6 +10,7 @@ import (
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
 	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
 )
@@ -27,7 +28,7 @@ func TestMiddleware_NewSession(t *testing.T) {
 	a.Body("FOO", res)
 
 	// Check the resposne cookie contains `CookieName`
-	c := a.Cookie(res, middleware.CookieName)
+	c, _ := xhttptest.GetCookie(res, middleware.CookieName)
 	a.NotNil(c)
 	sid, ok := uuid.FromString(strings.Split(c.Value, ".")[0])
 	a.OK(ok)
@@ -78,7 +79,7 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 			a.NotNil(res)
 			a.Status(response.HTTPStatusOK, res)
 			a.Body("FOO", res)
-			c = a.Cookie(res, middleware.CookieName)
+			c, _ = xhttptest.GetCookie(res, middleware.CookieName)
 			a.NotNil(c)
 		},
 	)
