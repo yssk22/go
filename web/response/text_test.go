@@ -26,3 +26,12 @@ func TestTextWithCode(t *testing.T) {
 	a.EqStr("Test Test", w.Body.String())
 	a.EqInt(404, w.Code)
 }
+
+func TestText_nil(t *testing.T) {
+	a := assert.New(t)
+	text := NewText(nil)
+	w := httptest.NewRecorder()
+	text.Render(context.Background(), w)
+
+	a.EqStr("<nil>", w.Body.String())
+}
