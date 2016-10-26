@@ -67,6 +67,7 @@ func (r *Router) addRoute(method string, pattern string, handlers ...Handler) {
 		}
 		if rt == nil {
 			rt = newRoute(method, pattern)
+			r.routes[method] = append(routes, rt)
 		}
 	}
 	rt.pipeline.Append(handlers...)
