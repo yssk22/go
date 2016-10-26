@@ -11,7 +11,7 @@ type _text struct {
 	v interface{}
 }
 
-func (t _text) Render(ctx context.Context, w io.Writer) {
+func (t *_text) Render(ctx context.Context, w io.Writer) {
 	fmt.Fprintf(w, "%v", t.v)
 }
 

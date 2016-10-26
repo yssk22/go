@@ -14,4 +14,5 @@ func TestRedirect(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.Render(context.Background(), w)
 	a.EqInt(int(HTTPStatusSeeOther), w.Code)
+	a.EqStr("/", w.Header().Get("Location"))
 }

@@ -10,7 +10,7 @@ func NewRedirectWithStatus(url string, status HTTPStatus) *Response {
 	switch status {
 	case HTTPStatusMovedParmanently, HTTPStatusFound, HTTPStatusSeeOther:
 		res := NewResponseWithStatus(NoContent, status)
-		res.Header.Add("Location", url)
+		res.Header.Set("Location", url)
 		return res
 	default:
 		panic("Invalid status code for redirect")
