@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/x/xtesting/assert"
 )
 
 func ExampleRouter() {
@@ -21,6 +23,30 @@ func ExampleRouter() {
 	fmt.Printf("*response.Response: %q", w.Body)
 	// Output:
 	// *response.Response: "bar"
+}
+
+func TestRouter_multipleRoutes(t *testing.T) {
+	a := assert.New(t)
+	router := NewRouter(nil)
+	router.Get("/a.html",
+		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
+			return response.NewText("a.html")
+		}),
+	)
+	router.Get("/b.html",
+		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
+			return response.NewText("b.html")
+		}),
+	)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/a.html", nil)
+	router.Dispatch(w, req)
+	a.EqStr("a.html", w.Body.String())
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/b.html", nil)
+	router.Dispatch(w, req)
+	a.EqStr("b.html", w.Body.String())
 }
 
 func ExampleRouter_multipleHandlerPipeline() {

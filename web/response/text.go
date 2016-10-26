@@ -12,7 +12,7 @@ type _text struct {
 }
 
 func (t _text) Render(ctx context.Context, w io.Writer) {
-	fmt.Fprintf(w, "%s", t.v)
+	fmt.Fprintf(w, "%v", t.v)
 }
 
 // NewText returns a text response

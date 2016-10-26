@@ -64,39 +64,46 @@ func (f *TextFormatter) Format(r *Record) ([]byte, error) {
 }
 
 // SetCode sets the default ANSI code for log texts
-func (f *TextFormatter) SetCode(code ansi.Code) {
+func (f *TextFormatter) SetCode(code ansi.Code) *TextFormatter {
 	f.d.code = code
+	return f
 }
 
 // SetTrace set the template for LevelTrace logs.
-func (f *TextFormatter) SetTrace(s string, code ansi.Code) {
+func (f *TextFormatter) SetTrace(s string, code ansi.Code) *TextFormatter {
 	f.trace = newTextFormatterTemplate(s, code, f.funcMap)
 	f.trace.code = code
+	return f
 }
 
 // SetDebug set the template for LevelDebug logs.
-func (f *TextFormatter) SetDebug(s string, code ansi.Code) {
+func (f *TextFormatter) SetDebug(s string, code ansi.Code) *TextFormatter {
 	f.debug = newTextFormatterTemplate(s, code, f.funcMap)
+	return f
 }
 
 // SetInfo set the template for LevelInfo logs.
-func (f *TextFormatter) SetInfo(s string, code ansi.Code) {
+func (f *TextFormatter) SetInfo(s string, code ansi.Code) *TextFormatter {
 	f.info = newTextFormatterTemplate(s, code, f.funcMap)
+	return f
 }
 
 // SetWarn set the template for LevelWarn logs.
-func (f *TextFormatter) SetWarn(s string, code ansi.Code) {
+func (f *TextFormatter) SetWarn(s string, code ansi.Code) *TextFormatter {
 	f.warn = newTextFormatterTemplate(s, code, f.funcMap)
+	return f
 }
 
 // SetError set the template for LevelError logs.
-func (f *TextFormatter) SetError(s string, code ansi.Code) {
+func (f *TextFormatter) SetError(s string, code ansi.Code) *TextFormatter {
 	f.error = newTextFormatterTemplate(s, code, f.funcMap)
+	return f
 }
 
 // SetFatal set the template for LevelFatal logs.
-func (f *TextFormatter) SetFatal(s string, code ansi.Code) {
+func (f *TextFormatter) SetFatal(s string, code ansi.Code) *TextFormatter {
 	f.fatal = newTextFormatterTemplate(s, code, f.funcMap)
+	return f
 }
 
 type textFormatterTemplate struct {

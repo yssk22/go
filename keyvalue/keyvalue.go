@@ -30,29 +30,7 @@ func (e KeyError) Error() string {
 	return fmt.Sprintf("key %s is not found", e)
 }
 
-// Map is an alias for map[string]interface{} that implements GetterSetter interface
-type Map map[interface{}]interface{}
-
-// Get implements Getter#Get
-func (m Map) Get(key interface{}) (interface{}, error) {
-	if v, ok := m[key]; ok {
-		return v, nil
-	}
-	return nil, KeyError(fmt.Sprintf("%s", key))
-}
-
-// Set implements Setter#Set
-func (m Map) Set(key interface{}, v interface{}) error {
-	m[key] = v
-	return nil
-}
-
-// NewMap returns a new Map (shorthand for `Map(make(map[string]interface{}))`)
-func NewMap() Map {
-	return Map(make(map[interface{}]interface{}))
-}
-
-// GetgOr gets a value from Getter or return the defalut `or` value if not found.
+// GetOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key interface{}, or interface{}) interface{} {
 	v, e := g.Get(key)
 	if e != nil {
