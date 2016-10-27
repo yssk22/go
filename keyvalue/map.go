@@ -41,6 +41,12 @@ func (m StringKeyMap) Set(key interface{}, v interface{}) error {
 	return nil
 }
 
+// Del implements Setter#Del
+func (m StringKeyMap) Del(key interface{}) error {
+	delete(m, key.(string))
+	return nil
+}
+
 // NewStringKeyMap returns a new Map (shorthand for `Map(make(map[string]interface{}))`)
 func NewStringKeyMap() StringKeyMap {
 	return StringKeyMap(make(map[string]interface{}))

@@ -6,6 +6,7 @@ import (
 
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/uuid"
+	"github.com/speedland/go/x/xnet/xhttp"
 
 	"golang.org/x/net/context"
 )
@@ -32,13 +33,33 @@ func NewRequest(r *http.Request, option *Option) *Request {
 	if option == nil {
 		option = DefaultOption
 	}
+	query := r.URL.Query()
+	cookies := make(map[interface{}]*http.Cookie)
+	for _, cc := range r.Cookies() {
+		c, err := xhttp.UnsignCookie(cc, option.HMACKey)
+		if err == nil {
+			cookies[c.Name] = c
+		}
+	}
+
 	return &Request{
 		Request: r,
 		ctx:     initContext(r),
 		ID:      uuid.New(),
-		Query:   newURLValuesProxy(r.URL.Query()),
-		Cookies: newSignedCookieProxy(r.Cookies(), option.HMACKey),
-		Option:  option,
+		Query: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
+			return query.Get(key), nil
+		}).Proxy(),
+		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
+			return r.FormValue(key), nil
+		}).Proxy(),
+		Cookies: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
+			v, ok := cookies[key]
+			if !ok {
+				return nil, keyvalue.KeyError(key)
+			}
+			return v.Value, nil
+		}).Proxy(),
+		Option: option,
 	}
 }
 

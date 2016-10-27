@@ -46,7 +46,7 @@ func (r *Response) SetCookie(c *http.Cookie, hmac *xhmac.Base64) {
 // Render renders whole http contnet
 func (r *Response) Render(ctx context.Context, w http.ResponseWriter) {
 	wh := w.Header()
-	for k, v := range wh {
+	for k, v := range r.Header {
 		for _, vv := range v {
 			wh.Add(k, vv)
 		}
@@ -69,3 +69,10 @@ func (r *Response) Content() string {
 type Body interface {
 	Render(ctx context.Context, w io.Writer)
 }
+
+type noContent struct{}
+
+func (r noContent) Render(ctx context.Context, w io.Writer) {
+}
+
+var NoContent = &noContent{}

@@ -44,13 +44,18 @@ func NewSession() *Session {
 }
 
 // Set sets the session data
-func (s *Session) Set(key interface{}, value interface{}) {
-	s.Data.Set(key, value)
+func (s *Session) Set(key interface{}, value interface{}) error {
+	return s.Data.Set(key, value)
 }
 
 // Get sets the session data
 func (s *Session) Get(key interface{}) (interface{}, error) {
 	return s.Data.Get(key)
+}
+
+// Del delete the session data
+func (s *Session) Del(key interface{}) error {
+	return s.Data.Del(key)
 }
 
 // IsExpired returns true if the session is expired

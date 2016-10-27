@@ -27,7 +27,7 @@ type GetterSetter interface {
 type KeyError string
 
 func (e KeyError) Error() string {
-	return fmt.Sprintf("key %s is not found", e)
+	return fmt.Sprintf("key %q is not found", string(e))
 }
 
 // GetOr gets a value from Getter or return the defalut `or` value if not found.
