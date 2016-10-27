@@ -63,6 +63,9 @@ func NewRequest(method, path string, v interface{}) *http.Request {
 		switch v.(type) {
 		case url.Values:
 			req, err = http.NewRequest(method, path, strings.NewReader(v.(url.Values).Encode()))
+			if req != nil {
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			}
 		case io.Reader:
 			req, err = http.NewRequest(method, path, v.(io.Reader))
 		default:
