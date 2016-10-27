@@ -38,7 +38,9 @@ func main() {
 		src, err := generator.Run(directory, g)
 		if err != nil {
 			log.Printf("error: %v", err)
-			log.Printf("generated code:\n%s\n", src)
+			if e, ok := err.(*generator.InvalidSourceError); ok {
+				log.Printf("generated code:\n%s\n", e.SourceWithLine(false))
+			}
 			log.Fatalf("Exiting")
 		}
 		output := filepath.Join(

@@ -2,4 +2,48 @@
 
 package example
 
-type ExampleKind struct{}
+import (
+	"fmt"
+
+	helper "github.com/speedland/go/web/gae/datastore"
+	"github.com/speedland/go/x/xlog"
+
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+)
+
+type ExampleKind struct {
+}
+
+const ExampleKindLoggerKey = "dsmodel.example"
+
+func (k *ExampleKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*Example, error) {
+	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
+	size := len(keys)
+	if size == 0 {
+		return nil, nil, nil
+	}
+	dsKeys := make([]*datastore.Key, size, size)
+	for i := range keys {
+		dsKeys[i] = helper.NewKey(ctx, "Example", keys[i])
+	}
+	ents := make([]*Example, size, size)
+	err := helper.GetMulti(ctx, dsKeys, ents)
+	if helper.IsDatastoreError(err) {
+		return nil, nil, err
+	}
+
+	logger.Debug(func(p *xlog.Printer) {
+		p.Println("Example#GetMulti")
+		for i := 0; i < size; i++ {
+			s := fmt.Sprintf("%v", ents[i])
+			if len(s) > 20 {
+				p.Printf("\t%s - %s...\n", dsKeys[i], s[:20])
+			} else {
+				p.Printf("\t%s - %s\n", dsKeys[i], s)
+			}
+		}
+	})
+
+	return dsKeys, ents, nil
+}

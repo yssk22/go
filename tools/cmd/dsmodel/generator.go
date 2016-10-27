@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"html/template"
 	"io"
+	"text/template"
+
+	"github.com/speedland/go/x/xstrings"
 )
 
 // Generator implements generator.Generator
@@ -33,12 +35,18 @@ func (g *Generator) Inspect(node ast.Node) bool {
 	}
 }
 
+var templateHelper = template.FuncMap(map[string]interface{}{
+	"snakecase": func(s string) string {
+		return xstrings.ToSnakeCase(s)
+	},
+})
+
 // GenSource implements Generator#GenSource
 func (g *Generator) GenSource(w io.Writer) error {
 	if g.Fields == nil {
 		return fmt.Errorf("no struct to be generated")
 	}
-	t := template.Must(template.New("template").Parse(codeTemplate))
+	t := template.Must(template.New("template").Funcs(templateHelper).Parse(codeTemplate))
 	return t.Execute(w, g)
 }
 
