@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
@@ -53,11 +52,6 @@ func (m *Middleware) Process(req *web.Request, next web.NextHandler) *response.R
 		logger.Errorf("Failed to prepare sessoin(%v), fallback to create a new session", err)
 		session = NewSession()
 	}
-	logger.Debug(func(p *xlog.Printer) {
-		p.Printf("Session Initialized:\n")
-		p.Printf("\tKey: %s", session.ID.String())
-		p.Printf("\tTimestamp: %s", session.Timestamp)
-	})
 	resp := next(req.WithContext(
 		NewContext(req.Context(), session),
 	))
@@ -69,39 +63,34 @@ func (m *Middleware) Process(req *web.Request, next web.NextHandler) *response.R
 	if cookie != nil {
 		resp.Header.Set("X-SPEEDLAND-SESSION-ID", session.ID.String())
 		resp.SetCookie(cookie, req.Option.HMACKey)
-		logger.Debugf("Session %s stored and cookie sent", session.ID)
+		if !session.fromStore {
+			logger.Infof("Session initialized: %s", session.ID)
+		}
 	}
 	return resp
 
 }
 
 func (m *Middleware) prepareSession(req *web.Request) (*Session, error) {
-	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
-	var sessionID uuid.UUID
-	var session *Session
 	strSessionID := req.Cookies.GetStringOr(m.CookieName, "")
-	logger.Debugf("Getting a session with %s", strSessionID)
-	if strSessionID != "" {
-		var err error
-		var ok bool
-		sessionID, ok = uuid.FromString(strSessionID)
-		if ok {
-			if session, err = m.Store.Get(req.Context(), sessionID); err != nil {
-				if _, ok := err.(*keyvalue.KeyError); !ok {
-					return nil, fmt.Errorf("SessionStore.Get: %v", err)
-				}
-			}
-		}
+	if strSessionID == "" {
+		return NewSession(), nil
 	}
-	if session == nil {
-		session = NewSession()
-	} else {
-		session.fromStore = true
+	sessionID, ok := uuid.FromString(strSessionID)
+	if !ok {
+		return nil, fmt.Errorf("invalid session id: %q", strSessionID)
 	}
+	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
+	logger.Debugf("Getting a session with %s", sessionID)
+	session, err := m.Store.Get(req.Context(), sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("SessionStore.Get: %v", err)
+	}
+	session.fromStore = true
 	if session.fromStore && session.IsExpired(m.MaxAge) {
 		logger.Debugf("Session %s is expired, deleting", session.ID)
 		m.Store.Del(req.Context(), session)
-		session = NewSession()
+		return NewSession(), nil
 	}
 	return session, nil
 }
