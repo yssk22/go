@@ -4,10 +4,9 @@ package example
 
 import (
 	"fmt"
-
 	helper "github.com/speedland/go/web/gae/datastore"
 	"github.com/speedland/go/x/xlog"
-
+	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -16,6 +15,14 @@ type ExampleKind struct {
 }
 
 const ExampleKindLoggerKey = "dsmodel.example"
+
+func (k *ExampleKind) New() *Example {
+	a := &Example{}
+	a.Digit = 10
+	a.Desc = "This is defualt value"
+	a.CreatedAt = xtime.Now()
+	return a
+}
 
 func (k *ExampleKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*Example, error) {
 	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)

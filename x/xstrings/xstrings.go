@@ -1,7 +1,19 @@
 // Package xstrings provides extended utility functions for strings
 package xstrings
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
+
+// SplitAndTrim is like strings.Split but spaces in each of item are trimmed
+func SplitAndTrim(s string, sep string) []string {
+	list := strings.Split(s, sep)
+	for i, v := range list {
+		list[i] = strings.TrimSpace(v)
+	}
+	return list
+}
 
 // ToSnakeCase converts the string to the one by snake case.
 func ToSnakeCase(s string) string {
@@ -26,19 +38,3 @@ func ToSnakeCase(s string) string {
 	str = append(str, unicode.ToLower(runes[len(runes)-1]))
 	return string(str)
 }
-
-// var specialUpperCaseWords = []string{
-// 	"API", "URL", "ID",
-// }
-
-// func getSpecialUpperCaseWordLen(runes []rune, i int) int {
-// 	for _, word := range specialUpperCaseWords {
-// 		l := len(word)
-// 		if i+l < len(runes) {
-// 			if string(runes[i:i+l]) == word {
-// 				return l
-// 			}
-// 		}
-// 	}
-// 	return -1
-// }

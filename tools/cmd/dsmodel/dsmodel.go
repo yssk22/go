@@ -32,9 +32,7 @@ func main() {
 		args = []string{"."}
 	}
 	for _, directory := range args {
-		g := &Generator{
-			Type: *typeName,
-		}
+		g := NewGenerator(*typeName)
 		src, err := generator.Run(directory, g)
 		if err != nil {
 			log.Printf("error: %v", err)
