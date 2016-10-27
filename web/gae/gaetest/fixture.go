@@ -10,7 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"time"
+
+	"github.com/speedland/go/x/xlog"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -218,6 +219,7 @@ func convertJsonValueToProperties(k string, v interface{}) []datastore.Property 
 }
 
 func loadJsonToDatastore(ctx context.Context, pkey *datastore.Key, data map[string]interface{}) error {
+	var logger = xlog.WithContext(ctx).WithKey(FixtureLoggerKey)
 	var kind string
 	var ns string
 	var keyval interface{}
@@ -250,20 +252,7 @@ func loadJsonToDatastore(ctx context.Context, pkey *datastore.Key, data map[stri
 	if _, err := datastore.Put(ctx, key, jsonSaver(data)); err != nil {
 		return err
 	}
-	// Check the data is actually stored.
-	if err := wcg.RetryUntil(func() error {
-		var v jsonSaver
-		if err := datastore.Get(ctx, key, &v); err != nil {
-			return fmt.Errorf(
-				"fixture is not synched on '%s:[%s]': internal error?(%v) on ",
-				kind, keyval, err,
-			)
-		}
-		return nil
-	}, 5*time.Second, 500*time.Millisecond); err != nil {
-		return err
-	}
-
+	logger.Infof("Fixture: %s loaded", key)
 	if children, ok := data["_children"]; ok {
 		for _, v := range children.([]interface{}) {
 			if err := loadJsonToDatastore(ctx, key, v.(map[string]interface{})); err != nil {

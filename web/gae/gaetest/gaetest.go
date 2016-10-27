@@ -1,9 +1,6 @@
 package gaetest
 
 import (
-	"os"
-	"sync"
-
 	"github.com/speedland/go/web"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -12,14 +9,26 @@ import (
 
 var instance aetest.Instance
 
-var once sync.Once
-
-// Exit exits the process with shutting down test server.
-func Exit(code int) {
-	if instance != nil {
-		instance.Close()
+// Run runs gaetest server and run f in a clean way.
+// Note:
+//    this does not kill dev_appserver process if the test code fails in panic
+//    even we use defer to close the instance. This is because each test are executed
+//    in the different goroutine, which cannot be recovered.
+func Run(f func() int) int {
+	var err error
+	defer func() {
+		if instance != nil {
+			instance.Close()
+		}
+	}()
+	instance, err = aetest.NewInstance(&aetest.Options{
+		AppID: "gaetest",
+		StronglyConsistentDatastore: true,
+	})
+	if err != nil {
+		panic(err)
 	}
-	os.Exit(code)
+	return f()
 }
 
 func NewContext() context.Context {
@@ -31,16 +40,6 @@ func NewContext() context.Context {
 }
 
 func Instance() aetest.Instance {
-	var err error
-	once.Do(func() {
-		instance, err = aetest.NewInstance(&aetest.Options{
-			AppID: "gaetest",
-			StronglyConsistentDatastore: true,
-		})
-		if err != nil {
-			panic(err)
-		}
-	})
 	return instance
 }
 

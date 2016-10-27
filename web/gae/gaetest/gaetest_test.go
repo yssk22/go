@@ -1,7 +1,12 @@
 package gaetest
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestMain(m *testing.M) {
-	Exit(m.Run())
+	os.Exit(Run(func() int {
+		return m.Run()
+	}))
 }
