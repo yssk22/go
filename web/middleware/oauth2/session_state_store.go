@@ -33,7 +33,7 @@ func (*SessionStateStore) Validate(ctx context.Context, state string) (bool, err
 	}
 	v, err := session.Get(oauth2SessionStateKey)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("session(%q): %v", session.ID, err)
 	}
 	_, ok := v.(string)
 	if !ok {
