@@ -24,11 +24,12 @@ const (
 
 // Generator implements generator.Generator
 type Generator struct {
-	Package      string
-	Type         string
-	Fields       []*Field
-	Dependencies map[string]string
-	IDField      string
+	Package        string
+	Type           string
+	Fields         []*Field
+	Dependencies   map[string]string
+	IDField        string
+	TimestampField string
 }
 
 func NewGenerator(typeName string) *Generator {
@@ -176,6 +177,9 @@ func newField(g *Generator, f *ast.Field) *Field {
 	}
 	if field.IsID {
 		g.IDField = field.FieldName()
+	}
+	if field.IsTimestamp {
+		g.TimestampField = field.FieldName()
 	}
 	return field
 }

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/speedland/go/iterator/slice"
+	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 
 	"github.com/speedland/go/gae/datastore/ent"
@@ -133,4 +135,35 @@ func TestExampleKind_GetMulti_cacheCreation(t *testing.T) {
 	_, values, _ = k.GetMulti(gaetest.NewContext(), "example-1")
 	a.NotNil(values[0])
 	a.EqStr(e1.Desc, values[0].Desc)
+}
+
+func TestExampleKind_PutMulti(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+
+	k := &ExampleKind{}
+	e := k.New()
+	e.ID = "foo"
+	e.Desc = "PUT TEST"
+
+	now := time.Date(2016, 1, 1, 12, 12, 0, 0, xtime.JST)
+	xtime.RunAt(
+		now,
+		func() {
+			xlog.SetKeyFilter(ExampleKindLoggerKey, xlog.LevelDebug)
+			keys, err := k.PutMulti(gaetest.NewContext(), []*Example{e})
+			a.Nil(err)
+			a.EqInt(1, len(keys))
+			a.EqStr(e.ID, keys[0].StringID())
+			a.EqTime(now, e.UpdatedAt)
+
+			_, ents, err := k.GetMulti(gaetest.NewContext(), slice.ToInterfaceSlice(keys)...)
+			a.Nil(err)
+			a.EqInt(1, len(keys))
+			a.EqInt(1, len(ents))
+			a.NotNiPl(ents[0])
+			a.EqStr(e.ID, ents[0].ID)
+			a.EqStr(e.Desc, ents[0].Desc)
+		},
+	)
 }

@@ -19,8 +19,11 @@ func (ent *{{.Type}}) NewKey(ctx context.Context) *datastore.Key {
 }
 
 type {{.Type}}Kind struct {
+    BeforeSave func(ent *{{.Type}}) error
+    AfterSave  func(ent *{{.Type}}) error
     useDefaultIfNil bool
     noCache bool
+    noTimestampUpdate bool
 }
 
 const {{.Type}}KindLoggerKey = "ent.{{snakecase .Type}}"
@@ -58,15 +61,14 @@ func (k *{{.Type}}Kind) MustGet(ctx context.Context, key interface{}) *{{.Type}}
 
 // GetMulti do Get with multiple keys
 func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-    size := len(keys)
-    if size == 0 {
-        return nil, nil, nil
-    }
+    var size = len(keys)
     var memKeys []string
     var dsKeys  []*datastore.Key
     var ents []*{{.Type}}
-
+    if size == 0 {
+        return nil, nil, nil
+    }
+    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
     dsKeys = make([]*datastore.Key, size, size)
     for i := range keys {
         dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", keys[i])
@@ -179,6 +181,98 @@ func (k *{{.Type}}Kind) MustGetMulti(ctx context.Context, keys ...interface{}) [
         panic(err)
     }
     return v
+}
+
+// Put puts the entity to datastore.
+func (k *{{.Type}}Kind) Put(ctx context.Context, ent *{{.Type}}) (*datastore.Key, error) {
+    keys, err := k.PutMulti(ctx, []*{{.Type}}{
+        ent,
+    })
+    if err != nil {
+        return nil, err
+    }
+    return keys[0], nil
+}
+
+// MustPut is like Put and panic if an error occurrs.
+func (k *{{.Type}}Kind) MustPut(ctx context.Context, ent *{{.Type}}) *datastore.Key {
+    keys, err := k.Put(ctx, ent)
+    if err != nil {
+        panic(err)
+    }
+    return keys
+}
+
+// PutMulti do Put with multiple keys
+func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*datastore.Key, error) {
+    var size = len(ents)
+    var dsKeys  []*datastore.Key
+    if size == 0 {
+        return nil, nil
+    }
+    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+
+    dsKeys = make([]*datastore.Key, size, size)
+    for i := range ents {
+        if k.BeforeSave != nil {
+            if err := k.BeforeSave(ents[i]); err != nil {
+                return nil, err
+            }
+        }
+        dsKeys[i] = ents[i].NewKey(ctx)
+    }
+
+    if !k.noTimestampUpdate {
+        for i := range ents {
+            ents[i].{{.TimestampField}} = xtime.Now()
+        }
+    }
+
+    _, err := helper.PutMulti(ctx, dsKeys, ents)
+    if helper.IsDatastoreError(err) {
+        return nil, err
+    }
+
+    if !k.noCache {
+        memKeys := make([]string, size, size)
+        for i := range memKeys {
+            memKeys[i] =ent.GetMemcacheKey(dsKeys[i])
+        }
+        err := memcache.DeleteMulti(ctx, memKeys)
+        if memcache.IsMemcacheError(err) {
+            logger.Warnf("Failed to invalidate memcache keys: %v", err)
+        }
+    }
+
+    logger.Debug(func(p *xlog.Printer){
+        p.Printf(
+            "{{.Type}}#PutMulti [Datastore] (NoCache: %t)\n",
+            k.noCache,
+        )
+        for i:=0; i < size; i++ {
+            s := fmt.Sprintf("%v", ents[i])
+            if len(s) > 20 {
+                p.Printf("\t%s - %s...\n", dsKeys[i], s[:20])
+            }else{
+                p.Printf("\t%s - %s\n", dsKeys[i], s)
+            }
+            if i >= 20 {
+                p.Printf("\t...(and %d ents)\n", size - i)
+                break
+            }
+        }
+    })
+
+    return dsKeys, nil
+}
+
+// MustPutMulti do Put with multiple keys
+func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]*datastore.Key) {
+    keys, err := k.PutMulti(ctx, ents)
+    if err != nil {
+        panic(err)
+    }
+    return keys
 }
 
 `

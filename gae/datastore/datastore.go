@@ -57,6 +57,13 @@ func GetMulti(ctx context.Context, keys []*datastore.Key, ent interface{}) error
 	return datastore.GetMulti(ctx, keys, ent)
 }
 
+// PutMulti is wrapper for google.golang.org/appengine/datastore.PutMulti
+// to support +1000 keys
+func PutMulti(ctx context.Context, keys []*datastore.Key, ent interface{}) ([]*datastore.Key, error) {
+	// TODO: support +1000 keys
+	return datastore.PutMulti(ctx, keys, ent)
+}
+
 // DeleteMulti is wrapper for google.golang.org/appengine/datastore.DeleteMulti
 // to support +1000 keys
 func DeleteMulti(ctx context.Context, keys []*datastore.Key) error {
