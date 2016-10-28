@@ -37,7 +37,7 @@ func NewGenerator(typeName string) *Generator {
 		Dependencies: make(map[string]string),
 	}
 	g.AddDependency("fmt")
-	g.AddDependencyAs("github.com/speedland/go/web/gae/datastore", "helper")
+	g.AddDependencyAs("github.com/speedland/go/gae/datastore", "helper")
 	g.AddDependency("github.com/speedland/go/x/xlog")
 	g.AddDependency("golang.org/x/net/context")
 	g.AddDependency("google.golang.org/appengine/datastore")

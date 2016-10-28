@@ -8,7 +8,7 @@ import (
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 
-	"github.com/speedland/go/web/gae/gaetest"
+	"github.com/speedland/go/gae/gaetest"
 	"github.com/speedland/go/x/xtesting/assert"
 )
 

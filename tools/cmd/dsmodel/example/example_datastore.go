@@ -4,7 +4,7 @@ package example
 
 import (
 	"fmt"
-	helper "github.com/speedland/go/web/gae/datastore"
+	helper "github.com/speedland/go/gae/datastore"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
