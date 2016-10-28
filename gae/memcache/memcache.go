@@ -26,8 +26,8 @@ func SetWithExpire(ctx context.Context, key string, value interface{}, expire ti
 }
 
 // SetMulti is to support multiple keys. `value`` must be []Kind or []*Kind
-func SetMulti(ctx context.Context, keys []string, values interface{}, expire time.Duration) error {
-	return SetMultiWithExpire(ctx, keys, values, expire)
+func SetMulti(ctx context.Context, keys []string, values interface{}) error {
+	return SetMultiWithExpire(ctx, keys, values, time.Duration(0))
 }
 
 // SetMultiWithExpire is like SetMulti and with expiration

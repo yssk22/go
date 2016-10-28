@@ -22,6 +22,8 @@ type Item struct {
 
 func TestSet(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+
 	item := &Item{ID: "FOO"}
 	a.Nil(Set(gaetest.NewContext(), "a", item))
 	a.OK(Exists(gaetest.NewContext(), "a"))
@@ -29,6 +31,8 @@ func TestSet(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+
 	item := &Item{ID: "FOO"}
 	a.Nil(Set(gaetest.NewContext(), "a", item))
 
@@ -39,6 +43,7 @@ func TestGet(t *testing.T) {
 
 func TestGet_cacheMiss(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
 
 	item2 := &Item{}
 	err := Get(gaetest.NewContext(), "a", item2)
@@ -47,6 +52,7 @@ func TestGet_cacheMiss(t *testing.T) {
 
 func TestGetMulti_cacheMiss(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
 
 	item := &Item{ID: "FOO"}
 	a.Nil(Set(gaetest.NewContext(), "a", item))

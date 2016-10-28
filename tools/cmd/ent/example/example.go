@@ -3,7 +3,7 @@ package example
 import "time"
 
 // Example is an example of datastore model.
-//go:generate dsmodel -type=Example
+//go:generate ent -type=Example
 type Example struct {
 	ID                  string    `json:"id" ent:"id"`
 	Digit               int       `json:"digit" ent:"form,resetifmissing" default:"10"`

@@ -50,12 +50,16 @@ func IsDatastoreError(err error) bool {
 	return true
 }
 
+// GetMulti is wrapper for google.golang.org/appengine/datastore.GetMulti
+// to support +1000 keys
 func GetMulti(ctx context.Context, keys []*datastore.Key, ent interface{}) error {
-	// size := len(keys)
-	// if size >= 1000 {
-	// 	keyClusters := slice.SplitByLength(keys, 999).([][]*datastore.Key)
-	// 	entClusters := slice.SplitByLength(ent, 999)
-	// }
 	// TODO: support +1000 keys
 	return datastore.GetMulti(ctx, keys, ent)
+}
+
+// DeleteMulti is wrapper for google.golang.org/appengine/datastore.DeleteMulti
+// to support +1000 keys
+func DeleteMulti(ctx context.Context, keys []*datastore.Key) error {
+	// TODO: support +1000 keys
+	return datastore.DeleteMulti(ctx, keys)
 }
