@@ -15,6 +15,7 @@ import(
 )
 
 type {{.Type}}Kind struct {
+    useDefaultIfNil bool
 }
 
 const {{.Type}}KindLoggerKey = "dsmodel.{{snakecase .Type}}"
@@ -27,6 +28,21 @@ func (k *{{.Type}}Kind) New() *{{.Type}} {
     return a
 }
 
+func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
+    k.useDefaultIfNil = b
+    return k
+}
+
+// Get gets the kind entity from datastore
+func (k *{{.Type}}Kind) Get(ctx context.Context, key interface{}) (*datastore.Key, *{{.Type}}, error) {
+    keys, ents, err := k.GetMulti(ctx, key)
+    if err != nil {
+        return nil, nil, err
+    }
+    return keys[0], ents[0], nil
+}
+
+// GetMulti do Get with multiple keys
 func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
     logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
     size := len(keys)
@@ -43,8 +59,17 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
         return nil, nil, err
     }
 
+    if k.useDefaultIfNil {
+        for i:=0; i < size; i++ {
+            if ents[i] == nil {
+                ents[i] = k.New()
+                ents[i].{{.IDField}} = dsKeys[i].StringID() // TODO: Support non-string key as ID
+            }
+        }
+    }
+
     logger.Debug(func(p *xlog.Printer){
-        p.Println("{{.Type}}#GetMulti")
+        p.Println("{{.Type}}#GetMulti (UseDefault: %b)", k.useDefaultIfNil)
         for i:=0; i < size; i++ {
             s := fmt.Sprintf("%v", ents[i])
             if len(s) > 20 {

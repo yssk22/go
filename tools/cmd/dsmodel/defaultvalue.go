@@ -20,6 +20,6 @@ var defaultValueGen = map[string](func(string) (string, string)){
 		} else if v == "$today" {
 			return dependency, "xtime.Today()"
 		}
-		return dependency, fmt.Sprintf("xtime.ParseDateTime(%q)", v)
+		return dependency, fmt.Sprintf("xtime.MustParse(%q)", v)
 	},
 }

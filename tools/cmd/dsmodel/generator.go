@@ -28,6 +28,7 @@ type Generator struct {
 	Type         string
 	Fields       []*Field
 	Dependencies map[string]string
+	IDField      string
 }
 
 func NewGenerator(typeName string) *Generator {
@@ -170,6 +171,9 @@ func newField(g *Generator, f *ast.Field) *Field {
 				break
 			}
 		}
+	}
+	if field.IsID {
+		g.IDField = field.FieldName()
 	}
 	return field
 }

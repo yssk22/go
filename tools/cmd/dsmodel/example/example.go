@@ -7,7 +7,7 @@ import "time"
 type Example struct {
 	ID                  string    `json:"id" ent:"id"`
 	Digit               int       `json:"digit" ent:"form,resetifmissing" default:"10"`
-	Desc                string    `json:"desc" ent:"form" default:"This is defualt value"`
+	Desc                string    `json:"desc" ent:"form" default:"This is default value"`
 	ContentBytes        []byte    `json:"content_bytes" ent:"form"`
 	SliceType           []string  `json:"slice_type" ent:"form"`
 	SliceFloatType      []float64 `json:"slice_float_type" ent:"form"`
@@ -15,6 +15,7 @@ type Example struct {
 	FloatType           float64   `json:"float_type" ent:"form"`
 	CreatedAt           time.Time `json:"created_at" default:"$now"`
 	UpdatedAt           time.Time `json:"updated_at" ent:"timestamp"`
+	DefaultTime         time.Time `json:"default_time" default:"2016-01-01T20:12:10Z"`
 	BeforeSaveProcessed bool      `json:"before_save_processed"`
 	AfterSaveProcessed  bool      `json:"after_save_processed"`
 }
