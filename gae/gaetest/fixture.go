@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	"github.com/speedland/go/x/xlog"
+	"github.com/speedland/go/x/xtime"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -141,10 +142,10 @@ func convertJsonValueToProperties(k string, v interface{}) []datastore.Property 
 			p.NoIndex = true
 			propertyList = append(propertyList, p)
 		} else {
-			if dt, err := xtime.ParseDateTime(fmt.Sprintf("%s", v)); err == nil {
+			if dt, err := xtime.Parse(fmt.Sprintf("%s", v)); err == nil {
 				p.Value = dt
 				propertyList = append(propertyList, p)
-			} else if d, err := xtime.ParseDateTime(fmt.Sprintf("%sT00:00:00Z", v)); err == nil {
+			} else if d, err := xtime.Parse(fmt.Sprintf("%sT00:00:00Z", v)); err == nil {
 				p.Value = d
 				propertyList = append(propertyList, p)
 			} else {
