@@ -7,6 +7,7 @@ import (
 	helper "github.com/speedland/go/gae/datastore"
 	"github.com/speedland/go/gae/datastore/ent"
 	"github.com/speedland/go/gae/memcache"
+	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
@@ -273,4 +274,79 @@ func (k *ExampleKind) MustPutMulti(ctx context.Context, ents []*Example) []*data
 		panic(err)
 	}
 	return keys
+}
+
+// ExampleQuery helps to build and execute a query
+type ExampleQuery struct {
+	q *helper.Query
+}
+
+func NewExampleQuery() *ExampleQuery {
+	return &ExampleQuery{
+		q: helper.NewQuery("Example"),
+	}
+}
+
+// Ancestor sets the ancestor filter
+func (q *ExampleQuery) Ancestor(a lazy.Value) *ExampleQuery {
+	q.q = q.q.Ancestor(a)
+	return q
+}
+
+// Eq sets the "=" filter on the name field.
+func (q *ExampleQuery) Eq(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Eq(name, value)
+	return q
+}
+
+// Lt sets the "<" filter on the "name" field.
+func (q *ExampleQuery) Lt(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Lt(name, value)
+	return q
+}
+
+// Le sets the "<=" filter on the "name" field.
+func (q *ExampleQuery) Le(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Le(name, value)
+	return q
+}
+
+// Gt sets the ">" filter on the "name" field.
+func (q *ExampleQuery) Gt(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Gt(name, value)
+	return q
+}
+
+// Ge sets the ">=" filter on the "name" field.
+func (q *ExampleQuery) Ge(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Ge(name, value)
+	return q
+}
+
+// Ne sets the "!=" filter on the "name" field.
+func (q *ExampleQuery) Ne(name string, value lazy.Value) *ExampleQuery {
+	q.q = q.q.Ne(name, value)
+	return q
+}
+
+// Asc specifies ascending order on the given filed.
+func (q *ExampleQuery) Asc(name string) *ExampleQuery {
+	q.q = q.q.Asc(name)
+	return q
+}
+
+// Desc specifies descending order on the given filed.
+func (q *ExampleQuery) Desc(name string) *ExampleQuery {
+	q.q = q.q.Desc(name)
+	return q
+}
+
+// Desc specifies descending order on the given filed.
+func (q *ExampleQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Example, error) {
+	var v []*Example
+	keys, err := q.q.GetAll(ctx, &v)
+	if err != nil {
+		return nil, nil, err
+	}
+	return keys, v, err
 }

@@ -275,4 +275,78 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
     return keys
 }
 
+// {{.Type}}Query helps to build and execute a query
+type {{.Type}}Query struct {
+    q *helper.Query
+}
+
+func New{{.Type}}Query() *{{.Type}}Query {
+    return &{{.Type}}Query{
+        q: helper.NewQuery("{{.Type}}"),
+    }
+}
+
+// Ancestor sets the ancestor filter
+func (q *{{.Type}}Query) Ancestor(a lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Ancestor(a)
+	return q
+}
+
+// Eq sets the "=" filter on the name field.
+func (q *{{.Type}}Query) Eq(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Eq(name, value)
+	return q
+}
+
+// Lt sets the "<" filter on the "name" field.
+func (q *{{.Type}}Query) Lt(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Lt(name, value)
+	return q
+}
+
+// Le sets the "<=" filter on the "name" field.
+func (q *{{.Type}}Query) Le(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Le(name, value)
+	return q
+}
+
+// Gt sets the ">" filter on the "name" field.
+func (q *{{.Type}}Query) Gt(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Gt(name, value)
+	return q
+}
+
+// Ge sets the ">=" filter on the "name" field.
+func (q *{{.Type}}Query) Ge(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Ge(name, value)
+	return q
+}
+
+// Ne sets the "!=" filter on the "name" field.
+func (q *{{.Type}}Query) Ne(name string, value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Ne(name, value)
+	return q
+}
+
+// Asc specifies ascending order on the given filed.
+func (q *{{.Type}}Query) Asc(name string) *{{.Type}}Query {
+	q.q = q.q.Asc(name)
+	return q
+}
+
+// Desc specifies descending order on the given filed.
+func (q *{{.Type}}Query) Desc(name string) *{{.Type}}Query {
+	q.q = q.q.Desc(name)
+	return q
+}
+
+// Desc specifies descending order on the given filed.
+func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}, error) {
+    var v []*{{.Type}}
+    keys, err := q.q.GetAll(ctx, &v)
+    if err != nil {
+        return nil, nil, err
+    }
+    return keys, v, err
+}
 `

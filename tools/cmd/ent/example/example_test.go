@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/speedland/go/iterator/slice"
-	"github.com/speedland/go/x/xlog"
+	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xtime"
 
 	"github.com/speedland/go/gae/datastore/ent"
@@ -150,7 +150,6 @@ func TestExampleKind_PutMulti(t *testing.T) {
 	xtime.RunAt(
 		now,
 		func() {
-			xlog.SetKeyFilter(ExampleKindLoggerKey, xlog.LevelDebug)
 			keys, err := k.PutMulti(gaetest.NewContext(), []*Example{e})
 			a.Nil(err)
 			a.EqInt(1, len(keys))
@@ -161,9 +160,22 @@ func TestExampleKind_PutMulti(t *testing.T) {
 			a.Nil(err)
 			a.EqInt(1, len(keys))
 			a.EqInt(1, len(ents))
-			a.NotNiPl(ents[0])
+			a.NotNil(ents[0])
 			a.EqStr(e.ID, ents[0].ID)
 			a.EqStr(e.Desc, ents[0].Desc)
 		},
 	)
+}
+
+func TestExampleQuery_GetAll(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_GetAll.json", nil))
+
+	q := NewExampleQuery()
+	q.Eq("ID", lazy.New("example-2"))
+	keys, value, err := q.GetAll(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(1, len(keys))
+	a.EqStr("example-2", value[0].ID)
 }
