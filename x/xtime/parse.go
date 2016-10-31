@@ -8,6 +8,20 @@ import (
 
 var dateRegxp = regexp.MustCompile(`(?:(\d{4})[\/-])?(\d{1,2})[\/-](\d{1,2})`)
 
+// Parse parse RFC3339 format by default.
+func Parse(value string) (time.Time, error) {
+	return time.Parse(time.RFC3339, value)
+}
+
+// MustParse is like Parse but panic if an error occurrs.
+func MustParse(value string) time.Time {
+	t, e := Parse(value)
+	if e != nil {
+		panic(e)
+	}
+	return t
+}
+
 // ParseDate parse the string expression of YYYY/MM/DD formatted time and returns it as time.Time
 // YYYY/ can be omitted and hintYear is used for that case. The delimiter can be either '/' or '-'
 func ParseDate(s string, location *time.Location, hintYear int) time.Time {

@@ -7,6 +7,15 @@ import (
 	"github.com/speedland/go/x/xtesting/assert"
 )
 
+func TestParse(t *testing.T) {
+	a := assert.New(t)
+	d, _ := Parse("2016-06-12T02:12:00Z")
+	a.EqTime(
+		time.Date(2016, 6, 12, 2, 12, 0, 0, time.UTC),
+		d,
+	)
+}
+
 func TestParseDate(t *testing.T) {
 	a := assert.New(t)
 	d := ParseDate("2016/6/12", time.UTC, 0)

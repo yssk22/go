@@ -128,7 +128,7 @@ func (a *Assert) EqByteString(expect string, got []byte, msgContext ...interface
 // EqTime for equality assertion (time.Time)
 func (a *Assert) EqTime(expect, got time.Time, msgContext ...interface{}) {
 	if !expect.Equal(got) {
-		a.Failure(expect, got, msgContext...)
+		a.Failure(expect.Format(time.RFC3339), got.Format(time.RFC3339), msgContext...)
 	}
 }
 
