@@ -8,6 +8,9 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
+// LoggerKey is a key for logger in this package
+const LoggerKey = "gae.datastore"
+
 // NewKey returns a new *datastore.Key for `kind`.
 // if k is *datastore.Key, it returns the same object.
 // if k is not a string nor an int, k is converted by fmt.Sprintf("%s").
