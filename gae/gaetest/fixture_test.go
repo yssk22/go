@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"lib/wcg"
+	"github.com/speedland/go/x/xtesting/assert"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -60,34 +60,32 @@ func TestDatastoreFixture(t *testing.T) {
   }
 ]`)
 
-	assert := wcg.NewAssert(t)
+	a := assert.New(t)
 	var fk FixtureKind
 	ctx := NewContext()
-	assert.Nil(DatastoreFixture(ctx, filepath, nil), "DatastoreFixture")
+	a.Nil(DatastoreFixture(ctx, filepath, nil), "DatastoreFixture")
 
 	key := datastore.NewKey(ctx, "FixtureKind", "key1", 0, nil)
 
-	wcg.NewLogger(nil).Infof("GET: %s", key)
-	assert.Nil(datastore.Get(ctx, key, &fk), "datastore.Get('key1') ")
+	a.Nil(datastore.Get(ctx, key, &fk), "datastore.Get('key1') ")
+	a.EqInt(10, fk.IntValue, "IntValue should be 10")
+	a.EqFloat32(2.4, fk.FloatValue, "FloatValue should be 2.4")
+	a.EqStr("foobar", fk.StringValue, "StringValue should be 'foobar'")
+	a.EqStr("bytesfoobar", string(fk.BytesValue), "BytesValue should be 'foobar'")
+	a.EqInt(3, len(fk.Slice), "len(Slice) should be 3")
+	a.EqStr("a", string(fk.Slice[0]), "Slice[0] should be 'a'")
+	a.EqStr("b", string(fk.Slice[1]), "Slice[0] should be 'a'")
+	a.EqStr("c", string(fk.Slice[2]), "Slice[0] should be 'a'")
 
-	assert.EqInt(10, fk.IntValue, "IntValue should be 10")
-	assert.EqFloat32(2.4, fk.FloatValue, "FloatValue should be 2.4")
-	assert.EqStr("foobar", fk.StringValue, "StringValue should be 'foobar'")
-	assert.EqStr("bytesfoobar", string(fk.BytesValue), "BytesValue should be 'foobar'")
-	assert.EqInt(3, len(fk.Slice), "len(Slice) should be 3")
-	assert.EqStr("a", string(fk.Slice[0]), "Slice[0] should be 'a'")
-	assert.EqStr("b", string(fk.Slice[1]), "Slice[0] should be 'a'")
-	assert.EqStr("c", string(fk.Slice[2]), "Slice[0] should be 'a'")
-
-	assert.EqTime(time.Date(2014, 01, 02, 14, 02, 50, 0, time.UTC), fk.DateTimeValue, "DateTimeValue should be 2014-01-02T14:02:50Z")
-	assert.EqTime(time.Date(2014, 01, 02, 0, 0, 0, 0, time.UTC), fk.DateValue, "DateTimeValue should be 2014-01-02T00:00:00Z")
-	assert.EqStr("bar", string(fk.Struct.Foo), "Struct.Foo should be 'bar'")
+	a.EqTime(time.Date(2014, 01, 02, 14, 02, 50, 0, time.UTC), fk.DateTimeValue, "DateTimeValue should be 2014-01-02T14:02:50Z")
+	a.EqTime(time.Date(2014, 01, 02, 0, 0, 0, 0, time.UTC), fk.DateValue, "DateTimeValue should be 2014-01-02T00:00:00Z")
+	a.EqStr("bar", string(fk.Struct.Foo), "Struct.Foo should be 'bar'")
 
 	// namespace
 	ns1, _ := appengine.Namespace(ctx, "ns1")
 	key = datastore.NewKey(ns1, "FixtureKind", "key1", 0, nil)
-	assert.Nil(datastore.Get(ns1, key, &fk), "datastore.Get('key1') /w ns1")
-	assert.EqStr("withns1", fk.StringValue, "StringValue should be 'withns1'")
+	a.Nil(datastore.Get(ns1, key, &fk), "datastore.Get('key1') /w ns1")
+	a.EqStr("withns1", fk.StringValue, "StringValue should be 'withns1'")
 }
 
 func TestDatastoreFixtureWithBindings(t *testing.T) {
@@ -103,9 +101,9 @@ func TestDatastoreFixtureWithBindings(t *testing.T) {
     "DateValue": "{{today}}"
   }]`)
 	ctx := NewContext()
-	assert := wcg.NewAssert(t)
+	a := assert.New(t)
 	var fk FixtureKind
 	DatastoreFixture(ctx, filepath, nil)
 	key := datastore.NewKey(ctx, "FixtureKind", "key1", 0, nil)
-	assert.Nil(datastore.Get(ctx, key, &fk), "datastore.Get('key1') ")
+	a.Nil(datastore.Get(ctx, key, &fk), "datastore.Get('key1') ")
 }

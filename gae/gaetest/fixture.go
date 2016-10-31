@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"lib/wcg"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -142,10 +141,10 @@ func convertJsonValueToProperties(k string, v interface{}) []datastore.Property 
 			p.NoIndex = true
 			propertyList = append(propertyList, p)
 		} else {
-			if dt, err := wcg.ParseDateTime(fmt.Sprintf("%s", v)); err == nil {
+			if dt, err := xtime.ParseDateTime(fmt.Sprintf("%s", v)); err == nil {
 				p.Value = dt
 				propertyList = append(propertyList, p)
-			} else if d, err := wcg.ParseDate(fmt.Sprintf("%s", v)); err == nil {
+			} else if d, err := xtime.ParseDateTime(fmt.Sprintf("%sT00:00:00Z", v)); err == nil {
 				p.Value = d
 				propertyList = append(propertyList, p)
 			} else {
