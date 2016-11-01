@@ -19,7 +19,7 @@ func ExampleRouter() {
 	)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/path/to/bar.html", nil)
-	router.Dispatch(w, req)
+	router.ServeHTTP(w, req)
 	fmt.Printf("*response.Response: %q", w.Body)
 	// Output:
 	// *response.Response: "bar"
@@ -40,12 +40,12 @@ func TestRouter_multipleRoutes(t *testing.T) {
 	)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/a.html", nil)
-	router.Dispatch(w, req)
+	router.ServeHTTP(w, req)
 	a.EqStr("a.html", w.Body.String())
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/b.html", nil)
-	router.Dispatch(w, req)
+	router.ServeHTTP(w, req)
 	a.EqStr("b.html", w.Body.String())
 }
 
@@ -69,7 +69,7 @@ func ExampleRouter_multipleHandlerPipeline() {
 	for _, s := range []string{"first", "second"} {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/path/to/%s.html", s), nil)
-		router.Dispatch(w, req)
+		router.ServeHTTP(w, req)
 		fmt.Printf("*response.Response: %q\n", w.Body)
 	}
 	// Output:
@@ -93,7 +93,7 @@ func ExampleRouter_Use() {
 	)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/a.html", nil)
-	router.Dispatch(w, req)
+	router.ServeHTTP(w, req)
 	fmt.Printf("*response.Response: %q\n", w.Body)
 
 	// Output:
