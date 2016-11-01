@@ -21,8 +21,8 @@ func TestMiddleware_NewSession(t *testing.T) {
 	sessionDataValue := "BAR"
 
 	a := httptest.NewAssert(t)
-	router := prepareRouter(sessionDataKey, sessionDataValue, middleware)
-	res := router.TestPost("/session", nil)
+	recorder := httptest.NewRecorder(prepareRouter(sessionDataKey, sessionDataValue, middleware))
+	res := recorder.TestPost("/session", nil)
 	a.NotNil(res)
 	a.Status(response.HTTPStatusOK, res)
 	a.Body("FOO", res)
@@ -43,7 +43,7 @@ func TestMiddleware_NewSession(t *testing.T) {
 	// Make another Request with cookie
 	req, _ := http.NewRequest("GET", "/session", nil)
 	req.AddCookie(c)
-	res = router.TestRequest(req)
+	res = recorder.TestRequest(req)
 	a.Status(response.HTTPStatusOK, res)
 	a.Body(sessionDataValue, res)
 }
@@ -54,8 +54,8 @@ func TestMiddleware_NoSessionCreation(t *testing.T) {
 	sessionDataValue := "BAR"
 
 	a := httptest.NewAssert(t)
-	router := prepareRouter(sessionDataKey, sessionDataValue, middleware)
-	res := router.TestGet("/session")
+	recorder := httptest.NewRecorder(prepareRouter(sessionDataKey, sessionDataValue, middleware))
+	res := recorder.TestGet("/session")
 	a.Status(response.HTTPStatusOK, res)
 	a.Body("<nil>", res)
 
@@ -70,12 +70,12 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 	sessionDataKey := "FOO"
 	sessionDataValue := "BAR"
 	a := httptest.NewAssert(t)
-	router := prepareRouter(sessionDataKey, sessionDataValue, middleware)
+	recorder := httptest.NewRecorder(prepareRouter(sessionDataKey, sessionDataValue, middleware))
 
 	xtime.RunAt(
 		time.Date(2015, 1, 1, 0, 0, 0, 0, xtime.JST),
 		func() {
-			res := router.TestPost("/session", nil)
+			res := recorder.TestPost("/session", nil)
 			a.NotNil(res)
 			a.Status(response.HTTPStatusOK, res)
 			a.Body("FOO", res)
@@ -89,7 +89,7 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 		func() {
 			req := httptest.NewRequest("GET", "/session", nil)
 			req.AddCookie(c)
-			res := router.TestRequest(req)
+			res := recorder.TestRequest(req)
 			a.NotNil(res)
 			a.Status(response.HTTPStatusOK, res)
 			a.Body("<nil>", res)
@@ -101,8 +101,8 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 	a.EqInt(0, len(store.store))
 }
 
-func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Middleware) *httptest.Router {
-	router := httptest.NewRouter(nil)
+func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Middleware) *web.Router {
+	router := web.NewRouter(nil)
 	router.Use(middleware)
 	router.Post("/session", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		session := FromContext(req.Context())
