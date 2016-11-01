@@ -43,6 +43,7 @@ func NewGenerator(typeName string) *Generator {
 	g.AddDependency("github.com/speedland/go/gae/memcache")
 	g.AddDependency("github.com/speedland/go/lazy")
 	g.AddDependency("github.com/speedland/go/x/xlog")
+	g.AddDependency("github.com/speedland/go/x/xtime")
 	g.AddDependency("golang.org/x/net/context")
 	g.AddDependency("google.golang.org/appengine/datastore")
 	return g
