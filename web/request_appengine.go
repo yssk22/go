@@ -9,6 +9,6 @@ import (
 	"google.golang.org/appengine"
 )
 
-func initContext(r *http.Request) context.Context {
-	return appengine.NewContext(r.Request)
+func initContext(req *http.Request) context.Context {
+	return appengine.NewContext(req)
 }

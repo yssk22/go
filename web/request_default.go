@@ -1,4 +1,5 @@
-// +build !appengine !go1.7
+// +build !appengine
+// +build !go1.7
 
 package web
 
