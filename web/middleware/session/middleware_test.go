@@ -87,7 +87,7 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 	xtime.RunAt(
 		time.Date(2016, 1, 1, 0, 0, 0, 0, xtime.JST),
 		func() {
-			req := httptest.NewRequest("GET", "/session", nil)
+			req := recorder.NewRequest("GET", "/session", nil)
 			req.AddCookie(c)
 			res := recorder.TestRequest(req)
 			a.NotNil(res)

@@ -47,7 +47,7 @@ func TestMiddleware(t *testing.T) {
 
 	// 2. callback
 	cookie, _ := xhttptest.GetCookie(res, sessionMiddleware.CookieName)
-	req := httptest.NewRequest("POST", "/oauth2/callback", url.Values{
+	req := recorder.NewRequest("POST", "/oauth2/callback", url.Values{
 		"code":  []string{"validcode"},
 		"state": []string{uuid.String()},
 	})
