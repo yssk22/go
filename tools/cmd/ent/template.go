@@ -343,7 +343,7 @@ func (q *{{.Type}}Query) Desc(name string) *{{.Type}}Query {
 	return q
 }
 
-// Desc specifies descending order on the given filed.
+// GetAll returns all key and value of the query.
 func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}, error) {
     var v []*{{.Type}}
     keys, err := q.q.GetAll(ctx, &v)
@@ -351,5 +351,48 @@ func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Ty
         return nil, nil, err
     }
     return keys, v, err
+}
+
+// MustGetAll is like GetAll but panic if an error occurrs.
+func (q *{{.Type}}Query) MustGetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}) {
+    keys, values, err := q.GetAll(ctx)
+    if err != nil {
+        panic(err)
+    }
+    return keys, values
+}
+
+// GetAllValues is like GetAll but returns only values
+func (q *{{.Type}}Query) GetAllValues(ctx context.Context) ([]*{{.Type}}, error) {
+    var v []*{{.Type}}
+    _, err := q.q.GetAll(ctx, &v)
+    if err != nil {
+        return nil, err
+    }
+    return v, err
+}
+
+// MustGetAllValues is like GetAllValues but panic if an error occurrs
+func (q *{{.Type}}Query) MustGetAllValues(ctx context.Context) []*{{.Type}} {
+    var v []*{{.Type}}
+    _, err := q.q.GetAll(ctx, &v)
+    if err != nil {
+        panic(err)
+    }
+    return v
+}
+
+// Count returns the count of entities
+func (q *{{.Type}}Query) Count(ctx context.Context) (int, error) {
+    return q.q.Count(ctx)
+}
+
+// MustCount returns the count of entities
+func (q *{{.Type}}Query) MustCount(ctx context.Context) int {
+    c, err := q.Count(ctx)
+    if err != nil {
+        panic(err)
+    }
+    return c
 }
 `
