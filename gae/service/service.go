@@ -94,6 +94,11 @@ func (s *Service) Namespace() string {
 	return s.namespace
 }
 
+// Use adds the middleware onto the service router
+func (s *Service) Use(handlers ...web.Handler) {
+	s.router.Use(handlers...)
+}
+
 // Get defines an endpoint for GET
 func (s *Service) Get(path string, handlers ...web.Handler) {
 	s.router.Get(s.Path(path), handlers...)
