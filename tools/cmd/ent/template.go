@@ -26,6 +26,9 @@ type {{.Type}}Kind struct {
     noTimestampUpdate bool
 }
 
+// Default{{.Type}}Kind is a default value of *{{.Type}}Kind
+var Default{{.Type}}Kind = &{{.Type}}Kind{}
+
 const {{.Type}}KindLoggerKey = "ent.{{snakecase .Type}}"
 
 func (k *{{.Type}}Kind) New() *{{.Type}} {
