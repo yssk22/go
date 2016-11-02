@@ -1,7 +1,11 @@
 package gaetest
 
 import (
-	"github.com/speedland/go/web"
+	"io"
+	"net/http"
+
+	"github.com/speedland/go/web/httptest"
+
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
@@ -28,9 +32,11 @@ func Run(f func() int) int {
 	if err != nil {
 		panic(err)
 	}
+	prepareTaskQueueInTest()
 	return f()
 }
 
+// NewContext returns a new appengine context.Context
 func NewContext() context.Context {
 	req, err := Instance().NewRequest("GET", "/", nil)
 	if err != nil {
@@ -39,15 +45,20 @@ func NewContext() context.Context {
 	return appengine.NewContext(req)
 }
 
+// Instance returns a current appengine instance
 func Instance() aetest.Instance {
 	return instance
 }
 
-// GET issue a GET request to the test server
-func GET(path string) *web.Request {
-	r, err := instance.NewRequest("GET", path, nil)
-	if err != nil {
-		panic(err)
-	}
-	return web.NewRequest(r, nil)
+// NewRequest returns a new *http.Request bound with appengine context.Context
+func NewRequest(method string, path string, body io.Reader) (*http.Request, error) {
+	return Instance().NewRequest(method, path, body)
+}
+
+// NewRecorder returns a new *httptest.Recorder object
+func NewRecorder(handler http.Handler) *httptest.Recorder {
+	return httptest.NewRecorderWithFactory(
+		handler,
+		httptest.RequestFactoryFunc(NewRequest),
+	)
 }

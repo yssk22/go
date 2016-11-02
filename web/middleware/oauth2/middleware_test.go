@@ -28,10 +28,10 @@ func TestMiddleware(t *testing.T) {
 	middleware.Config = &TestConfig{}
 
 	a := httptest.NewAssert(t)
-	router := prepareRouter(middleware)
+	recorder := httptest.NewRecorder(prepareRouter(middleware))
 
 	// 1. Redirect (to prepare auth state key)
-	res := router.TestGet("/oauth2/login")
+	res := recorder.TestGet("/oauth2/login")
 	a.Status(response.HTTPStatusFound, res)
 	session, err := sessiontest.GetSession(res, sessionMiddleware)
 	a.Nil(err)
@@ -47,17 +47,17 @@ func TestMiddleware(t *testing.T) {
 
 	// 2. callback
 	cookie, _ := xhttptest.GetCookie(res, sessionMiddleware.CookieName)
-	req := httptest.NewRequest("POST", "/oauth2/callback", url.Values{
+	req := recorder.NewRequest("POST", "/oauth2/callback", url.Values{
 		"code":  []string{"validcode"},
 		"state": []string{uuid.String()},
 	})
 	req.AddCookie(cookie)
-	res = router.TestRequest(req)
+	res = recorder.TestRequest(req)
 	a.Body("AccessToken: test-access-token, RefreshToken: test-refresh-token", res)
 }
 
-func prepareRouter(middleware *Middleware) *httptest.Router {
-	router := httptest.NewRouter(nil)
+func prepareRouter(middleware *Middleware) *web.Router {
+	router := web.NewRouter(nil)
 	router.Use(sessionMiddleware)
 	router.Use(middleware)
 	router.Get("/", web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {

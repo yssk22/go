@@ -30,7 +30,11 @@ func NewAssert(t *testing.T) *Assert {
 // Status asserts the http status code
 func (a *Assert) Status(expected response.HTTPStatus, res *httptest.ResponseRecorder, msgContext ...interface{}) {
 	if expected != response.HTTPStatus(res.Code) {
-		a.Failure(expected, res.Code, msgContext...)
+		if len(msgContext) > 0 {
+			a.Failure(expected, res.Code, msgContext...)
+		} else {
+			a.Failure(expected, res.Code, "**** HTTP Body ****\n\t%s", res.Body)
+		}
 	}
 }
 
@@ -72,9 +76,11 @@ func (a *Assert) Cookie(res *httptest.ResponseRecorder, name string, msgContext 
 func (a *Assert) JSON(v interface{}, res *httptest.ResponseRecorder, msgContext ...interface{}) {
 	var body = res.Body.Bytes()
 	err := json.Unmarshal(body, v)
-	a.Failure(
-		fmt.Sprintf("%v of %s", err, reflect.TypeOf(v).Name()),
-		string(body),
-		msgContext...,
-	)
+	if err != nil {
+		a.Failure(
+			fmt.Sprintf("%v of %s", err, reflect.TypeOf(v).Name()),
+			string(body),
+			msgContext...,
+		)
+	}
 }

@@ -74,7 +74,7 @@ func (r *Router) addRoute(method string, pattern string, handlers ...Handler) {
 }
 
 // Dispatch dispaches *http.Request to the matched handlers and return Response
-func (r *Router) Dispatch(w http.ResponseWriter, req *http.Request) {
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const RequestIDHeader = "X-SPEEDLAND-REQUEST-ID"
 	var request = NewRequest(req, r.option)
 	var logger = xlog.WithKey("web.router").WithContext(request.Context())

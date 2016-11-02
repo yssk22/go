@@ -20,7 +20,7 @@ var (
 )
 
 func main() {
-	log.SetPrefix("[enum] ")
+	log.SetPrefix("[ent] ")
 	log.SetFlags(0)
 	flag.Parse()
 	if len(*typeName) == 0 {

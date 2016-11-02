@@ -41,7 +41,6 @@ func NewRequest(r *http.Request, option *Option) *Request {
 			cookies[c.Name] = c
 		}
 	}
-
 	return &Request{
 		Request: r,
 		ctx:     initContext(r),
