@@ -175,6 +175,15 @@ func (q *Query) Run(ctx context.Context, dst interface{}) (*datastore.Iterator, 
 	return query.Run(ctx), nil
 }
 
+// Count returns a count
+func (q *Query) Count(ctx context.Context) (int, error) {
+	query, err := q.prepare(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return query.Count(ctx)
+}
+
 func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 	var buff []string
 	logger := xlog.WithContext(ctx).WithKey(LoggerKey)
