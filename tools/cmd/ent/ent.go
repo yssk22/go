@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	ent "github.com/speedland/go/ent/generator"
 	"github.com/speedland/go/tools/generator"
 	"github.com/speedland/go/x/xstrings"
 )
@@ -32,7 +33,7 @@ func main() {
 		args = []string{"."}
 	}
 	for _, directory := range args {
-		g := NewGenerator(*typeName)
+		g := ent.NewStruct(*typeName)
 		src, err := generator.Run(directory, g)
 		if err != nil {
 			log.Printf("error: %v", err)

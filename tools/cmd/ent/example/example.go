@@ -10,7 +10,6 @@ type Example struct {
 	Desc                string    `json:"desc" ent:"form" default:"This is default value"`
 	ContentBytes        []byte    `json:"content_bytes" ent:"form"`
 	SliceType           []string  `json:"slice_type" ent:"form"`
-	SliceFloatType      []float64 `json:"slice_float_type" ent:"form"`
 	BoolType            bool      `json:"bool_type" ent:"form"`
 	FloatType           float64   `json:"float_type" ent:"form"`
 	CreatedAt           time.Time `json:"created_at" default:"$now"`
