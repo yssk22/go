@@ -4,9 +4,10 @@ package example
 
 import (
 	"fmt"
+	"github.com/speedland/go/ent"
 	helper "github.com/speedland/go/gae/datastore"
-	"github.com/speedland/go/gae/datastore/ent"
 	"github.com/speedland/go/gae/memcache"
+	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
@@ -14,8 +15,41 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-func (ent *Example) NewKey(ctx context.Context) *datastore.Key {
-	return helper.NewKey(ctx, "Example", ent.ID)
+func (e *Example) NewKey(ctx context.Context) *datastore.Key {
+	return helper.NewKey(ctx, "Example", e.ID)
+}
+
+// UpdateByForm updates the fields by form values. All values should be validated
+// before calling this function.
+func (e *Example) UpdateByForm(form *keyvalue.GetProxy) {
+	if v, err := form.Get("digit"); err == nil {
+		e.Digit = ent.ParseInt(v.(string))
+	}
+	if v, err := form.Get("desc"); err == nil {
+		e.Desc = v.(string)
+	}
+	if v, err := form.Get("content_bytes"); err == nil {
+		e.ContentBytes = []byte(v.(string))
+	}
+	if v, err := form.Get("slice_type"); err == nil {
+		e.SliceType = ent.ParseStringList(v.(string))
+	}
+	if v, err := form.Get("bool_type"); err == nil {
+		e.BoolType = ent.ParseBool(v.(string))
+	}
+	if v, err := form.Get("float_type"); err == nil {
+		e.FloatType = ent.ParseFloat64(v.(string))
+	}
+}
+
+// NewExample returns a new *Example with default field values.
+func NewExample() *Example {
+	e := &Example{}
+	e.Digit = 10
+	e.Desc = "This is default value"
+	e.CreatedAt = ent.ParseTime("$now")
+	e.DefaultTime = ent.ParseTime("2016-01-01T20:12:10Z")
+	return e
 }
 
 type ExampleKind struct {
@@ -26,16 +60,10 @@ type ExampleKind struct {
 	noTimestampUpdate bool
 }
 
-const ExampleKindLoggerKey = "ent.example"
+// DefaultExampleKind is a default value of *ExampleKind
+var DefaultExampleKind = &ExampleKind{}
 
-func (k *ExampleKind) New() *Example {
-	a := &Example{}
-	a.Digit = 10
-	a.Desc = "This is default value"
-	a.CreatedAt = xtime.Now()
-	a.DefaultTime = xtime.MustParse("2016-01-01T20:12:10Z")
-	return a
-}
+const ExampleKindLoggerKey = "ent.example"
 
 func (k *ExampleKind) UseDefaultIfNil(b bool) *ExampleKind {
 	k.useDefaultIfNil = b
@@ -125,7 +153,7 @@ func (k *ExampleKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*dat
 	if k.useDefaultIfNil {
 		for i := 0; i < cacheMissingSize; i++ {
 			if cacheMissingEnts[i] == nil {
-				cacheMissingEnts[i] = k.New()
+				cacheMissingEnts[i] = NewExample()
 				cacheMissingEnts[i].ID = dsKeys[i].StringID() // TODO: Support non-string key as ID
 			}
 		}
@@ -341,7 +369,7 @@ func (q *ExampleQuery) Desc(name string) *ExampleQuery {
 	return q
 }
 
-// Desc specifies descending order on the given filed.
+// GetAll returns all key and value of the query.
 func (q *ExampleQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Example, error) {
 	var v []*Example
 	keys, err := q.q.GetAll(ctx, &v)
@@ -349,4 +377,47 @@ func (q *ExampleQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Example
 		return nil, nil, err
 	}
 	return keys, v, err
+}
+
+// MustGetAll is like GetAll but panic if an error occurrs.
+func (q *ExampleQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []*Example) {
+	keys, values, err := q.GetAll(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return keys, values
+}
+
+// GetAllValues is like GetAll but returns only values
+func (q *ExampleQuery) GetAllValues(ctx context.Context) ([]*Example, error) {
+	var v []*Example
+	_, err := q.q.GetAll(ctx, &v)
+	if err != nil {
+		return nil, err
+	}
+	return v, err
+}
+
+// MustGetAllValues is like GetAllValues but panic if an error occurrs
+func (q *ExampleQuery) MustGetAllValues(ctx context.Context) []*Example {
+	var v []*Example
+	_, err := q.q.GetAll(ctx, &v)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Count returns the count of entities
+func (q *ExampleQuery) Count(ctx context.Context) (int, error) {
+	return q.q.Count(ctx)
+}
+
+// MustCount returns the count of entities
+func (q *ExampleQuery) MustCount(ctx context.Context) int {
+	c, err := q.Count(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }

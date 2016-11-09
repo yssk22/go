@@ -1,15 +1,17 @@
 package example
 
 import (
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/speedland/go/iterator/slice"
+	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xtime"
 
-	"github.com/speedland/go/gae/datastore/ent"
+	"github.com/speedland/go/ent"
 	"github.com/speedland/go/gae/gaetest"
 	"github.com/speedland/go/gae/memcache"
 
@@ -25,11 +27,29 @@ func TestMain(m *testing.M) {
 
 func TestEample_NewKey(t *testing.T) {
 	a := assert.New(t)
-	n := (&ExampleKind{}).New()
+	n := NewExample()
 	n.ID = "FOO"
 	key := n.NewKey(gaetest.NewContext())
 	a.EqStr("Example", key.Kind())
 	a.EqStr("FOO", key.StringID())
+}
+
+func TestExample_UpdateByForm(t *testing.T) {
+	a := assert.New(t)
+	n := NewExample()
+	n.Desc = "foo"
+	form := url.Values{
+		"desc": []string{"val"},
+	}
+	getter := keyvalue.GetterFunc(func(key interface{}) (interface{}, error) {
+		v, ok := form[key.(string)]
+		if ok && len(v) >= 0 {
+			return v[0], nil
+		}
+		return nil, keyvalue.KeyError(key.(string))
+	})
+	n.UpdateByForm(keyvalue.NewGetProxy(getter))
+	a.EqStr("val", n.Desc)
 }
 
 func TestExampleKind_New(t *testing.T) {
@@ -38,7 +58,7 @@ func TestExampleKind_New(t *testing.T) {
 	xtime.RunAt(
 		now,
 		func() {
-			n := (&ExampleKind{}).New()
+			n := NewExample()
 			a.EqStr("This is default value", n.Desc)
 			a.EqInt(10, n.Digit)
 			a.EqTime(now, n.CreatedAt)
@@ -142,7 +162,7 @@ func TestExampleKind_PutMulti(t *testing.T) {
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
 
 	k := &ExampleKind{}
-	e := k.New()
+	e := NewExample()
 	e.ID = "foo"
 	e.Desc = "PUT TEST"
 
