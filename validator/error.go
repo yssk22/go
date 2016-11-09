@@ -7,8 +7,8 @@ import (
 
 // ValidationError is an error returned by Eval(Validator, interface{})
 type ValidationError struct {
-	Errors map[string][]*FieldError
-	Value  interface{}
+	Errors map[string][]*FieldError `json:"errors"`
+	Value  interface{}              `json:"value"`
 }
 
 // FieldError represents an error in the validated object.
