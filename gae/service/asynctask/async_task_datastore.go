@@ -4,9 +4,10 @@ package asynctask
 
 import (
 	"fmt"
+	"github.com/speedland/go/ent"
 	helper "github.com/speedland/go/gae/datastore"
-	"github.com/speedland/go/gae/datastore/ent"
 	"github.com/speedland/go/gae/memcache"
+	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
@@ -14,8 +15,19 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-func (ent *AsyncTask) NewKey(ctx context.Context) *datastore.Key {
-	return helper.NewKey(ctx, "AsyncTask", ent.ID)
+func (a *AsyncTask) NewKey(ctx context.Context) *datastore.Key {
+	return helper.NewKey(ctx, "AsyncTask", a.ID)
+}
+
+// UpdateByForm updates the fields by form values. All values should be validated
+// before calling this function.
+func (a *AsyncTask) UpdateByForm(form *keyvalue.GetProxy) {
+}
+
+// NewAsyncTask returns a new *AsyncTask with default field values.
+func NewAsyncTask() *AsyncTask {
+	a := &AsyncTask{}
+	return a
 }
 
 type AsyncTaskKind struct {
@@ -26,12 +38,10 @@ type AsyncTaskKind struct {
 	noTimestampUpdate bool
 }
 
-const AsyncTaskKindLoggerKey = "ent.async_task"
+// DefaultAsyncTaskKind is a default value of *AsyncTaskKind
+var DefaultAsyncTaskKind = &AsyncTaskKind{}
 
-func (k *AsyncTaskKind) New() *AsyncTask {
-	a := &AsyncTask{}
-	return a
-}
+const AsyncTaskKindLoggerKey = "ent.async_task"
 
 func (k *AsyncTaskKind) UseDefaultIfNil(b bool) *AsyncTaskKind {
 	k.useDefaultIfNil = b
@@ -121,7 +131,7 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 	if k.useDefaultIfNil {
 		for i := 0; i < cacheMissingSize; i++ {
 			if cacheMissingEnts[i] == nil {
-				cacheMissingEnts[i] = k.New()
+				cacheMissingEnts[i] = NewAsyncTask()
 				cacheMissingEnts[i].ID = dsKeys[i].StringID() // TODO: Support non-string key as ID
 			}
 		}
@@ -337,7 +347,7 @@ func (q *AsyncTaskQuery) Desc(name string) *AsyncTaskQuery {
 	return q
 }
 
-// Desc specifies descending order on the given filed.
+// GetAll returns all key and value of the query.
 func (q *AsyncTaskQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*AsyncTask, error) {
 	var v []*AsyncTask
 	keys, err := q.q.GetAll(ctx, &v)
@@ -345,4 +355,47 @@ func (q *AsyncTaskQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Async
 		return nil, nil, err
 	}
 	return keys, v, err
+}
+
+// MustGetAll is like GetAll but panic if an error occurrs.
+func (q *AsyncTaskQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []*AsyncTask) {
+	keys, values, err := q.GetAll(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return keys, values
+}
+
+// GetAllValues is like GetAll but returns only values
+func (q *AsyncTaskQuery) GetAllValues(ctx context.Context) ([]*AsyncTask, error) {
+	var v []*AsyncTask
+	_, err := q.q.GetAll(ctx, &v)
+	if err != nil {
+		return nil, err
+	}
+	return v, err
+}
+
+// MustGetAllValues is like GetAllValues but panic if an error occurrs
+func (q *AsyncTaskQuery) MustGetAllValues(ctx context.Context) []*AsyncTask {
+	var v []*AsyncTask
+	_, err := q.q.GetAll(ctx, &v)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Count returns the count of entities
+func (q *AsyncTaskQuery) Count(ctx context.Context) (int, error) {
+	return q.q.Count(ctx)
+}
+
+// MustCount returns the count of entities
+func (q *AsyncTaskQuery) MustCount(ctx context.Context) int {
+	c, err := q.Count(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
