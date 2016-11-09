@@ -1,3 +1,4 @@
+// Package validator provides types and functions for validator implementations
 package validator
 
 import (
@@ -8,7 +9,7 @@ import (
 // Validatable is an interface for an object to be validated
 type Validatable interface {
 	Value() interface{}
-	Get(string) interface{}
+	Get(string) (interface{}, error)
 }
 
 // Validator is a struct that contains validator functions
@@ -45,7 +46,18 @@ func (v *Validator) Eval(i interface{}) *ValidationError {
 	}
 	ve := make(map[string][]*FieldError)
 	for name, list := range v.fields {
-		value := validatable.Get(name)
+		value, err := validatable.Get(name)
+		if err != nil {
+			ferr := &FieldError{
+				Message: err.Error(),
+			}
+			if _, ok := ve[name]; ok {
+				ve[name] = append(ve[name], ferr)
+			} else {
+				ve[name] = []*FieldError{ferr}
+			}
+			continue
+		}
 		for _, f := range list.funcs {
 			err := f(value)
 			if err != nil {
@@ -102,10 +114,10 @@ func (v *validatable) Value() interface{} {
 	return v.i
 }
 
-func (v *validatable) Get(name string) interface{} {
+func (v *validatable) Get(name string) (interface{}, error) {
 	val := v.v.FieldByName(name)
 	if val.IsValid() {
-		return val.Interface()
+		return val.Interface(), nil
 	}
-	return nil
+	return nil, nil
 }
