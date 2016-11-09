@@ -304,6 +304,51 @@ func (k *ExampleKind) MustPutMulti(ctx context.Context, ents []*Example) []*data
 	return keys
 }
 
+func (k *ExampleKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
+	var size = len(keys)
+	var dsKeys []*datastore.Key
+	if size == 0 {
+		return nil, nil
+	}
+	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
+	dsKeys = make([]*datastore.Key, size, size)
+	for i := range keys {
+		dsKeys[i] = helper.NewKey(ctx, "Example", keys[i])
+	}
+	// Datastore access
+	err := helper.DeleteMulti(ctx, dsKeys)
+	if helper.IsDatastoreError(err) {
+		// we return nil even some ents hits the cache.
+		return nil, err
+	}
+
+	if !k.noCache {
+		memKeys := make([]string, size, size)
+		for i := range memKeys {
+			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
+		}
+		err := memcache.DeleteMulti(ctx, memKeys)
+		if memcache.IsMemcacheError(err) {
+			logger.Warnf("Failed to invalidate memcache keys: %v", err)
+		}
+	}
+
+	logger.Debug(func(p *xlog.Printer) {
+		p.Printf(
+			"Example#DeleteMulti [Datastore] (NoCache: %t)\n",
+			k.noCache,
+		)
+		for i := 0; i < size; i++ {
+			p.Printf("\t%s\n", dsKeys[i])
+			if i >= 20 {
+				p.Printf("\t...(and %d ents)\n", size-i)
+				break
+			}
+		}
+	})
+	return dsKeys, nil
+}
+
 // ExampleQuery helps to build and execute a query
 type ExampleQuery struct {
 	q *helper.Query

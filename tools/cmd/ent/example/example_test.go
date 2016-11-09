@@ -187,6 +187,21 @@ func TestExampleKind_PutMulti(t *testing.T) {
 	)
 }
 
+func TestExampleKind_DeleteMulti(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMulti.json", nil))
+
+	k := &ExampleKind{}
+	keys, err := k.DeleteMulti(gaetest.NewContext(), "example-1", "example-2")
+	a.Nil(err)
+	a.EqInt(2, len(keys))
+	ents := k.MustGetMulti(gaetest.NewContext(), "example-1", "example-2")
+	a.Nil(err)
+	a.Nil(ents[0])
+	a.Nil(ents[1])
+}
+
 func TestExampleQuery_GetAll(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
