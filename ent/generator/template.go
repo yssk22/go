@@ -281,7 +281,7 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
     return dsKeys, nil
 }
 
-// MustPutMulti do Put with multiple keys
+// MustPutMulti is like PutMulti but panic if an error occurs
 func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]*datastore.Key) {
     keys, err := k.PutMulti(ctx, ents)
     if err != nil {
@@ -290,6 +290,25 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
     return keys
 }
 
+// Delete deletes the entity from datastore
+func (k *{{.Type}}Kind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+    keys, err := k.DeleteMulti(ctx, key)
+    if err != nil {
+        return nil, err
+    }
+    return keys[0], nil
+}
+
+// MustDelete is like Delete but panic if an error occurs
+func (k *{{.Type}}Kind) MustDelete(ctx context.Context, key interface{}) (*datastore.Key) {
+    keys, err := k.DeleteMulti(ctx, key)
+    if err != nil {
+        panic(err)
+    }
+    return keys[0]
+}
+
+// DeleteMulti do Delete with multiple keys
 func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
     var size = len(keys)
     var dsKeys  []*datastore.Key
@@ -335,6 +354,14 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
     return dsKeys, nil
 }
 
+// MustDeleteMulti is like DeleteMulti but panic if an error occurs
+func (k *{{.Type}}Kind) MustDeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key) {
+    _keys, err := k.DeleteMulti(ctx, keys...)
+    if err != nil {
+        panic(err)
+    }
+    return _keys
+}
 
 // {{.Type}}Query helps to build and execute a query
 type {{.Type}}Query struct {
