@@ -7,9 +7,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
+	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web/middleware/session"
 )
+
+const LoggerKey = session.SessionLoggerKey
 
 // GAESessionStore implements SessionStore on GAE memcache and datastore
 type GAESessionStore struct {
@@ -30,6 +33,9 @@ func (s *GAESessionStore) Get(ctx context.Context, key uuid.UUID) (*session.Sess
 		return nil, err
 	}
 	wrapper := DefaultSessionKind.MustGet(_ctx, key.String())
+	if wrapper == nil {
+		return nil, keyvalue.KeyError(fmt.Sprintf("seesion:%s", key.String()))
+	}
 	sess := &session.Session{}
 	sess.ID, _ = uuid.FromString(wrapper.ID)
 	sess.CSRFSecret, _ = uuid.FromString(wrapper.CSRFSecret)
