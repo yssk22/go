@@ -41,7 +41,6 @@ var Default = &Middleware{
 func NewMiddleware() *Middleware {
 	m := &Middleware{}
 	*m = *Default
-	m.Store = NewMemorySessionStore()
 	return m
 }
 
@@ -81,7 +80,10 @@ func (m *Middleware) prepareSession(req *web.Request) (*Session, error) {
 		return nil, fmt.Errorf("invalid session id: %q", strSessionID)
 	}
 	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
-	logger.Debugf("Getting a session with %s", sessionID)
+	logger.Debug(func(fmt *xlog.Printer) {
+		fmt.Printf("Getting a session with %s\n", sessionID)
+		fmt.Printf("From %s\n", m.Store)
+	})
 	session, err := m.Store.Get(req.Context(), sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("SessionStore.Get: %v", err)
