@@ -10,7 +10,7 @@ import (
 // StateStore is an interface for session storage.
 type StateStore interface {
 	Set(context.Context, string) error
-	Validate(context.Context, string) (bool, error)
+	Get(context.Context) (string, error)
 }
 
 // Config is an interface for OAuth2 configuration. Use "golang.org/x/oauth2.Config"

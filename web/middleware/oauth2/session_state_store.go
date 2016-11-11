@@ -25,20 +25,16 @@ func (*SessionStateStore) Set(ctx context.Context, state string) error {
 	return session.Set(oauth2SessionStateKey, state)
 }
 
-// Set implements StateStore#Validate
-func (*SessionStateStore) Validate(ctx context.Context, state string) (bool, error) {
+// Get implements StateStore#Get
+func (*SessionStateStore) Get(ctx context.Context) (string, error) {
 	session := session.FromContext(ctx)
 	if session == nil {
-		return false, ErrSessionNotInitialized
+		return "", ErrSessionNotInitialized
 	}
-	v, err := session.Get(oauth2SessionStateKey)
-	if err != nil {
-		return false, fmt.Errorf("session(%q): %v", session.ID, err)
-	}
-	_, ok := v.(string)
-	if !ok {
-		return false, fmt.Errorf("OAuth2 state contains non-string: %v", v)
+	var state string
+	if err := session.Get(oauth2SessionStateKey, &state); err != nil {
+		return "", fmt.Errorf("session(%q): %v", session.ID, err)
 	}
 	session.Del(oauth2SessionStateKey)
-	return true, nil
+	return state, nil
 }

@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var sessionMiddleware = session.NewMiddleware()
+var sessionMiddleware = session.NewMiddleware(session.NewMemorySessionStore())
 
 func TestMiddleware(t *testing.T) {
 	middleware := &Middleware{}
@@ -36,9 +36,9 @@ func TestMiddleware(t *testing.T) {
 	session, err := sessiontest.GetSession(res, sessionMiddleware)
 	a.Nil(err)
 
-	v, err := session.Get(oauth2SessionStateKey)
-	a.Nil(err)
-	uuid, ok := uuid.FromString(v.(string))
+	var state string
+	a.Nil(session.Get(oauth2SessionStateKey, &state))
+	uuid, ok := uuid.FromString(state)
 	a.OK(ok)
 	a.Header(
 		fmt.Sprintf("http://oauth2.example.com/?state=%s", uuid.String()),
