@@ -33,7 +33,7 @@ func TestMiddleware(t *testing.T) {
 	// 1. Redirect (to prepare auth state key)
 	res := recorder.TestGet("/oauth2/login")
 	a.Status(response.HTTPStatusFound, res)
-	session, err := sessiontest.GetSession(res, sessionMiddleware)
+	session, err := sessiontest.GetSession(context.Background(), res, sessionMiddleware)
 	a.Nil(err)
 
 	var state string
