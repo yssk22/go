@@ -16,6 +16,24 @@ func (u UUID) String() string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])
 }
 
+// MarshalJSON implements json.Marshaler#MarshalJSON()
+func (u UUID) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", u.String())), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler#UnmarshalJSON()
+func (u *UUID) UnmarshalJSON(b []byte) error {
+	if b[0] != '"' || b[len(b)-1] != '"' {
+		return fmt.Errorf("Invalid string")
+	}
+	newval, ok := FromString(string(b[1 : len(b)-1]))
+	if !ok {
+		return fmt.Errorf("Invalid format")
+	}
+	*u = newval
+	return nil
+}
+
 // New generates uuid v4 following RFC4122 Section 4.4
 func New() UUID {
 	_uuid := make([]byte, 16, 16)
