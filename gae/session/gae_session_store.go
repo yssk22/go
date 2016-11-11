@@ -40,7 +40,9 @@ func (s *GAESessionStore) Get(ctx context.Context, key uuid.UUID) (*session.Sess
 	sess.ID, _ = uuid.FromString(wrapper.ID)
 	sess.CSRFSecret, _ = uuid.FromString(wrapper.CSRFSecret)
 	sess.Timestamp = wrapper.Timestamp
-	json.Unmarshal(wrapper.Data, &sess.Data)
+	if err := json.Unmarshal(wrapper.Data, &sess.Data); err != nil {
+		return nil, err
+	}
 	return sess, nil
 }
 
@@ -72,4 +74,8 @@ func (s *GAESessionStore) Del(ctx context.Context, session *session.Session) err
 	}
 	DefaultSessionKind.MustDelete(_ctx, session.ID.String())
 	return nil
+}
+
+func (s *GAESessionStore) String() string {
+	return fmt.Sprintf("GAESessionStore(ns=%s)", s.namespace)
 }

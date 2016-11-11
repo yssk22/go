@@ -16,7 +16,7 @@ import (
 )
 
 func TestMiddleware_NewSession(t *testing.T) {
-	middleware := NewMiddleware()
+	middleware := NewMiddleware(NewMemorySessionStore())
 	sessionDataKey := "FOO"
 	sessionDataValue := "BAR"
 
@@ -35,10 +35,10 @@ func TestMiddleware_NewSession(t *testing.T) {
 
 	// Check the store has session.
 	session, err := middleware.Store.Get(context.Background(), sid)
+	var value string
 	a.Nil(err)
-	value, err := session.Get("FOO")
-	a.Nil(err)
-	a.EqStr(sessionDataValue, value.(string))
+	a.Nil(session.Get("FOO", &value))
+	a.EqStr(sessionDataValue, value)
 
 	// Make another Request with cookie
 	req, _ := http.NewRequest("GET", "/session", nil)
@@ -49,7 +49,7 @@ func TestMiddleware_NewSession(t *testing.T) {
 }
 
 func TestMiddleware_NoSessionCreation(t *testing.T) {
-	middleware := NewMiddleware()
+	middleware := NewMiddleware(NewMemorySessionStore())
 	sessionDataKey := "FOO"
 	sessionDataValue := "BAR"
 
@@ -66,7 +66,7 @@ func TestMiddleware_NoSessionCreation(t *testing.T) {
 
 func TestMiddleware_SessionExpiration(t *testing.T) {
 	var c *http.Cookie
-	middleware := NewMiddleware()
+	middleware := NewMiddleware(NewMemorySessionStore())
 	sessionDataKey := "FOO"
 	sessionDataValue := "BAR"
 	a := httptest.NewAssert(t)
@@ -97,8 +97,7 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 	)
 
 	// Ensure it is deleted
-	store := middleware.Store.(*MemorySessionStore)
-	a.EqInt(0, len(store.store))
+	a.EqInt(0, len(middleware.Store.(*MemorySessionStore).store))
 }
 
 func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Middleware) *web.Router {
@@ -111,8 +110,10 @@ func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Mid
 	}))
 	router.Get("/session", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		session := FromContext(req.Context())
-		v, _ := session.Get(sessionDataKey)
-		return response.NewText(v)
+		if err := session.Get(sessionDataKey, &sessionDataValue); err != nil {
+			return response.NewText(nil)
+		}
+		return response.NewText(sessionDataValue)
 	}))
 	router.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return response.NewText("ok")

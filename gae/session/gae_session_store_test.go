@@ -16,16 +16,25 @@ func TestMain(m *testing.M) {
 }
 
 func TestGAESessionStore(t *testing.T) {
+	type custom struct {
+		Str string
+	}
 	a := assert.New(t)
 	store := NewGAESessionStore("")
 	sess := session.NewSession()
-	sess.Data.Set("foo", "bar")
+	sess.Set("foo", "bar")
+	sess.Set("custom", &custom{
+		Str: "string",
+	})
 	a.Nil(store.Set(gaetest.NewContext(), sess))
 
 	sess2, err := store.Get(gaetest.NewContext(), sess.ID)
 	a.Nil(err)
 	a.EqStr(sess.ID.String(), sess2.ID.String())
-	bar, err := sess2.Data.Get("foo")
-	a.Nil(err)
-	a.EqStr("bar", bar.(string))
+	var bar string
+	var c custom
+	a.Nil(sess2.Get("foo", &bar))
+	a.EqStr("bar", bar)
+	a.Nil(sess2.Get("custom", &c))
+	a.EqStr("string", c.Str)
 }
