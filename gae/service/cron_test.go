@@ -11,7 +11,6 @@ import (
 )
 
 func TestService_serveCron(t *testing.T) {
-	xlog.SetKeyFilter(web.LoggerKeyRouter, xlog.LevelDebug)
 	a := httptest.NewAssert(t)
 	s := New("test")
 	recorder := gaetest.NewRecorder(s)
