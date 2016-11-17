@@ -121,8 +121,17 @@ func (s *Service) Delete(path string, handlers ...web.Handler) {
 
 // Path returns an absolute path for this s.
 func (s *Service) Path(p string) string {
-	if path.Ext(p) == "" {
-		return path.Join("/", s.key, p) + "/"
+	if s.key != "" {
+		if path.Ext(p) == "" {
+			return path.Join("/", s.key, p) + "/"
+		}
+		return path.Join("/", s.key, p)
 	}
-	return path.Join("/", s.key, p)
+	if p == "/" {
+		return p
+	}
+	if path.Ext(p) == "" {
+		return p + "/"
+	}
+	return p
 }

@@ -4,10 +4,8 @@ import (
 	"testing"
 
 	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xlog"
 )
 
 func TestService_serveCron(t *testing.T) {

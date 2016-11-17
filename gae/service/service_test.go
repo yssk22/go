@@ -8,6 +8,7 @@ import (
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/x/xlog"
 )
 
 func TestMain(m *testing.M) {
@@ -30,4 +31,12 @@ func TestService(t *testing.T) {
 	resp := recorder.TestGet("/test/")
 	a.Status(response.HTTPStatusOK, resp)
 	a.Body("test", resp)
+}
+
+func TestService_emptyKey(t *testing.T) {
+	xlog.SetKeyFilter(web.RouterLoggerKey, xlog.LevelDebug)
+	a := httptest.NewAssert(t)
+	s := New("")
+	a.EqStr("/", s.Path("/"))
+	a.EqStr("/foo/", s.Path("/foo"))
 }
