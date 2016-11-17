@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:gphoto="http://schemas.google.com/photos/2007" xmlns:media="http://search.yahoo.com/mrss/" xmlns:openSearch="http://a9.com/-/spec/opensearchrss/1.0/">
+  <id>https://picasaweb.google.com/data/feed/api/user/default</id>
+  <updated>2016-06-13T00:31:33.556Z</updated>
+  <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#user" />
+  <title type="text">109784491874587409559</title>
+  <subtitle type="text" />
+  <icon>https://lh3.googleusercontent.com/-jde7mjJQ3lI/AAAAAAAAAAI/AAAAAAAABC4/-kyH9A02CMM/s64-c/109784491874587409559.jpg</icon>
+  <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559" />
+  <link rel="http://schemas.google.com/g/2005#post" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559" />
+  <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559" />
+  <link rel="http://schemas.google.com/photos/2007#slideshow" type="application/x-shockwave-flash" href="https://photos.gstatic.com/media/slideshow.swf?host=picasaweb.google.com&amp;RGB=0x000000&amp;feed=https://picasaweb.google.com/data/feed/api/user/109784491874587409559?alt%3Drss" />
+  <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559?start-index=1&amp;max-results=1000" />
+  <author>
+    <name>Yohei Sasaki</name>
+    <uri>https://picasaweb.google.com/109784491874587409559</uri>
+  </author>
+  <generator version="1.00" uri="http://picasaweb.google.com/">Picasaweb</generator>
+  <openSearch:totalResults>22</openSearch:totalResults>
+  <openSearch:startIndex>1</openSearch:startIndex>
+  <openSearch:itemsPerPage>1000</openSearch:itemsPerPage>
+  <gphoto:user>109784491874587409559</gphoto:user>
+  <gphoto:nickname>Yohei Sasaki</gphoto:nickname>
+  <gphoto:thumbnail>https://lh3.googleusercontent.com/-jde7mjJQ3lI/AAAAAAAAAAI/AAAAAAAABC4/-kyH9A02CMM/s64-c/109784491874587409559.jpg</gphoto:thumbnail>
+  <gphoto:quotalimit>16106127360</gphoto:quotalimit>
+  <gphoto:quotacurrent>5075761264</gphoto:quotacurrent>
+  <gphoto:maxPhotosPerAlbum>2000</gphoto:maxPhotosPerAlbum>
+  <entry>
+    <id>https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/1000000487409559</id>
+    <published>2015-11-29T11:03:42.000Z</published>
+    <updated>2015-11-29T15:32:17.582Z</updated>
+    <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#album" />
+    <title type="text">自動バックアップ</title>
+    <summary type="text" />
+    <rights type="text">protected</rights>
+    <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/1000000487409559" />
+    <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559?alabel=small_instant_upload" />
+    <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/1000000487409559" />
+    <author>
+      <name>Yohei Sasaki</name>
+      <uri>https://picasaweb.google.com/109784491874587409559</uri>
+    </author>
+    <gphoto:id>1000000487409559</gphoto:id>
+    <gphoto:name>InstantUpload</gphoto:name>
+    <gphoto:access>private</gphoto:access>
+    <gphoto:timestamp>1448795022000</gphoto:timestamp>
+    <gphoto:numphotos>1964</gphoto:numphotos>
+    <gphoto:user>109784491874587409559</gphoto:user>
+    <gphoto:nickname>Yohei Sasaki</gphoto:nickname>
+    <gphoto:albumType>InstantUpload</gphoto:albumType>
+    <media:group>
+      <media:content url="https://lh3.googleusercontent.com/-tsOSariGwEA/VlsZRvzG9VE/AAAAAAAAHAo/612SvKYJAGAmkNf7ZNJi8uxDmN8dVpK3gCHM/20151129" type="image/jpeg" medium="image" />
+      <media:credit>Yohei Sasaki</media:credit>
+      <media:description type="plain">自動バックアップ</media:description>
+      <media:keywords />
+      <media:thumbnail url="https://lh3.googleusercontent.com/-tsOSariGwEA/VlsZRvzG9VE/AAAAAAAAHAo/612SvKYJAGAmkNf7ZNJi8uxDmN8dVpK3gCHM/s160-c/20151129" height="160" width="160" />
+      <media:title type="plain">自動バックアップ</media:title>
+    </media:group>
+  </entry>
+  <entry>
+    <id>https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6173825975323480657</id>
+    <published>2015-07-21T05:17:55.000Z</published>
+    <updated>2015-07-21T05:38:48.016Z</updated>
+    <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#album" />
+    <title type="text">2015/07/21</title>
+    <summary type="text" />
+    <rights type="text">public</rights>
+    <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6173825975323480657" />
+    <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559/20150721" />
+    <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6173825975323480657" />
+    <link rel="edit" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6173825975323480657/6" />
+    <link rel="http://schemas.google.com/acl/2007#accessControlList" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6173825975323480657/acl" />
+    <author>
+      <name>Yohei Sasaki</name>
+      <uri>https://picasaweb.google.com/109784491874587409559</uri>
+    </author>
+    <gphoto:id>6173825975323480657</gphoto:id>
+    <gphoto:name>20150721</gphoto:name>
+    <gphoto:location />
+    <gphoto:access>public</gphoto:access>
+    <gphoto:timestamp>1437455875000</gphoto:timestamp>
+    <gphoto:numphotos>1</gphoto:numphotos>
+    <gphoto:numphotosremaining>1999</gphoto:numphotosremaining>
+    <gphoto:bytesUsed>351936</gphoto:bytesUsed>
+    <gphoto:user>109784491874587409559</gphoto:user>
+    <gphoto:nickname>Yohei Sasaki</gphoto:nickname>
+    <gphoto:albumType>Buzz</gphoto:albumType>
+    <media:group>
+      <media:content url="https://lh3.googleusercontent.com/-DFUjYERzqt4/Va3WA6Q8UlE/AAAAAAAAExE/N2a-oS2p14ULm0f6uMcsIR6PmWsm-qglACHM/20150721" type="image/jpeg" medium="image" />
+      <media:credit>Yohei Sasaki</media:credit>
+      <media:description type="plain" />
+      <media:keywords />
+      <media:thumbnail url="https://lh3.googleusercontent.com/-DFUjYERzqt4/Va3WA6Q8UlE/AAAAAAAAExE/N2a-oS2p14ULm0f6uMcsIR6PmWsm-qglACHM/s160-c/20150721" height="160" width="160" />
+      <media:title type="plain">2015/07/21</media:title>
+    </media:group>
+  </entry>
+</feed>
