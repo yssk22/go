@@ -131,7 +131,7 @@ func (s *Service) Path(p string) string {
 		return p
 	}
 	if path.Ext(p) == "" {
-		return p + "/"
+		return path.Join(p) + "/"
 	}
 	return p
 }

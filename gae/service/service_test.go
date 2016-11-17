@@ -39,4 +39,5 @@ func TestService_emptyKey(t *testing.T) {
 	s := New("")
 	a.EqStr("/", s.Path("/"))
 	a.EqStr("/foo/", s.Path("/foo"))
+	a.EqStr("/foo/", s.Path("/foo/"))
 }
