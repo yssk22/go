@@ -10,16 +10,30 @@ import (
 	"net/http"
 	"net/textproto"
 	"sync"
-)
 
-// PicasaScope for a scope string on Google API API
-const PicasaScope = "https://picasaweb.google.com/data/"
+	"golang.org/x/oauth2"
+)
 
 // BaseURL is a base url for Google Photo API
 const BaseURL = "https://picasaweb.google.com"
 
 // RedirectURL is a string passed for oauth
 const RedirectURL = "urn:ietf:wg:oauth:2.0:oob"
+
+// NewOAuth2Config returns a new *oauth2.Config for Google Photo endpoint.
+func NewOAuth2Config(clientID, clientSecret string) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
+			TokenURL: "https://accounts.google.com/o/oauth2/token",
+		},
+		Scopes: []string{
+			"https://picasaweb.google.com/data/",
+		},
+	}
+}
 
 // Client is a client for Gootle Photo API
 type Client struct {
