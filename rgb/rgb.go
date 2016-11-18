@@ -32,6 +32,15 @@ func ParseRGB(s string) (RGB, error) {
 	return RGB(0), fmt.Errorf("Could not parse RGB color: %q", s)
 }
 
+// MustParseRGB is like ParseRGB but panic if an error occurrs
+func MustParseRGB(s string) RGB {
+	rgb, err := ParseRGB(s)
+	if err != nil {
+		panic(err)
+	}
+	return rgb
+}
+
 // MarshalJSON implements json.Marshaler#MarshalJSON()
 func (rgb RGB) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("\"%s\"", rgb.ToHexString())), nil

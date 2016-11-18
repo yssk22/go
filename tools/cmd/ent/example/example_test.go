@@ -39,7 +39,8 @@ func TestExample_UpdateByForm(t *testing.T) {
 	n := NewExample()
 	n.Desc = "foo"
 	form := url.Values{
-		"desc": []string{"val"},
+		"desc":        []string{"val"},
+		"custom_type": []string{"#ff0000"},
 	}
 	getter := keyvalue.GetterFunc(func(key interface{}) (interface{}, error) {
 		v, ok := form[key.(string)]
@@ -50,6 +51,7 @@ func TestExample_UpdateByForm(t *testing.T) {
 	})
 	n.UpdateByForm(keyvalue.NewGetProxy(getter))
 	a.EqStr("val", n.Desc)
+	a.EqStr("#ff0000", n.CustomType.ToHexString())
 }
 
 func TestExampleKind_New(t *testing.T) {

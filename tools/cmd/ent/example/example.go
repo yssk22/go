@@ -1,6 +1,10 @@
 package example
 
-import "time"
+import (
+	"time"
+
+	"github.com/speedland/go/rgb"
+)
 
 // Example is an example of datastore model.
 //go:generate ent -type=Example
@@ -17,6 +21,7 @@ type Example struct {
 	DefaultTime         time.Time `json:"default_time" default:"2016-01-01T20:12:10Z"`
 	BeforeSaveProcessed bool      `json:"before_save_processed"`
 	AfterSaveProcessed  bool      `json:"after_save_processed"`
+	CustomType          rgb.RGB   `json:"custom_type" ent:"form" parser:"github.com/speedland/go/rgb.MustParseRGB"`
 }
 
 type AliasNotUsed int

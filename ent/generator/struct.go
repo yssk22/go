@@ -116,23 +116,24 @@ func (s *Struct) newField(f *ast.Field) *Field {
 		s:     s,
 		Field: f,
 	}
+	var defaultValue string
 	if f.Tag != nil {
 		if tags := tagRegexp.FindAllStringSubmatch(f.Tag.Value, -1); tags != nil {
 			for _, tag := range tags {
 				tagName := tag[1]
 				tagValue := tag[2]
 				switch tagName {
+				case tagNameParser:
+					field.Parser = tagValue
 				case tagNameDefault:
-					field.Default = field.GetDefaultExpr(tagValue)
+					defaultValue = tagValue
 					break
 				case tagNameEnt:
 					values := xstrings.SplitAndTrim(tagValue, ",")
 					field.IsID = hasTagValue(tagValueID, values)
 					field.IsTimestamp = hasTagValue(tagValueTimestamp, values)
+					field.IsForm = hasTagValue(tagValueForm, values)
 					field.ResetIfMissing = hasTagValue(tagValueResetIfMissing, values)
-					if hasTagValue(tagValueForm, values) {
-						field.Form = field.GetFormExpr()
-					}
 				default:
 					break
 				}
@@ -144,6 +145,12 @@ func (s *Struct) newField(f *ast.Field) *Field {
 	}
 	if field.IsTimestamp {
 		s.TimestampField = field.FieldName()
+	}
+	if field.IsForm {
+		field.Form = field.GetFormExpr()
+	}
+	if defaultValue != "" {
+		field.Default = field.GetDefaultExpr(defaultValue)
 	}
 	return field
 }

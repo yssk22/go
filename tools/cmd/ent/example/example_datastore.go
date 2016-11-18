@@ -9,6 +9,7 @@ import (
 	"github.com/speedland/go/gae/memcache"
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
+	"github.com/speedland/go/rgb"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
@@ -39,6 +40,9 @@ func (e *Example) UpdateByForm(form *keyvalue.GetProxy) {
 	}
 	if v, err := form.Get("float_type"); err == nil {
 		e.FloatType = ent.ParseFloat64(v.(string))
+	}
+	if v, err := form.Get("custom_type"); err == nil {
+		e.CustomType = rgb.MustParseRGB(v.(string))
 	}
 }
 
