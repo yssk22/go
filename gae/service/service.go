@@ -15,8 +15,10 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"path"
+	"strings"
 
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/web"
@@ -31,7 +33,8 @@ var ContextKey = xcontext.NewKey("service")
 
 // Service is a set of endpoints
 type Service struct {
-	key       string // base path for service URL
+	key       string // service key
+	urlPrefix string // url base path
 	namespace string // datastore/memcache namespace for services
 	crons     []*cron
 	queues    []*xtaskqueue.PushQueue
@@ -49,13 +52,21 @@ func FromContext(ctx context.Context) *Service {
 
 // New returns a new *Service instance
 func New(key string) *Service {
-	return NewWithNamespace(key, key)
+	return NewWithURLAndNamespace(
+		key,
+		strings.Replace(key, "-", "/", -1),
+		strings.Replace(key, "-", "/", -1),
+	)
 }
 
-// NewWithNamespace is like New with using the given namespece instead of 'key' namespace
-func NewWithNamespace(key string, namespace string) *Service {
+// NewWithURLAndNamespace is like New with using the given url prefix and namespece instead of 'key' value.
+func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
+	if key == "" {
+		panic(fmt.Errorf("service key must not be nil"))
+	}
 	s := &Service{
 		key:       key,
+		urlPrefix: url,
 		namespace: namespace,
 		router:    web.NewRouter(nil),
 	}
@@ -87,6 +98,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Key returns a key string
 func (s *Service) Key() string {
 	return s.key
+}
+
+// URLPrefix returns a namespace string
+func (s *Service) URLPrefix() string {
+	return s.urlPrefix
 }
 
 // Namespace returns a namespace string
@@ -121,11 +137,11 @@ func (s *Service) Delete(path string, handlers ...web.Handler) {
 
 // Path returns an absolute path for this s.
 func (s *Service) Path(p string) string {
-	if s.key != "" {
+	if s.urlPrefix != "" {
 		if path.Ext(p) == "" {
-			return path.Join("/", s.key, p) + "/"
+			return path.Join("/", s.urlPrefix, p) + "/"
 		}
-		return path.Join("/", s.key, p)
+		return path.Join("/", s.urlPrefix, p)
 	}
 	if p == "/" {
 		return p
