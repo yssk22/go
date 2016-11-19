@@ -1,7 +1,10 @@
 // Package crawler provides types and functions to run crawler.
 package crawler
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // Fetcher is an interface to get a raw resource for crawled targed.
 type Fetcher interface {
@@ -17,7 +20,7 @@ type Scraper interface {
 func Run(fetcher Fetcher, scraper Scraper) (interface{}, error) {
 	content, err := fetcher.Fetch()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch error: %v", err)
 	}
 	return scraper.Scrape(content)
 }
