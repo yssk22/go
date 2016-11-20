@@ -22,6 +22,8 @@ func TestStubFile(t *testing.T) {
 	}, &http.Client{})
 	resp, err := client.Get("http://www.example.com/")
 	a.Nil(err)
+	a.EqStr("text/plain; charset=utf-8", resp.Header.Get("content-type"))
+	a.EqInt64(2, resp.ContentLength)
 	body, err := ioutil.ReadAll(resp.Body)
 	a.Nil(err)
 	a.EqStr("OK", string(body))

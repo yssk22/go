@@ -2,9 +2,11 @@ package xhttptest
 
 import (
 	"fmt"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 )
 
 // Stub enforce stub accesses for http.Client using URL mapping.
@@ -43,8 +45,14 @@ func (r *rewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // StubFile is like a Stub but access local file resources
 // instead of making actual HTTP requests
-// Only response body is valid and other fields should not be used when
-// using this function.
+// The following fields are valid and others should not be used in your test.
+//
+//   - .Status
+//   - .StatusCode
+//   - .Header.Get("content-type")
+//   - .ContentLength
+//   - .Body
+//
 func StubFile(mapping map[string]string, c *http.Client) *http.Client {
 	c.Transport = &fileStub{
 		mapping: mapping,
@@ -67,11 +75,15 @@ func (r *fileStub) RoundTrip(req *http.Request) (*http.Response, error) {
 		StatusCode: http.StatusOK,
 		Status:     "OK",
 		Close:      false,
+		Header:     make(map[string][]string),
 	}
-	file, err := os.Open(filePath)
+	stat, err := os.Stat(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("stub file error: %v", err)
 	}
+	resp.ContentLength = stat.Size()
+	resp.Header.Set("content-type", mime.TypeByExtension(path.Ext(filePath)))
+	file, _ := os.Open(filePath)
 	resp.Body = file
 	return resp, nil
 }
