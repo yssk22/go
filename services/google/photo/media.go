@@ -1,4 +1,4 @@
-package photos
+package photo
 
 import (
 	"encoding/xml"
