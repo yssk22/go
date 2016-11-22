@@ -1,3 +1,4 @@
+// Package xzip provides higher level types and functions on top of "arvhive/zip" package.
 package xzip
 
 import (
