@@ -4,7 +4,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
-	"x/assert"
+
+	"github.com/speedland/go/x/xtesting/assert"
 )
 
 func TestStub(t *testing.T) {
@@ -27,4 +28,23 @@ func TestStubFile(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	a.Nil(err)
 	a.EqStr("OK", string(body))
+}
+
+func TestUseStubServer(t *testing.T) {
+	a := assert.New(t)
+	UseStubServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(r.URL.Path))
+		}),
+		func(s *StubServer) {
+			client := s.Client(map[string]string{
+				"http://example.com/foo.txt": "/foo.txt",
+			}, &http.Client{})
+			resp, err := client.Get("http://example.com/foo.txt")
+			a.Nil(err)
+			defer resp.Body.Close()
+			buff, _ := ioutil.ReadAll(resp.Body)
+			a.EqByteString("/foo.txt", buff)
+		},
+	)
 }

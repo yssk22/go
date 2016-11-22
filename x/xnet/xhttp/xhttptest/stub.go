@@ -3,10 +3,13 @@ package xhttptest
 import (
 	"fmt"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+
+	"github.com/speedland/go/x/xerrors"
 )
 
 // Stub enforce stub accesses for http.Client using URL mapping.
@@ -89,4 +92,35 @@ func (r *fileStub) RoundTrip(req *http.Request) (*http.Response, error) {
 	file, _ := os.Open(filePath)
 	resp.Body = file
 	return resp, nil
+}
+
+// StubServer is an http server that serve the request as stub.
+type StubServer struct {
+	addr net.Addr
+}
+
+// Client enforce http.Client to request to the stub server
+// instead of requesting external resources. mapping should be the map from external urls to stub server paths.
+func (s *StubServer) Client(mapping map[string]string, c *http.Client) *http.Client {
+	stubMapping := make(map[string]string)
+	for k, v := range mapping {
+		stubMapping[k] = fmt.Sprintf("http://%s%s", s.addr.String(), v)
+	}
+	return Stub(stubMapping, c)
+}
+
+// UseStubServer launches a stub server configured by handler
+// and execute test function f.
+func UseStubServer(handler http.Handler, f func(*StubServer)) {
+	server := &http.Server{}
+	listener, err := net.Listen("tcp", "localhost:0")
+	xerrors.MustNil(err)
+	defer func() {
+		listener.Close()
+	}()
+	server.Handler = handler
+	go server.Serve(listener)
+	f(&StubServer{
+		addr: listener.Addr(),
+	})
 }
