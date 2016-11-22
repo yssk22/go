@@ -40,7 +40,10 @@ func (r *rewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("forbitten by xhttptest.Stub")
 	}
 	req.URL = rewriteTo
-	return r.base.RoundTrip(req)
+	if r.base != nil {
+		return r.base.RoundTrip(req)
+	}
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 // StubFile is like a Stub but access local file resources
