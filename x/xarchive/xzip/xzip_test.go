@@ -22,7 +22,7 @@ func TestArchiver(t *testing.T) {
 	a.EqInt(len(expectBuff), len(gotBuff))
 	for i := range gotBuff {
 		if expectBuff[i] != gotBuff[i] {
-			t.Fatalf("ZipSource doesn't match expected zip content")
+			t.Fatalf("Archiver doesn't match expected zip content")
 		}
 	}
 }

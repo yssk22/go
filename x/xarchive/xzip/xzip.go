@@ -26,7 +26,7 @@ const uint32max = (1 << 32) - 1
 //     b, _ := NewRawSourceFromFile("b.txt")
 //     defer b.Close()
 //
-//     builder := NewZipSource(a, b)
+//     builder := NewArchiver(a, b)
 //     zip, _ := os.Create("ab.zip")
 //     defer zip.Close()
 //     io.Copy(zip, buiilder)
