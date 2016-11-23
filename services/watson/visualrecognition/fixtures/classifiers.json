@@ -1,0 +1,12 @@
+{"classifiers": [
+    {
+        "classifier_id": "dogs_1712183938",
+        "name": "satellite",
+        "status": "available"
+    },
+    {
+        "classifier_id": "my_classifier_1050835757",
+        "name": "fruits",
+        "status": "available"
+    }
+]}

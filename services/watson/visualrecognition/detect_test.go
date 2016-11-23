@@ -2,25 +2,61 @@ package visualrecognition
 
 import (
 	"net/http"
-	"os"
 	"testing"
-	"x/assert"
 
+	"github.com/speedland/go/x/xarchive/xzip"
 	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
+	"github.com/speedland/go/x/xtesting/assert"
 	"golang.org/x/net/context"
 )
 
-func TestClient_DetectByURL(t *testing.T) {
+func TestClient_DetectFacesOnURL(t *testing.T) {
 	a := assert.New(t)
-	stubClient := xhttptest.StubFile(
-		map[string]string{
-			"https://gateway-a.watsonplatform.net/visual-recognition/api/v3/detect_faces?api_key=abc&url=https%3A%2F%2Fgithub.com%2Fwatson-developer-cloud%2Fdoc-tutorial-downloads%2Fraw%2Fmaster%2Fvisual-recognition%2Fprez.jpg&version=2016-05-20": "./fixtures/fd.json",
+	xhttptest.UseStubServer(
+		http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			a.EqStr("GET", req.Method)
+			a.EqStr("/visual-recognition/api/v3/detect_faces", req.URL.Path)
+			a.EqStr("abc", req.URL.Query().Get("api_key"))
+			a.EqStr("2016-05-20", req.URL.Query().Get("version"))
+			a.EqStr("https://github.com/watson-developer-cloud/doc-tutorial-downloads/raw/master/visual-recognition/prez.jpg", req.URL.Query().Get("url"))
+			http.ServeFile(w, req, "./fixtures/detect-face.json")
+		}),
+		func(s *xhttptest.StubServer) {
+			c := NewClient("abc", s.Client(nil, &http.Client{}))
+			resp, err := c.DetectFacesOnURL(context.Background(), "https://github.com/watson-developer-cloud/doc-tutorial-downloads/raw/master/visual-recognition/prez.jpg")
+			a.Nil(err)
+			assertFaceDetectResponse(a, resp)
 		},
-		&http.Client{},
 	)
-	c := NewClient("abc", stubClient)
-	resp, err := c.DetectFacesByURL(context.Background(), "https://github.com/watson-developer-cloud/doc-tutorial-downloads/raw/master/visual-recognition/prez.jpg")
-	a.Nil(err)
+}
+
+func TestClient_DetectFacesOnImages(t *testing.T) {
+	a := assert.New(t)
+	xhttptest.UseStubServer(
+		http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			a.EqStr("POST", req.Method)
+			a.EqStr("/visual-recognition/api/v3/detect_faces", req.URL.Path)
+			a.EqStr("abc", req.URL.Query().Get("api_key"))
+			a.EqStr("2016-05-20", req.URL.Query().Get("version"))
+
+			req.ParseMultipartForm(1 << 16)
+			_, header, err := req.FormFile("images_file")
+			a.Nil(err)
+			a.EqStr("image.zip", header.Filename)
+			http.ServeFile(w, req, "./fixtures/detect-face.json")
+		}),
+		func(s *xhttptest.StubServer) {
+			c := NewClient("abc", s.Client(nil, &http.Client{}))
+			rs, _ := xzip.NewRawSourceFromFile("./fixtures/prez.jpg")
+			defer rs.Close()
+			resp, err := c.DetectFacesOnImages(context.Background(), xzip.NewArchiver(rs))
+			a.Nil(err)
+			assertFaceDetectResponse(a, resp)
+		},
+	)
+}
+
+func assertFaceDetectResponse(a *assert.Assert, resp *FaceDetectResponse) {
 	a.EqInt(1, len(resp.Images))
 	a.EqInt(1, len(resp.Images[0].Faces))
 	face := resp.Images[0].Faces[0]
@@ -37,17 +73,4 @@ func TestClient_DetectByURL(t *testing.T) {
 	a.EqStr("Barack Obama", face.Identity.Name)
 	a.EqFloat64(0.989013, face.Identity.Score)
 	a.EqStr("/people/politicians/democrats/barackobama", face.Identity.TypeHierarchy)
-}
-
-func TestClient_DetectByURL_real_access(t *testing.T) {
-	a := assert.New(t)
-	apiKey := os.Getenv("WATSON_VISUAL_RECOGNITION_API_KEY")
-	if apiKey == "" {
-		t.Skipf("Environment key %q is not set.", "WATSON_VISUAL_RECOGNITION_API_KEY")
-	}
-	c := NewClient(apiKey, http.DefaultClient)
-	resp, err := c.DetectFacesByURL(context.Background(), "https://github.com/watson-developer-cloud/doc-tutorial-downloads/raw/master/visual-recognition/prez.jpg")
-	a.Nil(err)
-	a.EqInt(1, len(resp.Images))
-	a.EqInt(1, len(resp.Images[0].Faces))
 }
