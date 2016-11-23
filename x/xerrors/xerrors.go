@@ -43,3 +43,13 @@ func (me MultiError) Error() string {
 	}
 	return fmt.Sprintf("%s (and %d other errors)", firstError.Error(), errorCount)
 }
+
+// HasError returns if there is an error in the errors.
+func (me MultiError) HasError() bool {
+	for _, e := range me {
+		if e != nil {
+			return true
+		}
+	}
+	return false
+}
