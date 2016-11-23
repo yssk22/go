@@ -12,45 +12,8 @@ import (
 	"github.com/speedland/go/x/xerrors"
 )
 
-// Stub enforce stub accesses for http.Client using URL mapping.
-func Stub(mapping map[string]string, c *http.Client) *http.Client {
-	rewriteMapping := make(map[string]*url.URL)
-	for k, v := range mapping {
-		var err error
-		rewriteMapping[k], err = url.Parse(v)
-		if err != nil {
-			panic(fmt.Errorf("invalid stub url mapping: %s -> %s", k, v))
-		}
-	}
-	c.Transport = &rewriter{
-		mapping: rewriteMapping,
-		base:    c.Transport,
-	}
-	return c
-}
-
-// rewriter is to rewrite a request not to access a remote resource
-type rewriter struct {
-	mapping map[string]*url.URL
-	base    http.RoundTripper
-}
-
-// RoundTrip implements http.RoundTripper#RoundTrip
-func (r *rewriter) RoundTrip(req *http.Request) (*http.Response, error) {
-	u := req.URL.String()
-	rewriteTo := r.mapping[u]
-	if rewriteTo == nil {
-		return nil, fmt.Errorf("forbitten by xhttptest.Stub")
-	}
-	req.URL = rewriteTo
-	if r.base != nil {
-		return r.base.RoundTrip(req)
-	}
-	return http.DefaultTransport.RoundTrip(req)
-}
-
 // StubFile is like a Stub but access local file resources
-// instead of making actual HTTP requests
+// instead of making actual HTTP requests.
 // The following fields are valid and others should not be used in your test.
 //
 //   - .Status
@@ -59,6 +22,7 @@ func (r *rewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 //   - .ContentLength
 //   - .Body
 //
+// If you want to test full http request transactions, use StubServer instead.
 func StubFile(mapping map[string]string, c *http.Client) *http.Client {
 	c.Transport = &fileStub{
 		mapping: mapping,
@@ -101,12 +65,16 @@ type StubServer struct {
 
 // Client enforce http.Client to request to the stub server
 // instead of requesting external resources. mapping should be the map from external urls to stub server paths.
+// if mapping is nil, all external requests are mapped to the StubServer s.
 func (s *StubServer) Client(mapping map[string]string, c *http.Client) *http.Client {
-	stubMapping := make(map[string]string)
-	for k, v := range mapping {
-		stubMapping[k] = fmt.Sprintf("http://%s%s", s.addr.String(), v)
+	if mapping != nil {
+		stubMapping := make(map[string]string)
+		for k, v := range mapping {
+			stubMapping[k] = fmt.Sprintf("http://%s%s", s.addr.String(), v)
+		}
+		return stubByMap(stubMapping, c)
 	}
-	return Stub(stubMapping, c)
+	return stubByServer(s, c)
 }
 
 // UseStubServer launches a stub server configured by handler
@@ -123,4 +91,68 @@ func UseStubServer(handler http.Handler, f func(*StubServer)) {
 	f(&StubServer{
 		addr: listener.Addr(),
 	})
+}
+
+// stubByMap enforce stub accesses for http.Client using URL mapping.
+func stubByMap(mapping map[string]string, c *http.Client) *http.Client {
+	rewriteMapping := make(map[string]*url.URL)
+	for k, v := range mapping {
+		var err error
+		rewriteMapping[k], err = url.Parse(v)
+		if err != nil {
+			panic(fmt.Errorf("invalid stub url mapping: %s -> %s", k, v))
+		}
+	}
+	c.Transport = &mappingRewriter{
+		mapping: rewriteMapping,
+		base:    c.Transport,
+	}
+	return c
+}
+
+// mappingRewriter is to rewrite a request not to access a remote resource
+type mappingRewriter struct {
+	mapping map[string]*url.URL
+	server  *StubServer
+	base    http.RoundTripper
+}
+
+// RoundTrip implements http.RoundTripper#RoundTrip
+func (r *mappingRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
+	u := req.URL.String()
+	rewriteTo := r.mapping[u]
+	if rewriteTo == nil {
+		return nil, fmt.Errorf("forbitten by xhttptest.Stub")
+	}
+	req.URL = rewriteTo
+
+	if r.base != nil {
+		return r.base.RoundTrip(req)
+	}
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+// stubByServer enforce stub accesses for http.Client to the StubServer
+func stubByServer(s *StubServer, c *http.Client) *http.Client {
+	c.Transport = &serverRewriter{
+		server: s,
+		base:   c.Transport,
+	}
+	return c
+}
+
+// serverRewriter is to rewrite a request not to access a remote resource
+type serverRewriter struct {
+	server *StubServer
+	base   http.RoundTripper
+}
+
+// RoundTrip implements http.RoundTripper#RoundTrip
+func (r *serverRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.URL.Scheme = "http"
+	req.URL.Host = r.server.addr.String()
+	if r.base != nil {
+		return r.base.RoundTrip(req)
+	}
+	return http.DefaultTransport.RoundTrip(req)
 }

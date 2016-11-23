@@ -8,14 +8,6 @@ import (
 	"github.com/speedland/go/x/xtesting/assert"
 )
 
-func TestStub(t *testing.T) {
-	a := assert.New(t)
-	client := Stub(nil, &http.Client{})
-	_, err := client.Get("http://www.example.com/")
-	a.NotNil(err)
-	a.EqStr("Get http://www.example.com/: forbitten by xhttptest.Rewriter", err.Error())
-}
-
 func TestStubFile(t *testing.T) {
 	a := assert.New(t)
 	client := StubFile(map[string]string{
@@ -45,6 +37,13 @@ func TestUseStubServer(t *testing.T) {
 			defer resp.Body.Close()
 			buff, _ := ioutil.ReadAll(resp.Body)
 			a.EqByteString("/foo.txt", buff)
+
+			client = s.Client(nil, &http.Client{})
+			resp, err = client.Get("http://example.com/bar.txt")
+			a.Nil(err)
+			defer resp.Body.Close()
+			buff, _ = ioutil.ReadAll(resp.Body)
+			a.EqByteString("/bar.txt", buff)
 		},
 	)
 }
