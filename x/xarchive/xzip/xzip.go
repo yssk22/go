@@ -10,6 +10,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/speedland/go/x/xerrors"
 	"github.com/speedland/go/x/xtime"
 )
 
@@ -47,6 +48,18 @@ func (s *Archiver) Read(p []byte) (int, error) {
 		return n, fmt.Errorf("zip source is broken: %v", s.errors[0])
 	}
 	return n, nil
+}
+
+// Close closes underlying sources
+func (s *Archiver) Close() error {
+	me := xerrors.NewMultiError(len(s.sources))
+	for i, s := range s.sources {
+		me[i] = s.Close()
+	}
+	if me.HasError() {
+		return me
+	}
+	return nil
 }
 
 // NewArchiver returns a new *Archiver from multiple raw sources.
