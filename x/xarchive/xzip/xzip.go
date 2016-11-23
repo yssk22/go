@@ -119,6 +119,9 @@ func NewRawSourceFromFile(path string) (*RawSource, error) {
 	if err != nil {
 		return nil, err
 	}
+	if info.IsDir() {
+		return nil, fmt.Errorf("%s is not a file", path)
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
