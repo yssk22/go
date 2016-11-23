@@ -120,6 +120,13 @@ func handleResponse(resp *http.Response, err error, dst interface{}) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
+		if resp.StatusCode == 413 {
+			// Watson seems return HTML file in this case
+			return &ErrorResponse{
+				Code: resp.StatusCode,
+				Err:  "entity too large",
+			}
+		}
 		return handleErrorResponse(resp)
 	}
 	decorder := json.NewDecoder(resp.Body)
