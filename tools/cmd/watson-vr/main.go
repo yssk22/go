@@ -18,7 +18,7 @@ import (
 	"time"
 
 	vr "github.com/speedland/go/services/watson/visualrecognition"
-	"github.com/speedland/go/tools"
+	"github.com/speedland/go/version"
 	"github.com/speedland/go/x/xtime"
 	"github.com/urfave/cli"
 )
@@ -33,9 +33,11 @@ func main() {
 	log.SetOutput(devNull)
 
 	app := cli.NewApp()
-	app.Name = "watson-vr"
+	app.Name = Name
 	app.Usage = "manage watson visual recognition"
-	app.Version = tools.Version
+	app.Version = fmt.Sprintf(
+		"%s-%s", version.Version, version.BuildRev,
+	)
 	app.Commands = []cli.Command{
 		classify,
 		detect,
