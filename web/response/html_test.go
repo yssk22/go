@@ -14,12 +14,13 @@ func TestHTML(t *testing.T) {
 	a := assert.New(t)
 
 	var tmpl = template.New("foo")
-	var data = make(map[string]interface{})
-	tmpl.Parse("Sub: {{sub}}")
-	tmpl.New("sub").Parse("This is sub {{.foo}}")
-	data["foo"] = "bar"
 
-	html := NewHTML(tmpl, data)
+	template.Must(tmpl.Parse("Sub: {{template \"sub\" .}}"))
+	template.Must(tmpl.New("sub").Parse("This is sub {{.foo}}"))
+
+	html := NewHTML(tmpl, map[string]string{
+		"foo": "bar",
+	})
 	w := httptest.NewRecorder()
 	html.Render(context.Background(), w)
 
