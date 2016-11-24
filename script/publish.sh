@@ -15,4 +15,4 @@ fi
 
 VERSION=$(git describe --tags 2>/dev/null || git describe --contains --all HEAD)
 
-${GHR} ${VERSION} ${DIST_DIR}
+${GHR} -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace ${VERSION} ${DIST_DIR}
