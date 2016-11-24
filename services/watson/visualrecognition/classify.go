@@ -35,8 +35,8 @@ type ClassScore struct {
 }
 
 type ClassifyParams struct {
-	ClassifierIDs []string `classifier_ids`
-	Threshold     float64  `threshold`
+	ClassifierIDs []string `json:"classifier_ids"`
+	Threshold     float64  `json:"threshold"`
 }
 
 // ClassifyURL make a GET request to /v3/classify endpoint with the `url` parameter.
