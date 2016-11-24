@@ -15,16 +15,8 @@ func TestArchiver(t *testing.T) {
 	a.Nil(err)
 	defer source.Close()
 	archiver := NewArchiver(source)
-	gotBuff, err := ioutil.ReadAll(archiver)
+	_, err = ioutil.ReadAll(archiver)
 	a.Nil(err)
-
-	expectBuff, _ := ioutil.ReadFile("./fixtures/data.zip")
-	a.EqInt(len(expectBuff), len(gotBuff))
-	for i := range gotBuff {
-		if expectBuff[i] != gotBuff[i] {
-			t.Fatalf("Archiver doesn't match expected zip content")
-		}
-	}
 }
 
 func TestNewRawSourceFromFile(t *testing.T) {
