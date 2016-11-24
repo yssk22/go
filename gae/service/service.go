@@ -55,7 +55,7 @@ func New(key string) *Service {
 	return NewWithURLAndNamespace(
 		key,
 		strings.Replace(key, "-", "/", -1),
-		strings.Replace(key, "-", "/", -1),
+		strings.Replace(key, "-", ".", -1),
 	)
 }
 
