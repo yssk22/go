@@ -7,11 +7,8 @@ import (
 	"github.com/speedland/go/validator"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/httptest"
-	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 )
-
-var sessionMiddleware = session.NewMiddleware()
 
 func TestMiddleware(t *testing.T) {
 	middleware := NewMiddleware(func(v *validator.FormValidator) {
