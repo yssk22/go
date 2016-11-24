@@ -9,6 +9,7 @@ import (
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
 )
 
@@ -76,6 +77,9 @@ func (queue *PushQueue) PushTask(ctx context.Context, urlPath string, form url.V
 	// aetest environment does not support non-default queue
 	// https://code.google.com/p/googleappengine/issues/detail?id=10771
 	var queueName = queue.Name
+	if appengine.IsDevAppServer() {
+		queueName = "default"
+	}
 	if _, err := Add(ctx, taskqueue.NewPOSTTask(urlPath, form), queueName); err != nil {
 		return fmt.Errorf("failed to push queue: %s, url: %s, - %v", queueName, urlPath, err)
 	}
@@ -86,12 +90,14 @@ func (queue *PushQueue) PushTask(ctx context.Context, urlPath string, form url.V
 // This is useful for handlers throttled via PushTask.
 func (queue *PushQueue) RequestValidator() web.Handler {
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		name := req.Header.Get("X-AppEngine-TaskName")
-		if queue.Name != name {
-			return response.NewErrorWithStatus(
-				fmt.Errorf("task queue validation failed"),
-				response.HTTPStatusBadRequest,
-			)
+		if !appengine.IsDevAppServer() {
+			name := req.Header.Get("X-AppEngine-TaskName")
+			if queue.Name != name {
+				return response.NewErrorWithStatus(
+					fmt.Errorf("task queue validation failed"),
+					response.HTTPStatusBadRequest,
+				)
+			}
 		}
 		return next(req)
 	})

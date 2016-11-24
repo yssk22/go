@@ -220,7 +220,7 @@ func New(s *service.Service, path string) *Config {
 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 			t := &AsyncTask{}
 			t.ID = uuid.New().String()
-			t.Path = path
+			t.Path = req.URL.Path
 			t.Query = req.URL.RawQuery
 			t.Status = StatusReady
 			kind.MustPut(req.Context(), t)
@@ -229,7 +229,7 @@ func New(s *service.Service, path string) *Config {
 				panic(err)
 			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
-			logger.Infof("An AsyncTask created.")
+			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s)", t.ID, taskPath, queue.Name)
 			return response.NewJSONWithStatus(
 				&triggerResponse{t.ID},
 				response.HTTPStatusCreated,
