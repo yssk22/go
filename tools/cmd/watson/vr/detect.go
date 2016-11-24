@@ -77,23 +77,23 @@ var detect = cli.Command{
 
 func printFaces(resp *vr.FaceDetectResponse) {
 	for _, image := range resp.Images {
-		fmt.Printf("%s:\n", path.Base(image.Image))
+		fmt.Printf("%s:\n", image.Image)
 		for _, face := range image.Faces {
 			if face.FaceLocation == nil {
 				continue
 			}
 			fmt.Printf(
-				"\t(%d, %d, %d, %d)\n",
+				"\t- location: (%d, %d, %d, %d)\n",
 				face.FaceLocation.Left, face.FaceLocation.Top, face.FaceLocation.Width, face.FaceLocation.Height,
 			)
 			if face.Age != nil {
-				fmt.Printf("\t\tage: %d-%d (%f)\n", face.Age.Min, face.Age.Min, face.Age.Score)
+				fmt.Printf("\t  age: %d-%d (%f)\n", face.Age.Min, face.Age.Min, face.Age.Score)
 			}
 			if face.Gender != nil {
-				fmt.Printf("\t\tgender: %s (%f)\n", face.Gender.Gender, face.Age.Score)
+				fmt.Printf("\t  gender: %s (%f)\n", face.Gender.Gender, face.Age.Score)
 			}
 			if face.Identity != nil {
-				fmt.Printf("\t\tidentity: %s %s (%f)\n", face.Identity.Name, face.Identity.TypeHierarchy, face.Identity.Score)
+				fmt.Printf("\t  identity: %s %s (%f)\n", face.Identity.Name, face.Identity.TypeHierarchy, face.Identity.Score)
 			}
 		}
 	}
