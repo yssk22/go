@@ -26,6 +26,6 @@ deployment:
       - git config --global user.email "yssk22@gmail.com"
       - git branch -D master
       - git fetch origin master
-      - git checkout master origin/master
+      - git checkout master
       - git merge develop --no-ff -m "Merge 'develop' (CI auto merge)"
       - git push origin master
