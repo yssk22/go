@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VERSION=$(git describe --tags 2>/dev/null || git describe --contains --all HEAD)
 BUILD_REV=$(git describe --always)
