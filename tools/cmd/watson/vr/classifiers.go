@@ -42,7 +42,7 @@ var prepareClassifier = cli.Command{
 			return err
 		}
 		if !rootInfo.IsDir() {
-			return fmt.Errorf("must specify one directory")
+			return fmt.Errorf("%s is not a directory", rootDir)
 		}
 		sources, err := collectSources(rootDir)
 		if err != nil {
@@ -69,32 +69,24 @@ var createClassifier = cli.Command{
 	Name:     "create-classifier",
 	Usage:    "create a new custom classifier from a directory",
 	Category: "classifiers",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "name",
-			Usage: "classifier name (default by the directry name)",
-		},
-	},
+	Flags:    []cli.Flag{},
 	Action: func(c *cli.Context) error {
 		client, err := NewClient(c)
 		if err != nil {
 			return err
 		}
 		args := c.Args()
-		if len(args) != 1 {
-			return fmt.Errorf("must specify one directory")
+		if len(args) != 2 {
+			return fmt.Errorf("must specify a classifier name and a source directory")
 		}
-		rootDir := args[0]
+		name := args[0]
+		rootDir := args[1]
 		rootInfo, err := os.Stat(rootDir)
 		if err != nil {
 			return err
 		}
 		if !rootInfo.IsDir() {
 			return fmt.Errorf("%s is not a directory", rootDir)
-		}
-		name := c.String("name")
-		if name == "" {
-			name = rootInfo.Name()
 		}
 		sources, err := collectSources(rootDir)
 		if err != nil {
@@ -193,7 +185,7 @@ var updateClassifier = cli.Command{
 		}
 		args := c.Args()
 		if len(args) != 2 {
-			return fmt.Errorf("must specify a classifier id and a directory")
+			return fmt.Errorf("must specify a classifier id and a source directory")
 		}
 		id := args[0]
 		rootDir := args[1]
@@ -240,7 +232,7 @@ var deleteClassifier = cli.Command{
 			log.Printf("Deleting %s ...", id)
 			_, err := client.DeleteClassifier(context.Background(), id)
 			if err != nil {
-				fmt.Printf("cannot delete %s: %v\n", id, err)
+				fmt.Printf("%s", err)
 			} else {
 				fmt.Printf("%s deleted\n", id)
 			}

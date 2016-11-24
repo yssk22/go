@@ -18,6 +18,7 @@ import (
 	"time"
 
 	vr "github.com/speedland/go/services/watson/visualrecognition"
+	"github.com/speedland/go/tools"
 	"github.com/speedland/go/x/xtime"
 	"github.com/urfave/cli"
 )
@@ -25,13 +26,16 @@ import (
 var apiKey string
 
 func main() {
+	devNull, _ := os.Open(os.DevNull)
+	defer devNull.Close()
 	log.SetPrefix("")
 	log.SetFlags(0)
+	log.SetOutput(devNull)
 
 	app := cli.NewApp()
 	app.Name = "watson-vr"
 	app.Usage = "manage watson visual recognition"
-	app.Version = "0.1.0"
+	app.Version = tools.Version
 	app.Commands = []cli.Command{
 		classify,
 		detect,
@@ -48,7 +52,18 @@ func main() {
 			Usage:  "API key to access watson",
 			EnvVar: "WATSON_API_KEY",
 		},
+		cli.BoolFlag{
+			Name:  "verbose",
+			Usage: "enable verbose logging",
+		},
 	}
+	app.Before = func(c *cli.Context) error {
+		if c.Bool("verbose") {
+			log.SetOutput(os.Stderr)
+		}
+		return nil
+	}
+
 	app.Run(os.Args)
 }
 

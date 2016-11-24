@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -174,7 +173,7 @@ func prepareSources(tempdir string, args ...string) ([]*xzip.RawSource, []*sourc
 		var info *sourceInfo
 		if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
 			var file string
-			fmt.Printf("Downloading %s....\n", arg)
+			log.Printf("Downloading %s....\n", arg)
 			file, err = download(arg, tempdir)
 			if err == nil {
 				rs, err = xzip.NewRawSourceFromFile(file)
