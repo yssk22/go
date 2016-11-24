@@ -21,6 +21,5 @@ do
     PKG_NAME=$(basename $MAIN_DIR)
     gox -output "dist/${PKG_NAME}.{{.OS}}.{{.Arch}}" \
         -ldflags "-X main.BuildRev $BUILD_REV -X main.Version $VERSION" \
-        -os="darwin" -arch="amd64" \
         $MAIN_DIR
 done

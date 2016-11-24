@@ -30,8 +30,6 @@ deployment:
       - git merge develop --no-ff -m "Merge 'develop' (CI auto merge)"
       - git push origin master
       - go get github.com/mitchellh/gox
-      - ./script/build.sh
-      - ./script/publish.sh
   master:
     branch: master
     commands:
