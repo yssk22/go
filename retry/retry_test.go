@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	"x/assert"
+
+	"github.com/speedland/go/x/xtesting/assert"
 
 	"golang.org/x/net/context"
 )

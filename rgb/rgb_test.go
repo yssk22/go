@@ -3,7 +3,8 @@ package rgb
 import (
 	"encoding/json"
 	"testing"
-	"x/assert"
+
+	"github.com/speedland/go/x/xtesting/assert"
 )
 
 func TestRGB_Parse(t *testing.T) {
