@@ -18,7 +18,7 @@ func TestRequired(t *testing.T) {
 	result := v.Eval(obj)
 	a.NotNil(result)
 	a.NotNil(result.Errors["Str"])
-	a.EqStr("must be required.", result.Errors["Str"][0].String())
+	a.EqStr("must be required", result.Errors["Str"][0].String())
 
 	obj.Str = "exists"
 	a.Nil(v.Eval(obj))

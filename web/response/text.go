@@ -23,6 +23,6 @@ func NewText(s interface{}) *Response {
 // NewTextWithStatus returns a text formatted response with the given status code
 func NewTextWithStatus(s interface{}, code HTTPStatus) *Response {
 	res := NewResponseWithStatus(&_text{s}, code)
-	res.Header.Set(ContentType, "plain/text; charset=utf-8")
+	res.Header.Set(ContentType, "text/plain; charset=utf-8")
 	return res
 }

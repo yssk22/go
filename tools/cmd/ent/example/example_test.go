@@ -39,7 +39,8 @@ func TestExample_UpdateByForm(t *testing.T) {
 	n := NewExample()
 	n.Desc = "foo"
 	form := url.Values{
-		"desc": []string{"val"},
+		"desc":        []string{"val"},
+		"custom_type": []string{"#ff0000"},
 	}
 	getter := keyvalue.GetterFunc(func(key interface{}) (interface{}, error) {
 		v, ok := form[key.(string)]
@@ -50,6 +51,7 @@ func TestExample_UpdateByForm(t *testing.T) {
 	})
 	n.UpdateByForm(keyvalue.NewGetProxy(getter))
 	a.EqStr("val", n.Desc)
+	a.EqStr("#ff0000", n.CustomType.ToHexString())
 }
 
 func TestExampleKind_New(t *testing.T) {
@@ -185,6 +187,21 @@ func TestExampleKind_PutMulti(t *testing.T) {
 			a.EqStr(e.Desc, ents[0].Desc)
 		},
 	)
+}
+
+func TestExampleKind_DeleteMulti(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMulti.json", nil))
+
+	k := &ExampleKind{}
+	keys, err := k.DeleteMulti(gaetest.NewContext(), "example-1", "example-2")
+	a.Nil(err)
+	a.EqInt(2, len(keys))
+	ents := k.MustGetMulti(gaetest.NewContext(), "example-1", "example-2")
+	a.Nil(err)
+	a.Nil(ents[0])
+	a.Nil(ents[1])
 }
 
 func TestExampleQuery_GetAll(t *testing.T) {

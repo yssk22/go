@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:exif="http://schemas.google.com/photos/exif/2007" xmlns:gphoto="http://schemas.google.com/photos/2007" xmlns:media="http://search.yahoo.com/mrss/" xmlns:openSearch="http://a9.com/-/spec/opensearchrss/1.0/">
+   <id>https://picasaweb.google.com/data/feed/api/user/default/albumid/6296694673225137745</id>
+   <updated>2016-06-16T07:52:36.271Z</updated>
+   <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#album" />
+   <title type="text">テストアルバム</title>
+   <subtitle type="text" />
+   <rights type="text">protected</rights>
+   <icon>https://lh3.googleusercontent.com/-KEpBog6gdyM/V2JacaitvlE/AAAAAAAAHTk/1HrZ-7yvAOUaeCkywbq5RORtCtvj45DjgCHM/s160-c/6296694673225137745</icon>
+   <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745" />
+   <link rel="http://schemas.google.com/g/2005#post" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745" />
+   <link rel="http://schemas.google.com/g/2005#resumable-create-media" type="application/atom+xml" href="https://picasaweb.google.com/data/upload/resumable/media/create-session/feed/api/user/109784491874587409559/albumid/6296694673225137745" />
+   <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559/6296694673225137745" />
+   <link rel="http://schemas.google.com/photos/2007#slideshow" type="application/x-shockwave-flash" href="https://photos.gstatic.com/media/slideshow.swf?host=picasaweb.google.com&amp;RGB=0x000000&amp;feed=https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745?alt%3Drss" />
+   <link rel="http://schemas.google.com/photos/2007#report" type="text/html" href="https://picasaweb.google.com/lh/reportAbuse?uname=109784491874587409559&amp;aid=6296694673225137745" />
+   <link rel="http://schemas.google.com/acl/2007#accessControlList" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745/acl" />
+   <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745?start-index=1&amp;max-results=1000" />
+   <author>
+      <name>Yohei Sasaki</name>
+      <uri>https://picasaweb.google.com/109784491874587409559</uri>
+   </author>
+   <generator version="1.00" uri="http://picasaweb.google.com/">Picasaweb</generator>
+   <openSearch:totalResults>3</openSearch:totalResults>
+   <openSearch:startIndex>1</openSearch:startIndex>
+   <openSearch:itemsPerPage>1000</openSearch:itemsPerPage>
+   <gphoto:id>6296694673225137745</gphoto:id>
+   <gphoto:name>6296694673225137745</gphoto:name>
+   <gphoto:location />
+   <gphoto:access>protected</gphoto:access>
+   <gphoto:timestamp>1466063473000</gphoto:timestamp>
+   <gphoto:numphotos>3</gphoto:numphotos>
+   <gphoto:numphotosremaining>1997</gphoto:numphotosremaining>
+   <gphoto:bytesUsed>7841686</gphoto:bytesUsed>
+   <gphoto:user>109784491874587409559</gphoto:user>
+   <gphoto:nickname>Yohei Sasaki</gphoto:nickname>
+   <gphoto:allowPrints>true</gphoto:allowPrints>
+   <gphoto:allowDownloads>true</gphoto:allowDownloads>
+   <entry id="0">
+      <id>https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698</id>
+      <published>2016-06-16T07:52:35.000Z</published>
+      <updated>2016-06-16T07:52:36.271Z</updated>
+      <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#photo" />
+      <title type="text">VIDEO0016.3gp</title>
+      <summary type="text" />
+      <content type="image/gif" src="https://lh3.googleusercontent.com/-k1gVlWXGrpc/V2JawwoBOYI/AAAAAAAAHTk/NZvrq_ERi8slUpunvHGDfz_FZzfy0-IwgCHM/VIDEO0016.3gp" />
+      <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698" />
+      <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559/6296694673225137745#6296695022750349698" />
+      <link rel="http://schemas.google.com/photos/2007#canonical" type="text/html" href="https://picasaweb.google.com/lh/photo/K7_cXuSHvvYyFwdOgID3AtMTjNZETYmyPJy0liipFm0" />
+      <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698" />
+      <link rel="edit" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698/3" />
+      <link rel="edit-media" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698/3" />
+      <link rel="media-edit" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296695022750349698/3" />
+      <link rel="http://schemas.google.com/photos/2007#report" type="text/html" href="https://picasaweb.google.com/lh/reportAbuse?uname=109784491874587409559&amp;aid=6296694673225137745&amp;iid=6296695022750349698" />
+      <gphoto:id>6296695022750349698</gphoto:id>
+      <gphoto:version>3</gphoto:version>
+      <gphoto:position>0.0</gphoto:position>
+      <gphoto:albumid>6296694673225137745</gphoto:albumid>
+      <gphoto:access>only_you</gphoto:access>
+      <gphoto:videostatus>final</gphoto:videostatus>
+      <gphoto:originalvideo width="800" height="480" type="MOV" duration="30" channels="1" samplingrate="8.0" videoCodec="MPEG4" audioCodec="AMR_NB" fps="7.7747064" />
+      <gphoto:width>800</gphoto:width>
+      <gphoto:height>480</gphoto:height>
+      <gphoto:size>6323709</gphoto:size>
+      <gphoto:client>photosweb</gphoto:client>
+      <gphoto:checksum />
+      <gphoto:timestamp>1353619034000</gphoto:timestamp>
+      <gphoto:imageVersion>7481</gphoto:imageVersion>
+      <gphoto:commentingEnabled>true</gphoto:commentingEnabled>
+      <gphoto:commentCount>0</gphoto:commentCount>
+      <gphoto:streamId>camera_sync_copied</gphoto:streamId>
+      <gphoto:license id="0" name="著作権をすべて留保する" url="">ALL_RIGHTS_RESERVED</gphoto:license>
+      <gphoto:shapes faces="done" />
+      <exif:tags>
+         <exif:imageUniqueID>d71acaea257c211a0000000000000000</exif:imageUniqueID>
+      </exif:tags>
+      <media:group>
+         <media:content url="https://lh3.googleusercontent.com/-k1gVlWXGrpc/V2JawwoBOYI/AAAAAAAAHTk/NZvrq_ERi8slUpunvHGDfz_FZzfy0-IwgCHM/VIDEO0016.3gp" height="308" width="512" type="image/gif" medium="image" />
+         <media:content url="https://lh3.googleusercontent.com/ReUAT31rd0t1k_NWqMmCkYyV5C4uZhBxGQwoSTFY2qFGBrlQ_JXlohw6YI3tk39ATa46Y73zoA=m18" height="360" width="600" type="video/mpeg4" medium="video" />
+         <media:credit>Yohei Sasaki</media:credit>
+         <media:description type="plain" />
+         <media:keywords />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-k1gVlWXGrpc/V2JawwoBOYI/AAAAAAAAHTk/NZvrq_ERi8slUpunvHGDfz_FZzfy0-IwgCHM/s72/VIDEO0016.3gp" height="44" width="72" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-k1gVlWXGrpc/V2JawwoBOYI/AAAAAAAAHTk/NZvrq_ERi8slUpunvHGDfz_FZzfy0-IwgCHM/s144/VIDEO0016.3gp" height="87" width="144" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-k1gVlWXGrpc/V2JawwoBOYI/AAAAAAAAHTk/NZvrq_ERi8slUpunvHGDfz_FZzfy0-IwgCHM/s288/VIDEO0016.3gp" height="173" width="288" />
+         <media:title type="plain">VIDEO0016.3gp</media:title>
+      </media:group>
+   </entry>
+   <entry id="1">
+      <id>https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514</id>
+      <published>2016-06-16T07:51:13.000Z</published>
+      <updated>2016-06-16T07:51:13.886Z</updated>
+      <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#photo" />
+      <title type="text">IMG_1052.JPG</title>
+      <summary type="text" />
+      <content type="image/jpeg" src="https://lh3.googleusercontent.com/-IWAZX06N8w4/V2JacTCeIQI/AAAAAAAAHTQ/UhFelZM9VyMDIQAOcaFGymQxh7are55pQCHM/IMG_1052.JPG" />
+      <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514" />
+      <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559/6296694673225137745#6296694671210848514" />
+      <link rel="http://schemas.google.com/photos/2007#canonical" type="text/html" href="https://picasaweb.google.com/lh/photo/vW39wT-uX9Vnb0oz8ck8QNMTjNZETYmyPJy0liipFm0" />
+      <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514" />
+      <link rel="edit" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514/2" />
+      <link rel="edit-media" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514/2" />
+      <link rel="media-edit" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694671210848514/2" />
+      <link rel="http://schemas.google.com/photos/2007#report" type="text/html" href="https://picasaweb.google.com/lh/reportAbuse?uname=109784491874587409559&amp;aid=6296694673225137745&amp;iid=6296694671210848514" />
+      <gphoto:id>6296694671210848514</gphoto:id>
+      <gphoto:version>2</gphoto:version>
+      <gphoto:position>1.0</gphoto:position>
+      <gphoto:albumid>6296694673225137745</gphoto:albumid>
+      <gphoto:access>only_you</gphoto:access>
+      <gphoto:width>4032</gphoto:width>
+      <gphoto:height>3024</gphoto:height>
+      <gphoto:size>785503</gphoto:size>
+      <gphoto:client />
+      <gphoto:checksum />
+      <gphoto:timestamp>1448794644000</gphoto:timestamp>
+      <gphoto:imageVersion>7476</gphoto:imageVersion>
+      <gphoto:commentingEnabled>true</gphoto:commentingEnabled>
+      <gphoto:commentCount>0</gphoto:commentCount>
+      <gphoto:streamId>cs_01_69f3b75b37049548587b50a70f0c48fb</gphoto:streamId>
+      <gphoto:license id="0" name="著作権をすべて留保する" url="">ALL_RIGHTS_RESERVED</gphoto:license>
+      <exif:tags>
+         <exif:fstop>2.2</exif:fstop>
+         <exif:make>Apple</exif:make>
+         <exif:model>iPhone 6s</exif:model>
+         <exif:exposure>0.06666667</exif:exposure>
+         <exif:flash>false</exif:flash>
+         <exif:focallength>4.15</exif:focallength>
+         <exif:iso>250</exif:iso>
+         <exif:time>1448827044000</exif:time>
+         <exif:imageUniqueID>636353c2a8982e940000000000000000</exif:imageUniqueID>
+      </exif:tags>
+      <media:group>
+         <media:content url="https://lh3.googleusercontent.com/-IWAZX06N8w4/V2JacTCeIQI/AAAAAAAAHTQ/UhFelZM9VyMDIQAOcaFGymQxh7are55pQCHM/IMG_1052.JPG" height="384" width="512" type="image/jpeg" medium="image" />
+         <media:credit>Yohei Sasaki</media:credit>
+         <media:description type="plain" />
+         <media:keywords />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-IWAZX06N8w4/V2JacTCeIQI/AAAAAAAAHTQ/UhFelZM9VyMDIQAOcaFGymQxh7are55pQCHM/s72/IMG_1052.JPG" height="54" width="72" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-IWAZX06N8w4/V2JacTCeIQI/AAAAAAAAHTQ/UhFelZM9VyMDIQAOcaFGymQxh7are55pQCHM/s144/IMG_1052.JPG" height="108" width="144" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-IWAZX06N8w4/V2JacTCeIQI/AAAAAAAAHTQ/UhFelZM9VyMDIQAOcaFGymQxh7are55pQCHM/s288/IMG_1052.JPG" height="216" width="288" />
+         <media:title type="plain">IMG_1052.JPG</media:title>
+      </media:group>
+   </entry>
+   <entry id="2">
+      <id>https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418</id>
+      <published>2016-06-16T07:51:13.000Z</published>
+      <updated>2016-06-16T07:51:13.886Z</updated>
+      <category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#photo" />
+      <title type="text">IMG_1053.JPG</title>
+      <summary type="text" />
+      <content type="image/jpeg" src="https://lh3.googleusercontent.com/-vsxphRRnWC4/V2JacY8ENEI/AAAAAAAAHTQ/yHXzICn0yV01dKV0UqjHbcQfFLt973BZwCHM/IMG_1053.JPG" />
+      <link rel="http://schemas.google.com/g/2005#feed" type="application/atom+xml" href="https://picasaweb.google.com/data/feed/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418" />
+      <link rel="alternate" type="text/html" href="https://picasaweb.google.com/109784491874587409559/6296694673225137745#6296694672794596418" />
+      <link rel="http://schemas.google.com/photos/2007#canonical" type="text/html" href="https://picasaweb.google.com/lh/photo/0LbrDXP1bVKLVRk1HDCElNMTjNZETYmyPJy0liipFm0" />
+      <link rel="self" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418" />
+      <link rel="edit" type="application/atom+xml" href="https://picasaweb.google.com/data/entry/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418/2" />
+      <link rel="edit-media" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418/2" />
+      <link rel="media-edit" type="image/jpeg" href="https://picasaweb.google.com/data/media/api/user/109784491874587409559/albumid/6296694673225137745/photoid/6296694672794596418/2" />
+      <link rel="http://schemas.google.com/photos/2007#report" type="text/html" href="https://picasaweb.google.com/lh/reportAbuse?uname=109784491874587409559&amp;aid=6296694673225137745&amp;iid=6296694672794596418" />
+      <gphoto:id>6296694672794596418</gphoto:id>
+      <gphoto:version>2</gphoto:version>
+      <gphoto:position>2.0</gphoto:position>
+      <gphoto:albumid>6296694673225137745</gphoto:albumid>
+      <gphoto:access>only_you</gphoto:access>
+      <gphoto:width>4032</gphoto:width>
+      <gphoto:height>3024</gphoto:height>
+      <gphoto:size>732474</gphoto:size>
+      <gphoto:client />
+      <gphoto:checksum />
+      <gphoto:timestamp>1448795022000</gphoto:timestamp>
+      <gphoto:imageVersion>7476</gphoto:imageVersion>
+      <gphoto:commentingEnabled>true</gphoto:commentingEnabled>
+      <gphoto:commentCount>0</gphoto:commentCount>
+      <gphoto:streamId>cs_01_ce5c1509f64590ecb428fb72b8d99d1e</gphoto:streamId>
+      <gphoto:license id="0" name="著作権をすべて留保する" url="">ALL_RIGHTS_RESERVED</gphoto:license>
+      <exif:tags>
+         <exif:fstop>2.2</exif:fstop>
+         <exif:make>Apple</exif:make>
+         <exif:model>iPhone 6s</exif:model>
+         <exif:exposure>0.033333335</exif:exposure>
+         <exif:flash>false</exif:flash>
+         <exif:focallength>4.15</exif:focallength>
+         <exif:iso>160</exif:iso>
+         <exif:time>1448827422000</exif:time>
+         <exif:imageUniqueID>92ddf20646e1df790000000000000000</exif:imageUniqueID>
+      </exif:tags>
+      <media:group>
+         <media:content url="https://lh3.googleusercontent.com/-vsxphRRnWC4/V2JacY8ENEI/AAAAAAAAHTQ/yHXzICn0yV01dKV0UqjHbcQfFLt973BZwCHM/IMG_1053.JPG" height="384" width="512" type="image/jpeg" medium="image" />
+         <media:credit>Yohei Sasaki</media:credit>
+         <media:description type="plain" />
+         <media:keywords />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-vsxphRRnWC4/V2JacY8ENEI/AAAAAAAAHTQ/yHXzICn0yV01dKV0UqjHbcQfFLt973BZwCHM/s72/IMG_1053.JPG" height="54" width="72" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-vsxphRRnWC4/V2JacY8ENEI/AAAAAAAAHTQ/yHXzICn0yV01dKV0UqjHbcQfFLt973BZwCHM/s144/IMG_1053.JPG" height="108" width="144" />
+         <media:thumbnail url="https://lh3.googleusercontent.com/-vsxphRRnWC4/V2JacY8ENEI/AAAAAAAAHTQ/yHXzICn0yV01dKV0UqjHbcQfFLt973BZwCHM/s288/IMG_1053.JPG" height="216" width="288" />
+         <media:title type="plain">IMG_1053.JPG</media:title>
+      </media:group>
+   </entry>
+</feed>

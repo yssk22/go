@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -38,10 +39,10 @@ var Default = &Middleware{
 }
 
 // NewMiddleware returns the *Middleware with default configurations.
-func NewMiddleware() *Middleware {
+func NewMiddleware(store SessionStore) *Middleware {
 	m := &Middleware{}
 	*m = *Default
-	m.Store = NewMemorySessionStore()
+	m.Store = store
 	return m
 }
 
@@ -81,8 +82,16 @@ func (m *Middleware) prepareSession(req *web.Request) (*Session, error) {
 		return nil, fmt.Errorf("invalid session id: %q", strSessionID)
 	}
 	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
-	logger.Debugf("Getting a session with %s", sessionID)
 	session, err := m.Store.Get(req.Context(), sessionID)
+	logger.Debug(func(fmt *xlog.Printer) {
+		fmt.Printf("Getting a session with %s\n", sessionID)
+		fmt.Printf("From %v\n", m.Store)
+		if session != nil {
+			if buff, err := json.MarshalIndent(session, "", "\t"); err == nil {
+				fmt.Println(string(buff))
+			}
+		}
+	})
 	if err != nil {
 		return nil, fmt.Errorf("SessionStore.Get: %v", err)
 	}

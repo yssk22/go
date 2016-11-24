@@ -1,0 +1,32 @@
+{
+    "images": [
+        {
+            "faces": [
+                {
+                    "age": {
+                        "max": 54,
+                        "min": 45,
+                        "score": 0.372036
+                    },
+                    "face_location": {
+                        "height": 75,
+                        "left": 256,
+                        "top": 93,
+                        "width": 67
+                    },
+                    "gender": {
+                        "gender": "MALE",
+                        "score": 0.99593
+                    },
+                    "identity": {
+                        "name": "Barack Obama",
+                        "score": 0.989013,
+                        "type_hierarchy": "/people/politicians/democrats/barackobama"
+                    }
+                }
+            ],
+            "image": "prez.jpg"
+        }
+    ],
+    "images_processed": 1
+}

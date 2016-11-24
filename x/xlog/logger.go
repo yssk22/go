@@ -24,6 +24,11 @@ type Record struct {
 	ctx context.Context // used for application context
 }
 
+// Context returns context.Context associated with the record.
+func (r *Record) Context() context.Context {
+	return r.ctx
+}
+
 // ContextValue returns the context value
 func (r *Record) ContextValue(key interface{}) interface{} {
 	if r.ctx != nil {

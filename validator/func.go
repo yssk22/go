@@ -7,7 +7,7 @@ import (
 	"github.com/speedland/go/x/xreflect"
 )
 
-var requiredError = NewFieldError("must be required.", nil)
+var requiredError = NewFieldError("must be required", nil)
 var requiredFunc = func(v interface{}) *FieldError {
 	if s, ok := v.(string); ok {
 		if s == "" {

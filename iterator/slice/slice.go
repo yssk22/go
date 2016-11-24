@@ -64,6 +64,7 @@ func (se SliceError) Error() string {
 }
 
 // SplitByLength splits a list into multiple lists. Each lengths of lists must be up to `each`
+// You can use the returned value as `[][]T` when you pass `[]T` for list.
 func SplitByLength(list interface{}, eachSize int) interface{} {
 	a := reflect.ValueOf(list)
 	assertSlice(a)
@@ -71,9 +72,13 @@ func SplitByLength(list interface{}, eachSize int) interface{} {
 	bucketType := a.Type()
 	bucketListType := reflect.SliceOf(bucketType)
 	tailSize := a.Len() % eachSize
-	bucketListLen := a.Len()/eachSize + tailSize%2
+	bucketListLen := a.Len() / eachSize
+	if tailSize != 0 {
+		bucketListLen++
+	}
 	bucketList := reflect.MakeSlice(bucketListType, bucketListLen, bucketListLen)
 
+	// fill non-tail (must hold eachSize)
 	for i := 0; i < bucketListLen-1; i++ {
 		bucket := bucketList.Index(i)
 		bucket.Set(reflect.MakeSlice(bucketType, eachSize, eachSize))
@@ -83,6 +88,7 @@ func SplitByLength(list interface{}, eachSize int) interface{} {
 		}
 	}
 
+	// fill tail
 	if tailSize == 0 {
 		tailSize = eachSize
 	}

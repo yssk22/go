@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+
+	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
 )
 
 // RequestFactory is an interface to create a new request.
@@ -31,6 +33,7 @@ var DefaultRequestFactory = RequestFactoryFunc(http.NewRequest)
 type Recorder struct {
 	handler        http.Handler
 	requestFactory RequestFactory
+	Cookies        []*http.Cookie
 }
 
 // NewRecorder returns a new *Recorder
@@ -53,6 +56,7 @@ func NewRecorderWithFactory(handler http.Handler, factory RequestFactory) *Recor
 func (r *Recorder) TestGet(path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("GET", path, nil))
+	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }
 
@@ -60,6 +64,7 @@ func (r *Recorder) TestGet(path string) *httptest.ResponseRecorder {
 func (r *Recorder) TestPost(path string, v interface{}) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("POST", path, v))
+	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }
 
@@ -67,6 +72,7 @@ func (r *Recorder) TestPost(path string, v interface{}) *httptest.ResponseRecord
 func (r *Recorder) TestPut(path string, v interface{}) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("PUT", path, v))
+	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }
 
@@ -74,6 +80,7 @@ func (r *Recorder) TestPut(path string, v interface{}) *httptest.ResponseRecorde
 func (r *Recorder) TestDelete(path string, v interface{}) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("DELETE", path, nil))
+	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }
 
@@ -105,6 +112,9 @@ func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request 
 	if err != nil {
 		panic(fmt.Errorf("Could not prepare a request: %v", err))
 	}
+	for _, c := range r.Cookies {
+		req.AddCookie(c)
+	}
 	return req
 }
 
@@ -112,5 +122,6 @@ func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request 
 func (r *Recorder) TestRequest(req *http.Request) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, req)
+	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }

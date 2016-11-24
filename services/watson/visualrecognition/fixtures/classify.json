@@ -1,0 +1,36 @@
+{
+    "images": [{
+        "classifiers": [{
+            "classes": [{
+                "class": "apple",
+                "score": 0.645656
+            }, {
+                "class": "fruit",
+                "score": 0.598688
+            }, {
+                "class": "food",
+                "score": 0.598688
+            }, {
+                "class": "orange",
+                "score": 0.5
+            }, {
+                "class": "vegetable",
+                "score": 0.28905
+            }, {
+               "class": "tree",
+               "score": 0.28905
+            }],
+            "classifier_id": "default",
+            "name": "default"
+        }, {
+            "classes": [{
+                "class": "orange",
+                "score": 0.635488
+            }],
+            "classifier_id": "fruits_1050835757",
+            "name": "fruits"
+        }],
+         "image": "orange-apple-banana-isolated.jpg"
+    }],
+    "images_processed": 1
+}

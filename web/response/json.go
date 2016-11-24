@@ -7,11 +7,22 @@ import (
 	"golang.org/x/net/context"
 )
 
+// UseFormattedJSON is a configuration variable about if json object is formatted or not.
+var UseFormattedJSON = false
+
 type _json struct {
 	data interface{}
 }
 
 func (j _json) Render(ctx context.Context, w io.Writer) {
+	if UseFormattedJSON {
+		buff, err := json.MarshalIndent(j.data, "", "    ")
+		if err != nil {
+			panic(err)
+		}
+		w.Write(buff)
+		return
+	}
 	if err := json.NewEncoder(w).Encode(j.data); err != nil {
 		panic(err)
 	}

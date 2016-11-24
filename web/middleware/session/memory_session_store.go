@@ -40,3 +40,7 @@ func (s *MemorySessionStore) Del(ctx context.Context, session *Session) error {
 	delete(s.store, session.ID)
 	return nil
 }
+
+func (s *MemorySessionStore) String() string {
+	return "MemorySessionStore"
+}

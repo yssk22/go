@@ -5,7 +5,7 @@ import "github.com/speedland/go/web/response"
 
 // LoggerKeys
 const (
-	LoggerKeyRouter = "web.router"
+	RouterLoggerKey = "web.router"
 )
 
 // NotFound is the default response for 404

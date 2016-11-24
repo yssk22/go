@@ -63,13 +63,13 @@ func (m *Middleware) handleCallbackPath(req *web.Request, next web.NextHandler) 
 			response.HTTPStatusBadRequest,
 		)
 	}
-	ok, err := m.Store.Validate(req.Context(), state)
+	storedState, err := m.Store.Get(req.Context())
 	if err != nil {
 		return response.NewError(
 			fmt.Errorf("validation failure: %v", err),
 		)
 	}
-	if !ok {
+	if state != storedState {
 		return response.NewErrorWithStatus(
 			fmt.Errorf("invalid state"),
 			response.HTTPStatusBadRequest,

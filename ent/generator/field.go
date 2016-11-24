@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 
 	"github.com/speedland/go/x/xstrings"
 )
@@ -13,8 +14,10 @@ type Field struct {
 	*ast.Field
 	Default        string // go code expression for the default value
 	Form           string // go code expression to parse form value (var name is v and returns (value, error))
+	Parser         string // optional field to parse the string value (pkg.Func format)
 	IsID           bool
 	IsTimestamp    bool
+	IsForm         bool
 	ResetIfMissing bool
 }
 
@@ -68,15 +71,30 @@ func (f *Field) GetDefaultExpr(v string) string {
 // GetFormExpr returns a form field expression of the field.
 func (f *Field) GetFormExpr() string {
 	typeName := f.TypeName()
-	genf, ok := formValueGen[typeName]
-	if !ok {
-		panic(fmt.Errorf("unsupported type %q on %s", typeName, f.FieldName()))
+	if typeName == "string" {
+		return "v.(string)"
 	}
-	dep, expr := genf()
-	if dep != "" {
-		f.s.AddDependency(dep)
+	parser := f.Parser
+	if parser == "" {
+		if parser = buildInParsers[typeName]; parser == "" {
+			panic(fmt.Errorf("missing parser tag for non-builtin types (%q on %s)", typeName, f.FieldName()))
+		}
 	}
-	return expr
+	var fun string
+	lastDot := strings.LastIndex(parser, ".")
+	if lastDot == len(parser)-1 {
+		panic(fmt.Errorf("parser tag must be `pkg.Func` format: %v, (%q on %s)", parser, typeName, f.FieldName()))
+	} else if lastDot == -1 {
+		fun = parser
+	} else {
+		// pkg.Func(v)
+		pkg := parser[0:lastDot]
+		pkgParts := strings.Split(pkg, "/")
+		fun = parser[lastDot+1:]
+		fun = fmt.Sprintf("%s.%s", pkgParts[len(pkgParts)-1], fun)
+		f.s.AddDependency(pkg)
+	}
+	return fmt.Sprintf("%s(v.(string))", fun)
 }
 
 func hasTagValue(v string, values []string) bool {

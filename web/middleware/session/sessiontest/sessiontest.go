@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func GetSession(w *httptest.ResponseRecorder, middleware *session.Middleware) (*session.Session, error) {
+func GetSession(ctx context.Context, w *httptest.ResponseRecorder, middleware *session.Middleware) (*session.Session, error) {
 	c, err := xhttptest.GetCookie(w, middleware.CookieName)
 	if err != nil {
 		return nil, fmt.Errorf("cookie not found")
@@ -22,5 +22,5 @@ func GetSession(w *httptest.ResponseRecorder, middleware *session.Middleware) (*
 		return nil, fmt.Errorf("cookie does not contain the valid session id")
 	}
 
-	return middleware.Store.Get(context.Background(), sid)
+	return middleware.Store.Get(ctx, sid)
 }

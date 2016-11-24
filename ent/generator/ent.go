@@ -8,6 +8,7 @@ var tagRegexp = regexp.MustCompile(`([a-z0-9A-Z]+):"([^"]+)"`)
 const (
 	tagNameDefault         = "default"
 	tagNameEnt             = "ent"
+	tagNameParser          = "parser"
 	tagValueID             = "id"
 	tagValueResetIfMissing = "resetifmissing"
 	tagValueForm           = "form"

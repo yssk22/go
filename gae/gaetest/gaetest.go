@@ -47,6 +47,9 @@ func NewContext() context.Context {
 
 // Instance returns a current appengine instance
 func Instance() aetest.Instance {
+	if instance == nil {
+		panic("GAE test instance is not initialized. Call gaetest.Run() on your TestMain function.")
+	}
 	return instance
 }
 

@@ -64,13 +64,20 @@ var defaultIOFormatter = NewTextFormatter(
 	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 )
 
+var defaultSink Sink = NewIOSinkWithFormatter(
+	os.Stderr, defaultIOFormatter,
+)
+
 var defaultLogger = New(
 	KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
-		NewIOSinkWithFormatter(
-			os.Stderr, defaultIOFormatter,
-		),
+		defaultSink,
 	),
 )
+
+// SetSink sets the default logger sink.
+func SetSink(s Sink) {
+	defaultSink = s
+}
 
 // SetKeyFilter sets the specific filter level for `key`.
 func SetKeyFilter(key interface{}, level Level) {

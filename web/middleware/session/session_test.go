@@ -14,15 +14,34 @@ func TestContextKey(t *testing.T) {
 	)
 }
 
+func TestSession_Set_Get(t *testing.T) {
+	type custom struct {
+		Str string
+	}
+	a := assert.New(t)
+	s := NewSession()
+	s.Set("FOO", "BAR")
+	s.Set("CUSTOM", &custom{
+		Str: "custom",
+	})
+	var str string
+	var c custom
+	a.Nil(s.Get("FOO", &str))
+	a.EqStr("BAR", str)
+	a.Nil(s.Get("CUSTOM", &c))
+	a.EqStr("custom", c.Str)
+}
+
 func TestSession_Encode_Decode(t *testing.T) {
 	a := assert.New(t)
 	s := NewSession()
-	s.Data.Set("FOO", "BAR")
+	s.Set("FOO", "BAR")
 	encoded, err := s.Encode()
 	a.Nil(err)
 
 	s1 := NewSession()
 	a.Nil(s1.Decode(encoded))
-	val, _ := s1.Data.Get("FOO")
-	a.EqStr("BAR", val.(string))
+	var str string
+	a.Nil(s1.Get("FOO", &str))
+	a.EqStr("BAR", str)
 }

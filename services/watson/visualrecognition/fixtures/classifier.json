@@ -1,0 +1,12 @@
+{
+    "classifier_id": "fruits_1050835757",
+    "name": "fruits",
+    "owner": "abc",
+    "status": "ready",
+    "created": "2016-05-06T21:13:19.426Z",
+    "classes": [
+        {"class": "apple"},
+        {"class": "banana"},
+        {"class": "orange"}
+    ]
+}

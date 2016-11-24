@@ -273,13 +273,86 @@ func (k *AsyncTaskKind) PutMulti(ctx context.Context, ents []*AsyncTask) ([]*dat
 	return dsKeys, nil
 }
 
-// MustPutMulti do Put with multiple keys
+// MustPutMulti is like PutMulti but panic if an error occurs
 func (k *AsyncTaskKind) MustPutMulti(ctx context.Context, ents []*AsyncTask) []*datastore.Key {
 	keys, err := k.PutMulti(ctx, ents)
 	if err != nil {
 		panic(err)
 	}
 	return keys
+}
+
+// Delete deletes the entity from datastore
+func (k *AsyncTaskKind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+	keys, err := k.DeleteMulti(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	return keys[0], nil
+}
+
+// MustDelete is like Delete but panic if an error occurs
+func (k *AsyncTaskKind) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
+	keys, err := k.DeleteMulti(ctx, key)
+	if err != nil {
+		panic(err)
+	}
+	return keys[0]
+}
+
+// DeleteMulti do Delete with multiple keys
+func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
+	var size = len(keys)
+	var dsKeys []*datastore.Key
+	if size == 0 {
+		return nil, nil
+	}
+	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
+	dsKeys = make([]*datastore.Key, size, size)
+	for i := range keys {
+		dsKeys[i] = helper.NewKey(ctx, "AsyncTask", keys[i])
+	}
+	// Datastore access
+	err := helper.DeleteMulti(ctx, dsKeys)
+	if helper.IsDatastoreError(err) {
+		// we return nil even some ents hits the cache.
+		return nil, err
+	}
+
+	if !k.noCache {
+		memKeys := make([]string, size, size)
+		for i := range memKeys {
+			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
+		}
+		err := memcache.DeleteMulti(ctx, memKeys)
+		if memcache.IsMemcacheError(err) {
+			logger.Warnf("Failed to invalidate memcache keys: %v", err)
+		}
+	}
+
+	logger.Debug(func(p *xlog.Printer) {
+		p.Printf(
+			"AsyncTask#DeleteMulti [Datastore] (NoCache: %t)\n",
+			k.noCache,
+		)
+		for i := 0; i < size; i++ {
+			p.Printf("\t%s\n", dsKeys[i])
+			if i >= 20 {
+				p.Printf("\t...(and %d ents)\n", size-i)
+				break
+			}
+		}
+	})
+	return dsKeys, nil
+}
+
+// MustDeleteMulti is like DeleteMulti but panic if an error occurs
+func (k *AsyncTaskKind) MustDeleteMulti(ctx context.Context, keys ...interface{}) []*datastore.Key {
+	_keys, err := k.DeleteMulti(ctx, keys...)
+	if err != nil {
+		panic(err)
+	}
+	return _keys
 }
 
 // AsyncTaskQuery helps to build and execute a query

@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -23,12 +24,12 @@ type SessionStore interface {
 	Del(context.Context, *Session) error
 }
 
-// Session is an object to represents sesssio
+// Session is an object to represents session
 type Session struct {
 	ID         uuid.UUID
 	CSRFSecret uuid.UUID
 	Timestamp  time.Time
-	Data       keyvalue.StringKeyMap
+	Data       map[string][]byte
 	fromStore  bool
 }
 
@@ -38,24 +39,37 @@ func NewSession() *Session {
 		ID:         uuid.New(),
 		CSRFSecret: uuid.New(),
 		Timestamp:  xtime.Now(),
-		Data:       keyvalue.NewStringKeyMap(),
+		Data:       make(map[string][]byte),
 		fromStore:  false,
 	}
 }
 
 // Set sets the session data
 func (s *Session) Set(key interface{}, value interface{}) error {
-	return s.Data.Set(key, value)
+	buff, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("session data must be json compatible: %v", err)
+	}
+	s.Data[key.(string)] = buff
+	return nil
 }
 
 // Get sets the session data
-func (s *Session) Get(key interface{}) (interface{}, error) {
-	return s.Data.Get(key)
+func (s *Session) Get(key interface{}, dst interface{}) error {
+	buff, ok := s.Data[key.(string)]
+	if !ok {
+		return keyvalue.KeyError(key.(string))
+	}
+	if err := json.Unmarshal(buff, dst); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Del delete the session data
 func (s *Session) Del(key interface{}) error {
-	return s.Data.Del(key)
+	delete(s.Data, key.(string))
+	return nil
 }
 
 // IsExpired returns true if the session is expired

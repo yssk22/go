@@ -34,6 +34,13 @@ func New(t *testing.T) *Assert {
 	return &Assert{t}
 }
 
+// SkipIfErr skip the test if an error occurrs.
+func (a Assert) SkipIfErr(err error) {
+	if err != nil {
+		a.Skipf(err.Error())
+	}
+}
+
 // OK for true assertion.
 func (a *Assert) OK(ok bool, msgContext ...interface{}) {
 	if !ok {
@@ -159,8 +166,8 @@ func (a *Assert) Failure(expect interface{}, got interface{}, msgContext ...inte
 	report := fmt.Sprintf(
 		"%s failure\n"+
 			"\t source: %s:%d\n"+
-			"\t expect: %#v\n"+
-			"\t    got: %#v",
+			"\t expect: %v\n"+
+			"\t    got: %v",
 		frame.FunctionName, frame.ShortFilePath, frame.LineNumber-1, expect, got,
 	)
 
