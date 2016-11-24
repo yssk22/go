@@ -26,13 +26,6 @@ deployment:
       - git config --global user.email "yssk22@gmail.com"
       - git branch -D master
       - git fetch origin master
-      - git checkout master
+      - git checkout master origin/master
       - git merge develop --no-ff -m "Merge 'develop' (CI auto merge)"
       - git push origin master
-      - go get github.com/mitchellh/gox
-  master:
-    branch: master
-    commands:
-      - go get github.com/mitchellh/gox
-      - ./script/build.sh
-      - ./script/publish.sh
