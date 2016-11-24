@@ -6,6 +6,10 @@ If you want to use Watson Visual Recognition API in your golang application, see
 
 # Install
 
+- Download the latest binary from https://github.com/speedland/go/releases (watson-vr.{os}.{arch})
+- `chmod 755 watson-vr-{os}.{arch}`
+- `mv watson-vr-{os}.{arch} watson-vr`
+
 # Usage
 
 You need to prepare Watson Visual Recognition API key on [IBM Bluemix](`https://console.ng.bluemix.net/registration/`)
@@ -97,7 +101,6 @@ You need to prepare the directory that contains updated images as described `Cre
 
     $ watson-vr delete-classifier myclassifier_2069560411
     myclassifier_2069560411 deleted
-
 
 ## Collections
 
