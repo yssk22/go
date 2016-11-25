@@ -10,9 +10,12 @@ import (
 // If task return an error, checker checks if the retry is needed afeter waitng by waiter.
 func Do(ctx context.Context, task func(context.Context) error, waiter Waiter, checker Checker) error {
 	var err error
-	for checker.Check() {
+	for {
 		if err = task(ctx); err == nil {
 			return nil
+		}
+		if !checker.Check() {
+			break
 		}
 		waiter.Wait()
 	}
