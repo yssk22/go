@@ -428,6 +428,24 @@ func (q *{{.Type}}Query) Desc(name string) *{{.Type}}Query {
 	return q
 }
 
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) Limit(n lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Limit(n)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) Start(value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Start(value)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) End(value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.End(value)
+	return q
+}
+
 // GetAll returns all key and value of the query.
 func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}, error) {
     var v []*{{.Type}}
@@ -480,4 +498,49 @@ func (q *{{.Type}}Query) MustCount(ctx context.Context) int {
     }
     return c
 }
+
+type {{.Type}}Pagination struct {` +
+	"Start datastore.Cursor `json:\"start\"`\n" +
+	"End   datastore.Cursor `json:\"end\"`\n" +
+	"Data  []*{{.Type}}      `json:\"data\"`\n" +
+	"Keys  []*datastore.Key  `json:\"-\"`\n" + `
+}
+
+// Run returns the count of entities
+func (q *{{.Type}}Query) Run(ctx context.Context) (*{{.Type}}Pagination, error) {
+    iter, err := q.q.Run(ctx)
+    if err != nil {
+        return nil, err
+    }
+    start, err := iter.Cursor()
+    if err != nil {
+        return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+    }
+    var keys []*datastore.Key
+    var data []*{{.Type}}
+    for {
+        var ent {{.Type}}
+        key, err := iter.Next(&ent)
+        if err == datastore.Done {
+            end, err := iter.Cursor()
+            if err != nil {
+                return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
+            }
+            return &{{.Type}}Pagination{
+                Start: start,
+                End:   end,
+                Keys:  keys,
+                Data:  data,
+            }, nil
+        }
+        if err != nil {
+            return nil, err
+        }
+        keys = append(keys, key)
+        data = append(data, &ent)
+    }
+}
+
+
+
 `

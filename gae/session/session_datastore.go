@@ -420,6 +420,24 @@ func (q *SessionQuery) Desc(name string) *SessionQuery {
 	return q
 }
 
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) Limit(n lazy.Value) *SessionQuery {
+	q.q = q.q.Limit(n)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) Start(value lazy.Value) *SessionQuery {
+	q.q = q.q.Start(value)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) End(value lazy.Value) *SessionQuery {
+	q.q = q.q.End(value)
+	return q
+}
+
 // GetAll returns all key and value of the query.
 func (q *SessionQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Session, error) {
 	var v []*Session
@@ -471,4 +489,46 @@ func (q *SessionQuery) MustCount(ctx context.Context) int {
 		panic(err)
 	}
 	return c
+}
+
+type SessionPagination struct {
+	Start datastore.Cursor `json:"start"`
+	End   datastore.Cursor `json:"end"`
+	Data  []*Session       `json:"data"`
+	Keys  []*datastore.Key `json:"-"`
+}
+
+// Run returns the count of entities
+func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
+	iter, err := q.q.Run(ctx)
+	if err != nil {
+		return nil, err
+	}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	var keys []*datastore.Key
+	var data []*Session
+	for {
+		var ent Session
+		key, err := iter.Next(&ent)
+		if err == datastore.Done {
+			end, err := iter.Cursor()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
+			}
+			return &SessionPagination{
+				Start: start,
+				End:   end,
+				Keys:  keys,
+				Data:  data,
+			}, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+		data = append(data, &ent)
+	}
 }

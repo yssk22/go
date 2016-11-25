@@ -114,6 +114,24 @@ func (q *Query) Desc(name string) *Query {
 	return q
 }
 
+// Limit sets the limit
+func (q *Query) Limit(value lazy.Value) *Query {
+	q.limit = value
+	return q
+}
+
+// Start sets the start cursor
+func (q *Query) Start(value lazy.Value) *Query {
+	q.startCursor = value
+	return q
+}
+
+// End sets the end cursor
+func (q *Query) End(value lazy.Value) *Query {
+	q.endCursor = value
+	return q
+}
+
 type order struct {
 	Name string
 	Type orderType
@@ -167,7 +185,7 @@ func (q *Query) GetAll(ctx context.Context, dst interface{}) ([]*datastore.Key, 
 }
 
 // Run runs a query and returns *datastore.Iterator
-func (q *Query) Run(ctx context.Context, dst interface{}) (*datastore.Iterator, error) {
+func (q *Query) Run(ctx context.Context) (*datastore.Iterator, error) {
 	query, err := q.prepare(ctx)
 	if err != nil {
 		return nil, err

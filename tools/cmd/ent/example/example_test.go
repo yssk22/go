@@ -216,3 +216,24 @@ func TestExampleQuery_GetAll(t *testing.T) {
 	a.EqInt(1, len(keys))
 	a.EqStr("example-2", value[0].ID)
 }
+
+func TestExampleQuery_Run(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+
+	q := NewExampleQuery().Asc("ID").Limit(lazy.New(2))
+	p, err := q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-1", p.Data[0].ID)
+	a.EqStr("", p.Start.String())
+	next := p.End.String()
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(next))
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr(next, p.Start.String())
+}
