@@ -16,7 +16,8 @@ var DefaultParallelOption = &ParallelOption{
 	MaxConcurrency: 0,
 }
 
-// ParallelSlice is like ParallelSlice but spawn goroutines up to `n` concurrency
+// Parallel is spawn `fun` in parallel.
+// `fun` must be type of `func(int, *T) error`, where list is []T or []*T).
 func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	if option == nil {
 		option = DefaultParallelOption

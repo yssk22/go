@@ -32,6 +32,21 @@ func ExampleParallel_Struct() {
 	// Output: [{0} {1} {2} {3}]
 }
 
+func ExampleParallel_StructPtr() {
+	type T struct {
+		i int
+	}
+	var a = []*T{
+		&T{0}, &T{1}, &T{2}, &T{3},
+	}
+	Parallel(a, DefaultParallelOption, func(i int, t *T) error {
+		t.i = t.i + 1
+		return nil
+	})
+	fmt.Println(a[0], a[1], a[2], a[3])
+	// Output: &{1} &{2} &{3} &{4}
+}
+
 func TestParallel_withMaxMaxConcurrency(t *testing.T) {
 	assert := assert.New(t)
 	var opts = &ParallelOption{
