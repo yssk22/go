@@ -25,6 +25,8 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	a1 := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
 	fType := f.Type()
+	shouldUsePtr := a1.Type().Elem().Kind() == reflect.Struct
+
 	assertSlice(a1)
 	assertSliceFun(fType)
 	if fType.NumOut() != 1 || !fType.Out(0).Implements(errorType) {
@@ -43,7 +45,6 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 
 	var wg sync.WaitGroup
 
-	shouldUsePtr := a.Type().Elem().Kind() == reflect.Struct
 	for i := 0; i < a.Len(); i++ {
 		wg.Add(1)
 		v := a.Index(i) // still slice as we used SplitByEach
