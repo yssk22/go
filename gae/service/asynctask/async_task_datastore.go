@@ -498,7 +498,7 @@ type AsyncTaskPagination struct {
 	Keys  []*datastore.Key `json:"-"`
 }
 
-// Run returns the count of entities
+// Run returns the a result as *AsyncTaskPagination object
 func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) {
 	iter, err := q.q.Run(ctx)
 	if err != nil {
@@ -531,4 +531,13 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 		keys = append(keys, key)
 		data = append(data, &ent)
 	}
+}
+
+// MustRun is like Run but panic if an error occurrs
+func (q *AsyncTaskQuery) MustRun(ctx context.Context) *AsyncTaskPagination {
+	p, err := q.Run(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }

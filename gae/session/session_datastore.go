@@ -498,7 +498,7 @@ type SessionPagination struct {
 	Keys  []*datastore.Key `json:"-"`
 }
 
-// Run returns the count of entities
+// Run returns the a result as *SessionPagination object
 func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 	iter, err := q.q.Run(ctx)
 	if err != nil {
@@ -531,4 +531,13 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 		keys = append(keys, key)
 		data = append(data, &ent)
 	}
+}
+
+// MustRun is like Run but panic if an error occurrs
+func (q *SessionQuery) MustRun(ctx context.Context) *SessionPagination {
+	p, err := q.Run(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
