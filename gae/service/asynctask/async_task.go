@@ -99,21 +99,12 @@ type triggerResponse struct {
 }
 
 type monitorResponse struct {
-<<<<<<< HEAD
 	ID       string    `json:"id"`
 	Status   Status    `json:"status"`
 	StartAt  time.Time `json:"start_at"`
 	FinishAt time.Time `json:"finish_at"`
 	Error    string    `json:"error" datastore:",noindex"`
 	Progress *Progress `json:"progress,omitempty"`
-=======
-	ID         string    `json:"id"`
-	Status     Status    `json:"status"`
-	StartAt    time.Time `json:"start_at"`
-	FinishedAt time.Time `json:"finished_at"`
-	Error      string    `json:"error" datastore:",noindex"`
-	Progress   *Progress `json:"progress,omitempty"`
->>>>>>> eb29b44b15f906c2994b43c5bafbfc9c912205bc
 }
 
 var kind = &AsyncTaskKind{}
