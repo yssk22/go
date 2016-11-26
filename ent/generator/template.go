@@ -516,8 +516,8 @@ func (q *{{.Type}}Query) Run(ctx context.Context) (*{{.Type}}Pagination, error) 
     if err != nil {
         return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
     }
-    var keys []*datastore.Key
-    var data []*{{.Type}}
+    keys := []*datastore.Key{}
+    data := []*{{.Type}}{}
     for {
         var ent {{.Type}}
         key, err := iter.Next(&ent)

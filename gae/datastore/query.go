@@ -250,7 +250,7 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 			)
 			s = append(s, order)
 		}
-		buff = append(buff, "Order: %v", strings.Join(s, " "))
+		buff = append(buff, fmt.Sprintf("Order: %v", strings.Join(s, " ")))
 	}
 
 	if q.limit != nil {

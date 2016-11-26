@@ -1,6 +1,7 @@
 package example
 
 import (
+	"encoding/json"
 	"net/url"
 	"os"
 	"testing"
@@ -236,4 +237,16 @@ func TestExampleQuery_Run(t *testing.T) {
 	a.EqInt(2, len(p.Data))
 	a.EqStr("example-3", p.Data[0].ID)
 	a.EqStr(next, p.Start)
+}
+
+func TestExamplePagination_MarshalJSON(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+
+	q := NewExampleQuery().Limit(lazy.New(0))
+	p, err := q.Run(gaetest.NewContext())
+	a.Nil(err)
+	b, _ := json.Marshal(p)
+	a.EqByteString(`{"start":"","end":"","data":[]}`, b)
 }
