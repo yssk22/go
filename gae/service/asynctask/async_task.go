@@ -101,6 +101,9 @@ type triggerResponse struct {
 type monitorResponse struct {
 	ID       string    `json:"id"`
 	Status   Status    `json:"status"`
+	StartAt  time.Time `json:"start_at"`
+	FinishAt time.Time `json:"finish_at"`
+	Error    string    `json:"error" datastore:",noindex"`
 	Progress *Progress `json:"progress,omitempty"`
 }
 
@@ -134,6 +137,9 @@ func New(s *service.Service, path string) *Config {
 				&monitorResponse{
 					ID:       t.ID,
 					Status:   t.Status,
+					StartAt:  t.StartAt,
+					FinishAt: t.FinishAt,
+					Error:    t.Error,
 					Progress: t.LastProgress(),
 				},
 			)
