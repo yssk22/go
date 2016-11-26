@@ -128,7 +128,7 @@ func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 // EqByteString for equality assertion ([]byte string)
 func (a *Assert) EqByteString(expect string, got []byte, msgContext ...interface{}) {
 	if expect != string(got) {
-		a.Failure(expect, got, msgContext...)
+		a.Failure(expect, string(got), msgContext...)
 	}
 }
 
