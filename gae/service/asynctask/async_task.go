@@ -99,9 +99,12 @@ type triggerResponse struct {
 }
 
 type monitorResponse struct {
-	ID       string    `json:"id"`
-	Status   Status    `json:"status"`
-	Progress *Progress `json:"progress,omitempty"`
+	ID         string    `json:"id"`
+	Status     Status    `json:"status"`
+	StartAt    time.Time `json:"start_at"`
+	FinishedAt time.Time `json:"finished_at"`
+	Error      string    `json:"error" datastore:",noindex"`
+	Progress   *Progress `json:"progress,omitempty"`
 }
 
 var kind = &AsyncTaskKind{}
@@ -132,9 +135,12 @@ func New(s *service.Service, path string) *Config {
 			}
 			return response.NewJSON(
 				&monitorResponse{
-					ID:       t.ID,
-					Status:   t.Status,
-					Progress: t.LastProgress(),
+					ID:         t.ID,
+					Status:     t.Status,
+					StartAt:    t.StartAt,
+					FinishedAt: t.FinishAt,
+					Error:      t.Error,
+					Progress:   t.LastProgress(),
 				},
 			)
 		}))
