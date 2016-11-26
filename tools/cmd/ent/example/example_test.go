@@ -227,13 +227,13 @@ func TestExampleQuery_Run(t *testing.T) {
 	a.Nil(err)
 	a.EqInt(2, len(p.Data))
 	a.EqStr("example-1", p.Data[0].ID)
-	a.EqStr("", p.Start.String())
-	next := p.End.String()
+	a.EqStr("", p.Start)
+	next := p.End
 
 	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(next))
 	p, err = q.Run(gaetest.NewContext())
 	a.Nil(err)
 	a.EqInt(2, len(p.Data))
 	a.EqStr("example-3", p.Data[0].ID)
-	a.EqStr(next, p.Start.String())
+	a.EqStr(next, p.Start)
 }

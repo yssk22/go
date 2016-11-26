@@ -492,8 +492,8 @@ func (q *SessionQuery) MustCount(ctx context.Context) int {
 }
 
 type SessionPagination struct {
-	Start datastore.Cursor `json:"start"`
-	End   datastore.Cursor `json:"end"`
+	Start string           `json:"start"`
+	End   string           `json:"end"`
 	Data  []*Session       `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -519,8 +519,8 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
 			return &SessionPagination{
-				Start: start,
-				End:   end,
+				Start: start.String(),
+				End:   end.String(),
 				Keys:  keys,
 				Data:  data,
 			}, nil

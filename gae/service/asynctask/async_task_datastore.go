@@ -492,8 +492,8 @@ func (q *AsyncTaskQuery) MustCount(ctx context.Context) int {
 }
 
 type AsyncTaskPagination struct {
-	Start datastore.Cursor `json:"start"`
-	End   datastore.Cursor `json:"end"`
+	Start string           `json:"start"`
+	End   string           `json:"end"`
 	Data  []*AsyncTask     `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -519,8 +519,8 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
 			return &AsyncTaskPagination{
-				Start: start,
-				End:   end,
+				Start: start.String(),
+				End:   end.String(),
 				Keys:  keys,
 				Data:  data,
 			}, nil

@@ -518,8 +518,8 @@ func (q *ExampleQuery) MustCount(ctx context.Context) int {
 }
 
 type ExamplePagination struct {
-	Start datastore.Cursor `json:"start"`
-	End   datastore.Cursor `json:"end"`
+	Start string           `json:"start"`
+	End   string           `json:"end"`
 	Data  []*Example       `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -545,8 +545,8 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
 			return &ExamplePagination{
-				Start: start,
-				End:   end,
+				Start: start.String(),
+				End:   end.String(),
 				Keys:  keys,
 				Data:  data,
 			}, nil
