@@ -508,8 +508,8 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
 	}
-	var keys []*datastore.Key
-	var data []*Session
+	keys := []*datastore.Key{}
+	data := []*Session{}
 	for {
 		var ent Session
 		key, err := iter.Next(&ent)

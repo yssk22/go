@@ -508,8 +508,8 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
 	}
-	var keys []*datastore.Key
-	var data []*AsyncTask
+	keys := []*datastore.Key{}
+	data := []*AsyncTask{}
 	for {
 		var ent AsyncTask
 		key, err := iter.Next(&ent)
