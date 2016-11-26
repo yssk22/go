@@ -207,6 +207,7 @@ func New(s *service.Service, path string) *Config {
 
 			// finished the task
 			t.FinishAt = xtime.Now()
+			t.Progress = nil
 			if err == nil {
 				t.Status = StatusSuccess
 				resp = response.NewJSON(true)
