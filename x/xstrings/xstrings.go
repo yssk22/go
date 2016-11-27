@@ -8,9 +8,13 @@ import (
 
 // SplitAndTrim is like strings.Split but spaces in each of item are trimmed
 func SplitAndTrim(s string, sep string) []string {
-	list := strings.Split(s, sep)
-	for i, v := range list {
-		list[i] = strings.TrimSpace(v)
+	var list []string
+	splitted := strings.Split(s, sep)
+	for _, v := range splitted {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			list = append(list, s)
+		}
 	}
 	return list
 }

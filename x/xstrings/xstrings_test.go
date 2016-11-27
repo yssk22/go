@@ -2,6 +2,12 @@ package xstrings
 
 import "fmt"
 
+func ExampleStripAndTrim() {
+	fmt.Println(SplitAndTrim("a, b, c ,d,,f,", ","))
+	// Output:
+	// [a b c d f]
+}
+
 func ExampleToSnakeCase() {
 	fmt.Println(
 		ToSnakeCase("FooBar"),
