@@ -61,6 +61,25 @@ func (t *AsyncTask) LastProgress() *Progress {
 	return &t.Progress[l-1]
 }
 
+// NewMonitorResponse returns a new *MonitorResponse exposed externally
+func (t *AsyncTask) NewMonitorResponse() *MonitorResponse {
+	m := &MonitorResponse{
+		ID:     t.ID,
+		Status: t.Status,
+	}
+	if !t.StartAt.IsZero() {
+		m.StartAt = &(t.StartAt)
+	}
+	if !t.FinishAt.IsZero() {
+		m.FinishAt = &(t.FinishAt)
+	}
+	if t.Error != "" {
+		m.Error = &(t.Error)
+	}
+	m.Progress = t.LastProgress()
+	return m
+}
+
 // Progress is a struct that represents the task progress
 type Progress struct {
 	Total   int        `json:"total,omitempty"`
@@ -98,13 +117,13 @@ type triggerResponse struct {
 	ID string `json:"id"`
 }
 
-type monitorResponse struct {
-	ID       string    `json:"id"`
-	Status   Status    `json:"status"`
-	StartAt  time.Time `json:"start_at"`
-	FinishAt time.Time `json:"finish_at"`
-	Error    string    `json:"error" datastore:",noindex"`
-	Progress *Progress `json:"progress,omitempty"`
+type MonitorResponse struct {
+	ID       string     `json:"id"`
+	Status   Status     `json:"status"`
+	StartAt  *time.Time `json:"start_at,omitempty"`
+	FinishAt *time.Time `json:"finish_at,omitempty"`
+	Error    *string    `json:"error,omitempty"`
+	Progress *Progress  `json:"progress,omitempty"`
 }
 
 var kind = &AsyncTaskKind{}
@@ -133,16 +152,7 @@ func New(s *service.Service, path string) *Config {
 			if t == nil {
 				return nil
 			}
-			return response.NewJSON(
-				&monitorResponse{
-					ID:       t.ID,
-					Status:   t.Status,
-					StartAt:  t.StartAt,
-					FinishAt: t.FinishAt,
-					Error:    t.Error,
-					Progress: t.LastProgress(),
-				},
-			)
+			return response.NewJSON(t.NewMonitorResponse())
 		}))
 
 	// POST /path/:taskid.json
