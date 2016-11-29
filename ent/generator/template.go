@@ -58,7 +58,7 @@ func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
 
 // Get gets the kind entity from datastore
 func (k *{{.Type}}Kind) Get(ctx context.Context, key interface{}) (*datastore.Key, *{{.Type}}, error) {
-    keys, ents, err := k.GetMulti(ctx, key)
+    keys, ents, err := k.GetMulti(ctx, []interface{}{key})
     if err != nil {
         return nil, nil, err
     }
@@ -74,19 +74,18 @@ func (k *{{.Type}}Kind) MustGet(ctx context.Context, key interface{}) *{{.Type}}
     return v
 }
 
-// GetMulti do Get with multiple keys
-func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
-    var size = len(keys)
+// GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
+func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
+    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+    var dsKeys, err = k.normMultiKeys(ctx, keys)
+    if err != nil {
+        return nil, nil, err
+    }
+    var size = len(dsKeys)
     var memKeys []string
-    var dsKeys  []*datastore.Key
     var ents []*{{.Type}}
     if size == 0 {
         return nil, nil, nil
-    }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-    dsKeys = make([]*datastore.Key, size, size)
-    for i := range keys {
-        dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", keys[i])
     }
     ents = make([]*{{.Type}}, size, size)
     // Memcache access
@@ -96,7 +95,7 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
         for i := range dsKeys {
             memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
         }
-        err := memcache.GetMulti(ctx, memKeys, ents)
+        err = memcache.GetMulti(ctx, memKeys, ents)
         if err == nil {
             // Hit caches on all keys!!
             return dsKeys, ents, nil
@@ -130,7 +129,7 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 
     // Datastore access
     cacheMissingEnts := make([]*{{.Type}}, cacheMissingSize, cacheMissingSize)
-    err := helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
+    err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
     if helper.IsDatastoreError(err) {
         // we return nil even some ents hits the cache.
         return nil, nil, err
@@ -190,8 +189,8 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 }
 
 // MustGetMulti is like GetMulti but returns only values and panic if error happens.
-func (k *{{.Type}}Kind) MustGetMulti(ctx context.Context, keys ...interface{}) []*{{.Type}} {
-    _, v, err := k.GetMulti(ctx, keys...)
+func (k *{{.Type}}Kind) MustGetMulti(ctx context.Context, keys interface{}) []*{{.Type}} {
+    _, v, err := k.GetMulti(ctx, keys)
     if err != nil {
         panic(err)
     }
@@ -292,7 +291,7 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
 
 // Delete deletes the entity from datastore
 func (k *{{.Type}}Kind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
-    keys, err := k.DeleteMulti(ctx, key)
+    keys, err := k.DeleteMulti(ctx, []interface{}{key})
     if err != nil {
         return nil, err
     }
@@ -301,27 +300,26 @@ func (k *{{.Type}}Kind) Delete(ctx context.Context, key interface{}) (*datastore
 
 // MustDelete is like Delete but panic if an error occurs
 func (k *{{.Type}}Kind) MustDelete(ctx context.Context, key interface{}) (*datastore.Key) {
-    keys, err := k.DeleteMulti(ctx, key)
+    _key, err := k.Delete(ctx, key)
     if err != nil {
         panic(err)
     }
-    return keys[0]
+    return _key
 }
 
 // DeleteMulti do Delete with multiple keys
-func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
-    var size = len(keys)
-    var dsKeys  []*datastore.Key
+func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+    var dsKeys, err = k.normMultiKeys(ctx, keys)
+    if err != nil {
+        return nil, err
+    }
+    var size = len(dsKeys)
     if size == 0 {
         return nil, nil
     }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-    dsKeys = make([]*datastore.Key, size, size)
-    for i := range keys {
-        dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", keys[i])
-    }
     // Datastore access
-    err := helper.DeleteMulti(ctx, dsKeys)
+    err = helper.DeleteMulti(ctx, dsKeys)
     if helper.IsDatastoreError(err) {
         // we return nil even some ents hits the cache.
         return nil, err
@@ -332,7 +330,7 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
         for i := range memKeys {
             memKeys[i] =ent.GetMemcacheKey(dsKeys[i])
         }
-        err := memcache.DeleteMulti(ctx, memKeys)
+        err = memcache.DeleteMulti(ctx, memKeys)
         if memcache.IsMemcacheError(err) {
             logger.Warnf("Failed to invalidate memcache keys: %v", err)
         }
@@ -355,12 +353,35 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
 }
 
 // MustDeleteMulti is like DeleteMulti but panic if an error occurs
-func (k *{{.Type}}Kind) MustDeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key) {
-    _keys, err := k.DeleteMulti(ctx, keys...)
+func (k *{{.Type}}Kind) MustDeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key) {
+    _keys, err := k.DeleteMulti(ctx, keys)
     if err != nil {
         panic(err)
     }
     return _keys
+}
+
+func (k *{{.Type}}Kind) normMultiKeys(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+    var dsKeys []*datastore.Key
+    switch t := keys.(type) {
+        case []string:
+            tmp := keys.([]string)
+            dsKeys = make([]*datastore.Key, len(tmp))
+            for i, s := range tmp {
+                dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", s)
+            }
+        case []interface{}:
+            tmp := keys.([]interface{})
+            dsKeys = make([]*datastore.Key, len(tmp))
+            for i, s := range tmp {
+                dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", s)
+            }
+        case []*datastore.Key:
+            dsKeys = keys.([]*datastore.Key)
+        default:
+            return nil, fmt.Errorf("getmulti: unsupported keys type: %s", t)
+    }
+    return dsKeys, nil
 }
 
 // {{.Type}}Query helps to build and execute a query

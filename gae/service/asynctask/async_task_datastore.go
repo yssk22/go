@@ -50,7 +50,7 @@ func (k *AsyncTaskKind) UseDefaultIfNil(b bool) *AsyncTaskKind {
 
 // Get gets the kind entity from datastore
 func (k *AsyncTaskKind) Get(ctx context.Context, key interface{}) (*datastore.Key, *AsyncTask, error) {
-	keys, ents, err := k.GetMulti(ctx, key)
+	keys, ents, err := k.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -66,19 +66,18 @@ func (k *AsyncTaskKind) MustGet(ctx context.Context, key interface{}) *AsyncTask
 	return v
 }
 
-// GetMulti do Get with multiple keys
-func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*AsyncTask, error) {
-	var size = len(keys)
+// GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
+func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*AsyncTask, error) {
+	var logger = xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
+	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, nil, err
+	}
+	var size = len(dsKeys)
 	var memKeys []string
-	var dsKeys []*datastore.Key
 	var ents []*AsyncTask
 	if size == 0 {
 		return nil, nil, nil
-	}
-	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
-	dsKeys = make([]*datastore.Key, size, size)
-	for i := range keys {
-		dsKeys[i] = helper.NewKey(ctx, "AsyncTask", keys[i])
 	}
 	ents = make([]*AsyncTask, size, size)
 	// Memcache access
@@ -88,7 +87,7 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 		for i := range dsKeys {
 			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
 		}
-		err := memcache.GetMulti(ctx, memKeys, ents)
+		err = memcache.GetMulti(ctx, memKeys, ents)
 		if err == nil {
 			// Hit caches on all keys!!
 			return dsKeys, ents, nil
@@ -122,7 +121,7 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 
 	// Datastore access
 	cacheMissingEnts := make([]*AsyncTask, cacheMissingSize, cacheMissingSize)
-	err := helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
+	err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
 		return nil, nil, err
@@ -182,8 +181,8 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 }
 
 // MustGetMulti is like GetMulti but returns only values and panic if error happens.
-func (k *AsyncTaskKind) MustGetMulti(ctx context.Context, keys ...interface{}) []*AsyncTask {
-	_, v, err := k.GetMulti(ctx, keys...)
+func (k *AsyncTaskKind) MustGetMulti(ctx context.Context, keys interface{}) []*AsyncTask {
+	_, v, err := k.GetMulti(ctx, keys)
 	if err != nil {
 		panic(err)
 	}
@@ -284,7 +283,7 @@ func (k *AsyncTaskKind) MustPutMulti(ctx context.Context, ents []*AsyncTask) []*
 
 // Delete deletes the entity from datastore
 func (k *AsyncTaskKind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
-	keys, err := k.DeleteMulti(ctx, key)
+	keys, err := k.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
@@ -293,27 +292,26 @@ func (k *AsyncTaskKind) Delete(ctx context.Context, key interface{}) (*datastore
 
 // MustDelete is like Delete but panic if an error occurs
 func (k *AsyncTaskKind) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
-	keys, err := k.DeleteMulti(ctx, key)
+	_key, err := k.Delete(ctx, key)
 	if err != nil {
 		panic(err)
 	}
-	return keys[0]
+	return _key
 }
 
 // DeleteMulti do Delete with multiple keys
-func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
-	var size = len(keys)
-	var dsKeys []*datastore.Key
+func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	var logger = xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
+	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, err
+	}
+	var size = len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
-	dsKeys = make([]*datastore.Key, size, size)
-	for i := range keys {
-		dsKeys[i] = helper.NewKey(ctx, "AsyncTask", keys[i])
-	}
 	// Datastore access
-	err := helper.DeleteMulti(ctx, dsKeys)
+	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
 		return nil, err
@@ -324,7 +322,7 @@ func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
 		for i := range memKeys {
 			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
 		}
-		err := memcache.DeleteMulti(ctx, memKeys)
+		err = memcache.DeleteMulti(ctx, memKeys)
 		if memcache.IsMemcacheError(err) {
 			logger.Warnf("Failed to invalidate memcache keys: %v", err)
 		}
@@ -347,12 +345,35 @@ func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
 }
 
 // MustDeleteMulti is like DeleteMulti but panic if an error occurs
-func (k *AsyncTaskKind) MustDeleteMulti(ctx context.Context, keys ...interface{}) []*datastore.Key {
-	_keys, err := k.DeleteMulti(ctx, keys...)
+func (k *AsyncTaskKind) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	_keys, err := k.DeleteMulti(ctx, keys)
 	if err != nil {
 		panic(err)
 	}
 	return _keys
+}
+
+func (k *AsyncTaskKind) normMultiKeys(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	var dsKeys []*datastore.Key
+	switch t := keys.(type) {
+	case []string:
+		tmp := keys.([]string)
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = helper.NewKey(ctx, "AsyncTask", s)
+		}
+	case []interface{}:
+		tmp := keys.([]interface{})
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = helper.NewKey(ctx, "AsyncTask", s)
+		}
+	case []*datastore.Key:
+		dsKeys = keys.([]*datastore.Key)
+	default:
+		return nil, fmt.Errorf("getmulti: unsupported keys type: %s", t)
+	}
+	return dsKeys, nil
 }
 
 // AsyncTaskQuery helps to build and execute a query
