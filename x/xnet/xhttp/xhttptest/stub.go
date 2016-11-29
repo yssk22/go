@@ -2,15 +2,65 @@ package xhttptest
 
 import (
 	"fmt"
+	"io"
 	"mime"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/speedland/go/x/xerrors"
 )
+
+// StubCreator returns *http.Client that creates files for stubs by real accesses if
+// stub file does not exists. The stub files are created(or used) at {basedir}/{domain}/{path}
+// structure.
+func StubCreator(basedir string, c *http.Client) *http.Client {
+	return newClient(c, &stubCreator{
+		basedir: basedir,
+		base:    c.Transport,
+	})
+}
+
+type stubCreator struct {
+	basedir string
+	base    http.RoundTripper
+}
+
+func (r *stubCreator) RoundTrip(req *http.Request) (*http.Response, error) {
+	path := filepath.Join(r.basedir, req.URL.Host, req.URL.Path)
+	if strings.HasSuffix(req.URL.Path, "/") {
+		path = fmt.Sprintf("%s/index.html", path)
+	}
+	if resp, err := createResponseByFile(path); err == nil {
+		return resp, err
+	}
+	rt := r.base
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
+	resp, err := rt.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return resp, nil
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return resp, nil
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		return resp, nil
+	}
+	f.Close()
+	return createResponseByFile(path)
+}
 
 // StubFile is like a Stub but access local file resources
 // instead of making actual HTTP requests.
@@ -24,10 +74,9 @@ import (
 //
 // If you want to test full http request transactions, use StubServer instead.
 func StubFile(mapping map[string]string, c *http.Client) *http.Client {
-	c.Transport = &fileStub{
+	return newClient(c, &fileStub{
 		mapping: mapping,
-	}
-	return c
+	})
 }
 
 type fileStub struct {
@@ -37,23 +86,27 @@ type fileStub struct {
 // RoundTrip implements http.RoundTripper#RoundTrip
 func (r *fileStub) RoundTrip(req *http.Request) (*http.Response, error) {
 	u := req.URL.String()
-	filePath := r.mapping[u]
-	if filePath == "" {
+	filepath := r.mapping[u]
+	if filepath == "" {
 		return nil, fmt.Errorf("forbitten by xhttptest.StubFile")
 	}
+	return createResponseByFile(filepath)
+}
+
+func createResponseByFile(filepath string) (*http.Response, error) {
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Status:     "OK",
 		Close:      false,
 		Header:     make(map[string][]string),
 	}
-	stat, err := os.Stat(filePath)
+	stat, err := os.Stat(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("stub file error: %v", err)
 	}
 	resp.ContentLength = stat.Size()
-	resp.Header.Set("content-type", mime.TypeByExtension(path.Ext(filePath)))
-	file, _ := os.Open(filePath)
+	resp.Header.Set("content-type", mime.TypeByExtension(path.Ext(filepath)))
+	file, _ := os.Open(filepath)
 	resp.Body = file
 	return resp, nil
 }
@@ -103,11 +156,10 @@ func stubByMap(mapping map[string]string, c *http.Client) *http.Client {
 			panic(fmt.Errorf("invalid stub url mapping: %s -> %s", k, v))
 		}
 	}
-	c.Transport = &mappingRewriter{
+	return newClient(c, &mappingRewriter{
 		mapping: rewriteMapping,
 		base:    c.Transport,
-	}
-	return c
+	})
 }
 
 // mappingRewriter is to rewrite a request not to access a remote resource
@@ -134,11 +186,10 @@ func (r *mappingRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // stubByServer enforce stub accesses for http.Client to the StubServer
 func stubByServer(s *StubServer, c *http.Client) *http.Client {
-	c.Transport = &serverRewriter{
+	return newClient(c, &serverRewriter{
 		server: s,
 		base:   c.Transport,
-	}
-	return c
+	})
 }
 
 // serverRewriter is to rewrite a request not to access a remote resource
@@ -155,4 +206,11 @@ func (r *serverRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 		return r.base.RoundTrip(req)
 	}
 	return http.DefaultTransport.RoundTrip(req)
+}
+
+func newClient(c *http.Client, t http.RoundTripper) *http.Client {
+	cc := new(http.Client)
+	*cc = *c
+	cc.Transport = t
+	return cc
 }
