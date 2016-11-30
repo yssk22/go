@@ -3,8 +3,7 @@ package service
 import (
 	"bytes"
 	"fmt"
-
-	"github.com/speedland/go/web/response"
+	"io"
 
 	"github.com/speedland/go/web"
 )
@@ -39,13 +38,10 @@ func (s *Service) AddCron(path, time, desc string, handlers ...web.Handler) {
 	s.Get(path, handlers...)
 }
 
-func (s *Service) serveCronYAML(r *web.Request, _ web.NextHandler) *response.Response {
-	var buff bytes.Buffer
-	fmt.Fprintf(&buff, "# Service -- %s\n", s.Key())
+// GenCronYAML generates cron yaml content to `w`
+func (s *Service) GenCronYAML(w io.Writer) {
+	fmt.Fprintf(w, "# Service -- %s\n", s.Key())
 	for _, c := range s.crons {
-		fmt.Fprintf(&buff, "%s", c.ToYAML())
+		fmt.Fprintf(w, "%s", c.ToYAML())
 	}
-	res := response.NewText(buff.String())
-	res.Header.Set(response.ContentType, "application/yaml; charset=utf-8")
-	return res
 }
