@@ -139,7 +139,7 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*data
         for i:=0; i < cacheMissingSize; i++ {
             if cacheMissingEnts[i] == nil {
                 cacheMissingEnts[i] = New{{.Type}}()
-                cacheMissingEnts[i].{{.IDField}} = dsKeys[i].StringID() // TODO: Support non-string key as ID
+                cacheMissingEnts[i].{{.IDField}} = cacheMissingKeys[i].StringID() // TODO: Support non-string key as ID
             }
         }
     }
