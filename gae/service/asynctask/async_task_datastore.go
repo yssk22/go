@@ -131,7 +131,7 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}) ([]*data
 		for i := 0; i < cacheMissingSize; i++ {
 			if cacheMissingEnts[i] == nil {
 				cacheMissingEnts[i] = NewAsyncTask()
-				cacheMissingEnts[i].ID = dsKeys[i].StringID() // TODO: Support non-string key as ID
+				cacheMissingEnts[i].ID = cacheMissingKeys[i].StringID() // TODO: Support non-string key as ID
 			}
 		}
 	}
