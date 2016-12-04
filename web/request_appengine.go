@@ -10,5 +10,14 @@ import (
 )
 
 func initContext(req *http.Request) context.Context {
-	return appengine.NewContext(req)
+	var ctx context.Context
+	func() {
+		defer func() {
+			if x := recover(); x != nil {
+				ctx = context.Background()
+			}
+		}()
+		ctx = appengine.NewContext(req)
+	}()
+	return ctx
 }
