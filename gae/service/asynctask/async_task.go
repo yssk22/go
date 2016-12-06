@@ -4,6 +4,7 @@ package asynctask
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -104,13 +105,29 @@ func (f Func) Run(req *web.Request, t *AsyncTask) (*Progress, error) {
 // Config is an configuration object to configure endpoints on the task.
 type Config struct {
 	Queue     *taskqueue.PushQueue
+	service   *service.Service
 	validator web.Handler
+	path      string
 	logic     Logic
 }
 
 // Implement defines the task logic
 func (c *Config) Implement(t Logic) {
 	c.logic = t
+}
+
+// Schedule adds the cron endpoint for the async task
+func (c *Config) Schedule(sched string, description string) {
+	p := path.Join(c.path, "cron/")
+	c.service.AddCron(p, sched, description,
+		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
+			err := c.Queue.PushTask(req.Context(), c.service.Path(p), url.Values{})
+			if err != nil {
+				return response.NewError(err)
+			}
+			return response.NewText("OK")
+		}),
+	)
 }
 
 type TriggerResponse struct {
@@ -139,7 +156,9 @@ func New(s *service.Service, path string) *Config {
 	queue := s.AddPushQueue(name)
 
 	config := &Config{
-		Queue: queue,
+		Queue:   queue,
+		service: s,
+		path:    path,
 	}
 
 	// GET /path/:taskid.json
