@@ -10,10 +10,12 @@ import (
 )
 
 var (
+	key       = flag.String("key", "", "service account key file")
 	kind      = flag.String("kind", "", "kind to export")
 	namespace = flag.String("namespace", "", "namespace on the kind")
 	host      = flag.String("host", "", "appengine host name")
 	output    = flag.String("output", "", "output file")
+	withProps = flag.Bool("with-props", false, "export with properties")
 )
 
 func main() {
@@ -35,7 +37,7 @@ func main() {
 			*output = fmt.Sprintf("%s.%s.%s.bk", *host, *namespace, *kind)
 		}
 	}
-	ctx, err := dsutil.GetRemoteContext(*host, *namespace)
+	ctx, err := dsutil.GetRemoteContext(*host, *namespace, *key)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +46,10 @@ func main() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	if err := dsutil.Export(ctx, *kind, f); err != nil {
+	option := &dsutil.ExportOption{
+		ValueOnly: !(*withProps),
+	}
+	if err := dsutil.Export(ctx, *kind, f, option); err != nil {
 		log.Fatal(err)
 	}
 }
