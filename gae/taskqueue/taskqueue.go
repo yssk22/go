@@ -94,10 +94,10 @@ func (queue *PushQueue) PushTask(ctx context.Context, urlPath string, form url.V
 func (queue *PushQueue) RequestValidator() web.Handler {
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		if !appengine.IsDevAppServer() {
-			name := req.Header.Get("X-AppEngine-TaskName")
+			name := req.Header.Get("X-AppEngine-QueueName")
 			if queue.Name != name {
 				logger := xlog.WithContext(req.Context()).WithKey(LoggerKey)
-				logger.Warnf("Task Queeue invalidation: %q != %q", queue.Name, name)
+				logger.Warnf("Task Queue invalidation: %q != %q", queue.Name, name)
 				return response.NewErrorWithStatus(
 					fmt.Errorf("task queue validation failed"),
 					response.HTTPStatusBadRequest,
