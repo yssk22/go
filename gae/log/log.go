@@ -28,9 +28,8 @@ func NewLogSinkWithFormatter(f *xlog.TextFormatter) xlog.Sink {
 }
 
 func (s *LogSink) Write(r *xlog.Record) error {
-	fmt.Println("FOOO")
 	ctx := r.Context()
-	if ctx != nil {
+	if ctx == nil {
 		return fmt.Errorf("log context is nil")
 	}
 	buff, err := s.formatter.Format(r)
