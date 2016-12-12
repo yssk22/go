@@ -39,20 +39,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// var defaultSink Sink = NewIOSink(os.Stderr)
-
-// // SetOutput sets the sink for the global logger
-// func SetOutput(s Sink) {
-// 	defaultSink = s
-// }
-
-// var defaultFilter = MinLevelFilter(LevelInfo)
-
-// // SetFilter sets the filter for the global logger
-// func SetFilter(f Filter) {
-// 	defaultFilter = f
-// }
-
 var defaultOption = &Option{
 	MinStackCaptureOn: LevelNone,
 	StackCaptureDepth: 0,
@@ -64,19 +50,17 @@ var defaultIOFormatter = NewTextFormatter(
 	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 )
 
-var defaultSink Sink = NewIOSinkWithFormatter(
-	os.Stderr, defaultIOFormatter,
-)
-
-var defaultLogger = New(
-	KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
-		defaultSink,
+var defaultFilter = KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
+	NewIOSinkWithFormatter(
+		os.Stderr, defaultIOFormatter,
 	),
 )
 
+var defaultLogger = New(defaultFilter)
+
 // SetSink sets the default logger sink.
 func SetSink(s Sink) {
-	defaultSink = s
+	defaultFilter.next = s
 }
 
 // SetKeyFilter sets the specific filter level for `key`.
