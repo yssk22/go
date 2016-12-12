@@ -11,17 +11,11 @@ import (
 )
 
 type ExportOption struct {
-	ValueOnly bool
 }
 
 var DefaultExportOption = &ExportOption{}
 
-type ExportedRow struct {
-	Key  *datastore.Key
-	Data entityLoader
-}
-
-const batchSize = 300
+const batchSize = 200
 
 func Export(ctx context.Context, kind string, w io.Writer, option *ExportOption) error {
 	if option == nil {
@@ -33,13 +27,9 @@ func Export(ctx context.Context, kind string, w io.Writer, option *ExportOption)
 	totalCount := 0
 	for {
 		for j := 0; j < batchSize; j++ {
-			var data interface{}
+			var data entity
 			var buff []byte
-			if option.ValueOnly {
-				data = entityValueLoader(make(map[string]interface{}))
-			} else {
-				data = entityLoader(make(map[string]interface{}))
-			}
+			data = entity(make(map[string]interface{}))
 			key, err := iter.Next(data)
 			if err != nil {
 				if err == datastore.Done {
@@ -48,14 +38,9 @@ func Export(ctx context.Context, kind string, w io.Writer, option *ExportOption)
 				}
 				return err
 			}
-			if option.ValueOnly {
-				buff, err = json.Marshal(data)
-			} else {
-				buff, err = json.Marshal(map[string]interface{}{
-					"Key":  key,
-					"Data": data,
-				})
-			}
+			buff, err = json.Marshal(Row{
+				Key: key, Data: data,
+			})
 			if err != nil {
 				return err
 			}
