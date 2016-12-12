@@ -8,10 +8,13 @@ import (
 
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/x/xlog"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
 )
+
+const LoggerKey = "gae.taskqueue"
 
 // QueueMode is a type alias for queue mode string
 type QueueMode string
@@ -93,6 +96,8 @@ func (queue *PushQueue) RequestValidator() web.Handler {
 		if !appengine.IsDevAppServer() {
 			name := req.Header.Get("X-AppEngine-TaskName")
 			if queue.Name != name {
+				logger := xlog.WithContext(req.Context()).WithKey(LoggerKey)
+				logger.Warnf("Task Queeue invalidation: %q != %q", queue.Name, name)
 				return response.NewErrorWithStatus(
 					fmt.Errorf("task queue validation failed"),
 					response.HTTPStatusBadRequest,
