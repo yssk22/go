@@ -186,7 +186,7 @@ func New(s *service.Service, path string) *Config {
 			if t.Status != StatusReady && t.Status != StatusRunning {
 				return response.NewErrorWithStatus(
 					fmt.Errorf("task %q is already in %s", t.ID, t.Status),
-					response.HTTPStatusPreconditionFailed,
+					response.HTTPStatusInternalServerError,
 				)
 			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
