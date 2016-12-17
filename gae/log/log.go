@@ -15,7 +15,7 @@ type LogSink struct {
 func NewLogSink() xlog.Sink {
 	return &LogSink{
 		formatter: xlog.NewTextFormatter(
-			`{{.Data}}`,
+			`{{.Data}}{{formatstack .}}`,
 		),
 	}
 }
