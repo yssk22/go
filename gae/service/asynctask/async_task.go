@@ -121,7 +121,7 @@ func (c *Config) Schedule(sched string, description string) {
 	p := path.Join(c.path, "cron/")
 	c.service.AddCron(p, sched, description,
 		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
-			err := c.Queue.PushTask(req.Context(), c.service.Path(p), url.Values{})
+			err := c.Queue.PushTask(req.Context(), c.service.Path(c.path), url.Values{})
 			if err != nil {
 				return response.NewError(err)
 			}
