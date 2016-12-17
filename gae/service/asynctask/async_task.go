@@ -183,13 +183,12 @@ func New(s *service.Service, path string) *Config {
 			if t == nil {
 				return nil
 			}
-			if t.Status != StatusReady && t.Status != StatusRunning {
-				return response.NewErrorWithStatus(
-					fmt.Errorf("task %q is already in %s", t.ID, t.Status),
-					response.HTTPStatusInternalServerError,
-				)
-			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
+			if t.Status != StatusReady && t.Status != StatusRunning {
+				// return 200 for GAE not to retry the task.
+				logger.Warnf("task %q is already in %s", t.ID, t.Status)
+				return response.NewText("OK")
+			}
 			if t.Status == StatusReady {
 				logger.Infof("Start a task")
 				t.StartAt = xtime.Now()
