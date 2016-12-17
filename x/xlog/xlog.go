@@ -40,14 +40,14 @@ import (
 )
 
 var defaultOption = &Option{
-	MinStackCaptureOn: LevelNone,
-	StackCaptureDepth: 0,
+	MinStackCaptureOn: LevelError,
+	StackCaptureDepth: 30,
 }
 
 var defaultKeyFilters = map[interface{}]Level{}
 
 var defaultIOFormatter = NewTextFormatter(
-	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
+	`{{formattimestamp .}} [{{.Level}}] {{.Data}}{{formatstack .}}`,
 )
 
 var defaultFilter = KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(

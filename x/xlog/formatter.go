@@ -184,7 +184,7 @@ var defaultFuncMap = map[string]interface{}{
 	},
 	"formatstack": func(r *Record) string {
 		if r.Stack == nil {
-			return "<No stack available>"
+			return ""
 		}
 		var i = 0
 		var buff bytes.Buffer
