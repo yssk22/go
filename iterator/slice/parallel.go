@@ -34,8 +34,11 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 
 	l := a1.Len()
+	if l == 0 {
+		return nil
+	}
 	n := option.MaxConcurrency
-	if n <= 0 || l < n {
+	if l < n {
 		n = l
 	}
 
