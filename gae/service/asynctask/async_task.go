@@ -121,7 +121,8 @@ func (c *Config) Schedule(sched string, description string) {
 	p := path.Join(c.path, "cron/")
 	c.service.AddCron(p, sched, description,
 		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
-			err := c.Queue.PushTask(req.Context(), c.service.Path(c.path), url.Values{})
+			path := fmt.Sprintf("%s?cron=true", c.service.Path(c.path))
+			err := c.Queue.PushTask(req.Context(), path, url.Values{})
 			if err != nil {
 				return response.NewError(err)
 			}
@@ -208,6 +209,7 @@ func New(s *service.Service, path string) *Config {
 						if !ok {
 							err = fmt.Errorf("%v", x)
 						}
+						logger.Fatalf("rescue from panic: %v", err)
 					}
 				}()
 				progress, err = config.logic.Run(req, t)
@@ -262,7 +264,7 @@ func New(s *service.Service, path string) *Config {
 				panic(err)
 			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
-			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s)", t.ID, taskPath, queue.Name)
+			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s, cron=%t)", t.ID, taskPath, queue.Name, req.Query.GetStringOr("cron", "") == "true")
 			return response.NewJSONWithStatus(
 				&TriggerResponse{t.ID},
 				response.HTTPStatusCreated,
