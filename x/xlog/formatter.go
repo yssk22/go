@@ -189,9 +189,6 @@ var defaultFuncMap = map[string]interface{}{
 		var i = 0
 		var buff bytes.Buffer
 		for i = range r.Stack {
-			if r.Stack[i].PackageName == "" {
-				return buff.String()
-			}
 			buff.WriteString(fmt.Sprintf("\n\t%s", r.Stack[i].String()))
 		}
 		if i == 50 {
