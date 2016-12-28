@@ -15,7 +15,7 @@ import(
 )
 
 func ({{$v}} *{{.Type}}) NewKey(ctx context.Context) *datastore.Key {
-    return helper.NewKey(ctx, "{{.Type}}", {{$v}}.{{.IDField}})
+    return helper.NewKey(ctx, "{{.Kind}}", {{$v}}.{{.IDField}})
 }
 
 // UpdateByForm updates the fields by form values. All values should be validated
@@ -49,7 +49,7 @@ type {{.Type}}Kind struct {
 // Default{{.Type}}Kind is a default value of *{{.Type}}Kind
 var Default{{.Type}}Kind = &{{.Type}}Kind{}
 
-const {{.Type}}KindLoggerKey = "ent.{{snakecase .Type}}"
+const {{.Type}}KindLoggerKey = "ent.{{snakecase .Kind}}"
 
 func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
     k.useDefaultIfNil = b
@@ -76,7 +76,7 @@ func (k *{{.Type}}Kind) MustGet(ctx context.Context, key interface{}) *{{.Type}}
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
-    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+    var logger = xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
     var dsKeys, err = k.normMultiKeys(ctx, keys)
     if err != nil {
         return nil, nil, err
@@ -101,7 +101,7 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*data
             return dsKeys, ents, nil
         }
         logger.Debug(func(p *xlog.Printer){
-            p.Println("{{.Type}}#GetMulti [Memcache]", )
+            p.Println("{{.Kind}}#GetMulti [Memcache]", )
             for i:=0; i < size; i++ {
                 s := fmt.Sprintf("%v", ents[i])
                 if len(s) > 20 {
@@ -162,14 +162,14 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*data
         }
         if len(cacheEnts) > 0 {
             if err := memcache.SetMulti(ctx, cacheKeys, cacheEnts); err != nil {
-                logger.Warnf("Failed to create {{.Type}}) caches: %v", err)
+                logger.Warnf("Failed to create {{.Kind}}) caches: %v", err)
             }
         }
     }
 
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#GetMulti [Datastore] (UseDefault: %t, NoCache: %t)\n",
+            "{{.Kind}}#GetMulti [Datastore] (UseDefault: %t, NoCache: %t)\n",
             k.useDefaultIfNil, k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -220,11 +220,11 @@ func (k *{{.Type}}Kind) MustPut(ctx context.Context, ent *{{.Type}}) *datastore.
 // PutMulti do Put with multiple keys
 func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*datastore.Key, error) {
     var size = len(ents)
-    var dsKeys  []*datastore.Key
+    var dsKeys []*datastore.Key
     if size == 0 {
         return nil, nil
     }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+    logger := xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
 
     dsKeys = make([]*datastore.Key, size, size)
     for i := range ents {
@@ -260,7 +260,7 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
 
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#PutMulti [Datastore] (NoCache: %t)\n",
+            "{{.Kind}}#PutMulti [Datastore] (NoCache: %t)\n",
             k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -338,7 +338,7 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
 
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#DeleteMulti [Datastore] (NoCache: %t)\n",
+            "{{.Kind}}#DeleteMulti [Datastore] (NoCache: %t)\n",
             k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -368,13 +368,13 @@ func (k *{{.Type}}Kind) normMultiKeys(ctx context.Context, keys interface{}) ([]
             tmp := keys.([]string)
             dsKeys = make([]*datastore.Key, len(tmp))
             for i, s := range tmp {
-                dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", s)
+                dsKeys[i] = helper.NewKey(ctx, "{{.Kind}}", s)
             }
         case []interface{}:
             tmp := keys.([]interface{})
             dsKeys = make([]*datastore.Key, len(tmp))
             for i, s := range tmp {
-                dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", s)
+                dsKeys[i] = helper.NewKey(ctx, "{{.Kind}}", s)
             }
         case []*datastore.Key:
             dsKeys = keys.([]*datastore.Key)
@@ -391,7 +391,7 @@ type {{.Type}}Query struct {
 
 func New{{.Type}}Query() *{{.Type}}Query {
     return &{{.Type}}Query{
-        q: helper.NewQuery("{{.Type}}"),
+        q: helper.NewQuery("{{.Kind}}"),
     }
 }
 
