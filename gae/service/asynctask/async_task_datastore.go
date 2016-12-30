@@ -525,10 +525,7 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 	if err != nil {
 		return nil, err
 	}
-	start, err := iter.Cursor()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-	}
+	pagination := &AsyncTaskPagination{}
 	keys := []*datastore.Key{}
 	data := []*AsyncTask{}
 	for {
@@ -539,15 +536,23 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			return &AsyncTaskPagination{
-				Start: start.String(),
-				End:   end.String(),
-				Keys:  keys,
-				Data:  data,
-			}, nil
+			if pagination.Start == "" {
+				pagination.Start = end.String()
+			}
+			pagination.Keys = keys
+			pagination.Data = data
+			pagination.End = end.String()
+			return pagination, nil
 		}
 		if err != nil {
 			return nil, err
+		}
+		if pagination.Start == "" {
+			start, err := iter.Cursor()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+			}
+			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)

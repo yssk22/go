@@ -551,10 +551,7 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 	if err != nil {
 		return nil, err
 	}
-	start, err := iter.Cursor()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-	}
+	pagination := &ExamplePagination{}
 	keys := []*datastore.Key{}
 	data := []*Example{}
 	for {
@@ -565,15 +562,23 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			return &ExamplePagination{
-				Start: start.String(),
-				End:   end.String(),
-				Keys:  keys,
-				Data:  data,
-			}, nil
+			if pagination.Start == "" {
+				pagination.Start = end.String()
+			}
+			pagination.Keys = keys
+			pagination.Data = data
+			pagination.End = end.String()
+			return pagination, nil
 		}
 		if err != nil {
 			return nil, err
+		}
+		if pagination.Start == "" {
+			start, err := iter.Cursor()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+			}
+			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)
