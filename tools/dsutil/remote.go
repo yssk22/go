@@ -22,7 +22,7 @@ var remoteCtxScopes = []string{
 
 var ErrNoRemoteAPIKeyIsConfigured = fmt.Errorf("no GOOGLE_APPLICATION_CREDENTIALS environment key is configured")
 
-func GetRemoteContext(host string, namespace string, keyfile string) (context.Context, error) {
+func GetRemoteContext(ctx context.Context, host string, namespace string, keyfile string) (context.Context, error) {
 	var hc *http.Client
 	var err error
 	if keyfile != "" {
@@ -34,7 +34,7 @@ func GetRemoteContext(host string, namespace string, keyfile string) (context.Co
 		if err != nil {
 			return nil, err
 		}
-		hc = oauth2.NewClient(oauth2.NoContext, cfg.TokenSource(oauth2.NoContext))
+		hc = oauth2.NewClient(ctx, cfg.TokenSource(ctx))
 	} else {
 		const defaultCredentialEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 		if os.Getenv(defaultCredentialEnvKey) != "" {
@@ -47,12 +47,12 @@ func GetRemoteContext(host string, namespace string, keyfile string) (context.Co
 		}
 	}
 
-	ctx, err := remote_api.NewRemoteContext(host, hc)
+	remoteCtx, err := remote_api.NewRemoteContext(host, hc)
 	if err != nil {
 		return nil, err
 	}
 	if namespace != "" {
-		return appengine.Namespace(ctx, namespace)
+		return appengine.Namespace(remoteCtx, namespace)
 	}
-	return ctx, nil
+	return remoteCtx, nil
 }

@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/oauth2"
+
 	"github.com/speedland/go/tools/dsutil"
 )
 
@@ -38,7 +40,7 @@ func main() {
 			*output = fmt.Sprintf("%s.%s.%s.bk", *host, *namespace, *kind)
 		}
 	}
-	ctx, err := dsutil.GetRemoteContext(*host, *namespace, *key)
+	ctx, err := dsutil.GetRemoteContext(oauth2.NoContext, *host, *namespace, *key)
 	if err != nil {
 		log.Fatal(err)
 	}
