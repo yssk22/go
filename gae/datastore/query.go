@@ -269,9 +269,11 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 		if err != nil {
 			return nil, fmt.Errorf("start cursor error: %v", err)
 		}
-		if vv, err := datastore.DecodeCursor(fmt.Sprintf("%s", v)); err == nil {
-			query = query.Start(vv)
-			buff = append(buff, fmt.Sprintf("Start: %s", vv))
+		if str := fmt.Sprintf("%s", v); str != "" {
+			if vv, err := datastore.DecodeCursor(str); err == nil {
+				query = query.Start(vv)
+				buff = append(buff, fmt.Sprintf("Start: %s", vv))
+			}
 		}
 	}
 
@@ -280,9 +282,11 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 		if err != nil {
 			return nil, fmt.Errorf("end cursor error: %v", err)
 		}
-		if vv, err := datastore.DecodeCursor(fmt.Sprintf("%s", v)); err == nil {
-			query = query.End(vv)
-			buff = append(buff, fmt.Sprintf("End: %s", vv))
+		if str := fmt.Sprintf("%s", v); str != "" {
+			if vv, err := datastore.DecodeCursor(str); err == nil {
+				query = query.End(vv)
+				buff = append(buff, fmt.Sprintf("End: %s", vv))
+			}
 		}
 	}
 	logger.Debug(func(p *xlog.Printer) {
