@@ -28,4 +28,9 @@ func TestCounter(t *testing.T) {
 	a.Nil(Increment(gaetest.NewContext(), ckey2))
 	a.Nil(Increment(gaetest.NewContext(), ckey2))
 	a.EqInt(2, MustCount(gaetest.NewContext(), ckey2))
+
+	a.Nil(Reset(gaetest.NewContext(), ckey1))
+	a.EqInt(0, MustCount(gaetest.NewContext(), ckey1))
+	a.Nil(Reset(gaetest.NewContext(), ckey2))
+	a.EqInt(0, MustCount(gaetest.NewContext(), ckey2))
 }

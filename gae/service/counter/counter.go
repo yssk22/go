@@ -66,6 +66,24 @@ func MustCount(ctx context.Context, key string) int {
 	return c
 }
 
+// Reset resets the counter of the given key
+func Reset(ctx context.Context, key string) error {
+	keys, _, err := NewShardQuery().Eq("CounterKey", lazy.New(key)).GetAll(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err := DefaultShardKind.DeleteMulti(ctx, keys); err != nil {
+		return err
+	}
+	memcache.Delete(ctx, countMemcacheKey(key))
+	return nil
+}
+
+// MustReset is like Reset but panics if an error occurrs.
+func MustReset(ctx context.Context, key string) {
+	xerrors.MustNil(Reset(ctx, key))
+}
+
 // Increment increments the counter of the given key
 func Increment(ctx context.Context, key string) error {
 	var cfg *Config
