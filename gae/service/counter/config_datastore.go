@@ -41,8 +41,8 @@ type ConfigKind struct {
 // DefaultConfigKind is a default value of *ConfigKind
 var DefaultConfigKind = &ConfigKind{}
 
-// CounterConfigKindLoggerKey  is a logger key name for the ent
-const CounterConfigKindLoggerKey = "ent.counter_config"
+// ConfigKindLoggerKey is a logger key name for the ent
+const ConfigKindLoggerKey = "ent.counter_config"
 
 func (k *ConfigKind) UseDefaultIfNil(b bool) *ConfigKind {
 	k.useDefaultIfNil = b
@@ -69,7 +69,7 @@ func (k *ConfigKind) MustGet(ctx context.Context, key interface{}) *Config {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ConfigKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Config, error) {
-	var logger = xlog.WithContext(ctx).WithKey(CounterConfigKindLoggerKey)
+	var logger = xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 	var dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, nil, err
@@ -217,7 +217,7 @@ func (k *ConfigKind) PutMulti(ctx context.Context, ents []*Config) ([]*datastore
 	if size == 0 {
 		return nil, nil
 	}
-	logger := xlog.WithContext(ctx).WithKey(CounterConfigKindLoggerKey)
+	logger := xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
@@ -302,7 +302,7 @@ func (k *ConfigKind) MustDelete(ctx context.Context, key interface{}) *datastore
 
 // DeleteMulti do Delete with multiple keys
 func (k *ConfigKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-	var logger = xlog.WithContext(ctx).WithKey(CounterConfigKindLoggerKey)
+	var logger = xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 	var dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, err

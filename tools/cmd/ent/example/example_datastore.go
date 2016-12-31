@@ -67,7 +67,7 @@ type ExampleKind struct {
 // DefaultExampleKind is a default value of *ExampleKind
 var DefaultExampleKind = &ExampleKind{}
 
-// ExampleKindLoggerKey  is a logger key name for the ent
+// ExampleKindLoggerKey is a logger key name for the ent
 const ExampleKindLoggerKey = "ent.example"
 
 func (k *ExampleKind) UseDefaultIfNil(b bool) *ExampleKind {

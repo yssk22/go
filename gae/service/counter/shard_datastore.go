@@ -41,8 +41,8 @@ type ShardKind struct {
 // DefaultShardKind is a default value of *ShardKind
 var DefaultShardKind = &ShardKind{}
 
-// CounterSharedKindLoggerKey  is a logger key name for the ent
-const CounterSharedKindLoggerKey = "ent.counter_shared"
+// ShardKindLoggerKey is a logger key name for the ent
+const ShardKindLoggerKey = "ent.counter_shared"
 
 func (k *ShardKind) UseDefaultIfNil(b bool) *ShardKind {
 	k.useDefaultIfNil = b
@@ -69,7 +69,7 @@ func (k *ShardKind) MustGet(ctx context.Context, key interface{}) *Shard {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ShardKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Shard, error) {
-	var logger = xlog.WithContext(ctx).WithKey(CounterSharedKindLoggerKey)
+	var logger = xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 	var dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, nil, err
@@ -217,7 +217,7 @@ func (k *ShardKind) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.K
 	if size == 0 {
 		return nil, nil
 	}
-	logger := xlog.WithContext(ctx).WithKey(CounterSharedKindLoggerKey)
+	logger := xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
@@ -302,7 +302,7 @@ func (k *ShardKind) MustDelete(ctx context.Context, key interface{}) *datastore.
 
 // DeleteMulti do Delete with multiple keys
 func (k *ShardKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-	var logger = xlog.WithContext(ctx).WithKey(CounterSharedKindLoggerKey)
+	var logger = xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 	var dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, err

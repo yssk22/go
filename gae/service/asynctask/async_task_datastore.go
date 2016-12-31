@@ -41,7 +41,7 @@ type AsyncTaskKind struct {
 // DefaultAsyncTaskKind is a default value of *AsyncTaskKind
 var DefaultAsyncTaskKind = &AsyncTaskKind{}
 
-// AsyncTaskKindLoggerKey  is a logger key name for the ent
+// AsyncTaskKindLoggerKey is a logger key name for the ent
 const AsyncTaskKindLoggerKey = "ent.async_task"
 
 func (k *AsyncTaskKind) UseDefaultIfNil(b bool) *AsyncTaskKind {

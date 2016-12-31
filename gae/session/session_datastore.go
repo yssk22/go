@@ -41,7 +41,7 @@ type SessionKind struct {
 // DefaultSessionKind is a default value of *SessionKind
 var DefaultSessionKind = &SessionKind{}
 
-// SessionKindLoggerKey  is a logger key name for the ent
+// SessionKindLoggerKey is a logger key name for the ent
 const SessionKindLoggerKey = "ent.session"
 
 func (k *SessionKind) UseDefaultIfNil(b bool) *SessionKind {

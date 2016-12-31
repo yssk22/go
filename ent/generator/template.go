@@ -49,8 +49,8 @@ type {{.Type}}Kind struct {
 // Default{{.Type}}Kind is a default value of *{{.Type}}Kind
 var Default{{.Type}}Kind = &{{.Type}}Kind{}
 
-// {{.Kind}}KindLoggerKey  is a logger key name for the ent
-const {{.Kind}}KindLoggerKey = "ent.{{snakecase .Kind}}"
+// {{.Type}}KindLoggerKey is a logger key name for the ent
+const {{.Type}}KindLoggerKey = "ent.{{snakecase .Kind}}"
 
 func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
     k.useDefaultIfNil = b
@@ -77,7 +77,7 @@ func (k *{{.Type}}Kind) MustGet(ctx context.Context, key interface{}) *{{.Type}}
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
-    var logger = xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
+    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
     var dsKeys, err = k.normMultiKeys(ctx, keys)
     if err != nil {
         return nil, nil, err
@@ -225,7 +225,7 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
     if size == 0 {
         return nil, nil
     }
-    logger := xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
+    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
 
     dsKeys = make([]*datastore.Key, size, size)
     for i := range ents {
@@ -310,7 +310,7 @@ func (k *{{.Type}}Kind) MustDelete(ctx context.Context, key interface{}) (*datas
 
 // DeleteMulti do Delete with multiple keys
 func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-    var logger = xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
+    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
     var dsKeys, err = k.normMultiKeys(ctx, keys)
     if err != nil {
         return nil, err
