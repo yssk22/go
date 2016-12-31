@@ -49,7 +49,8 @@ type {{.Type}}Kind struct {
 // Default{{.Type}}Kind is a default value of *{{.Type}}Kind
 var Default{{.Type}}Kind = &{{.Type}}Kind{}
 
-const {{.Type}}KindLoggerKey = "ent.{{snakecase .Kind}}"
+// {{.Kind}}KindLoggerKey  is a logger key name for the ent
+const {{.Kind}}KindLoggerKey = "ent.{{snakecase .Kind}}"
 
 func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
     k.useDefaultIfNil = b
@@ -309,7 +310,7 @@ func (k *{{.Type}}Kind) MustDelete(ctx context.Context, key interface{}) (*datas
 
 // DeleteMulti do Delete with multiple keys
 func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+    var logger = xlog.WithContext(ctx).WithKey({{.Kind}}KindLoggerKey)
     var dsKeys, err = k.normMultiKeys(ctx, keys)
     if err != nil {
         return nil, err
