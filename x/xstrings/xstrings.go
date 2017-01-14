@@ -19,6 +19,20 @@ func SplitAndTrim(s string, sep string) []string {
 	return list
 }
 
+// SplitAndTrimAsMap is like SplitAndTrim but returns an map[string]bool
+// where the map key is the string flagment included in
+func SplitAndTrimAsMap(s string, sep string) map[string]struct{} {
+	var m = make(map[string]struct{})
+	splitted := strings.Split(s, sep)
+	for _, v := range splitted {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			m[s] = struct{}{}
+		}
+	}
+	return m
+}
+
 // ToSnakeCase converts the string to the one by snake case.
 func ToSnakeCase(s string) string {
 	if len(s) == 0 {
