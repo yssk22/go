@@ -77,7 +77,7 @@ func (r *Recorder) TestPut(path string, v interface{}) *httptest.ResponseRecorde
 }
 
 // TestDelete make a test DELETE request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestDelete(path string, v interface{}) *httptest.ResponseRecorder {
+func (r *Recorder) TestDelete(path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("DELETE", path, nil))
 	r.Cookies, _ = xhttptest.GetCookies(w)
