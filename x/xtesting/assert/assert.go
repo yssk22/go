@@ -132,6 +132,7 @@ func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 			buff.WriteString("[DIFF]\n")
 			for _, diff := range diffs {
 				text := diff.Text
+				text = strings.Replace(text, "\n", "\\n\n", -1)
 				switch diff.Type {
 				case diffmatchpatch.DiffInsert:
 					_, _ = buff.WriteString("\x1b[34m")
