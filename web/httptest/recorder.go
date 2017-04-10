@@ -84,7 +84,7 @@ func (r *Recorder) TestDelete(path string) *httptest.ResponseRecorder {
 	return w
 }
 
-// PrepareRequest prepares http.Request with request body
+// NewRequest returns http.Request with request body given by `v`
 func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request {
 	var err error
 	var req *http.Request
