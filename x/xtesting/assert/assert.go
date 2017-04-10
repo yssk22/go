@@ -135,11 +135,11 @@ func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 				text = strings.Replace(text, "\n", "\\n\n", -1)
 				switch diff.Type {
 				case diffmatchpatch.DiffInsert:
-					_, _ = buff.WriteString("\x1b[34m")
+					_, _ = buff.WriteString("\x1b[41m")
 					_, _ = buff.WriteString(text)
 					_, _ = buff.WriteString("\x1b[0m")
 				case diffmatchpatch.DiffDelete:
-					_, _ = buff.WriteString("\x1b[31m")
+					_, _ = buff.WriteString("\x1b[44m")
 					_, _ = buff.WriteString(text)
 					_, _ = buff.WriteString("\x1b[0m")
 				case diffmatchpatch.DiffEqual:
