@@ -16,10 +16,14 @@
 package assert
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
 
+	"strings"
+
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/speedland/go/x/xreflect"
 	"github.com/speedland/go/x/xruntime"
 )
@@ -121,6 +125,29 @@ func (a *Assert) EqFloat64(expect, got float64, msgContext ...interface{}) {
 // EqStr for equality assertion (string)
 func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 	if expect != got {
+		if strings.IndexByte(got, '\n') >= 0 {
+			dmp := diffmatchpatch.New()
+			diffs := dmp.DiffMain(expect, got, false)
+			var buff bytes.Buffer
+			buff.WriteString("[DIFF]\n")
+			for _, diff := range diffs {
+				text := diff.Text
+				switch diff.Type {
+				case diffmatchpatch.DiffInsert:
+					_, _ = buff.WriteString("\x1b[34m")
+					_, _ = buff.WriteString(text)
+					_, _ = buff.WriteString("\x1b[0m")
+				case diffmatchpatch.DiffDelete:
+					_, _ = buff.WriteString("\x1b[31m")
+					_, _ = buff.WriteString(text)
+					_, _ = buff.WriteString("\x1b[0m")
+				case diffmatchpatch.DiffEqual:
+					_, _ = buff.WriteString(text)
+				}
+			}
+			a.Failure(expect, got, buff.String())
+			return
+		}
 		a.Failure(expect, got, msgContext...)
 	}
 }
