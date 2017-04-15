@@ -41,6 +41,9 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	if l < n {
 		n = l
 	}
+	if n <= 0 {
+		n = 1
+	}
 
 	errors := SliceError(make([]error, l))
 	eachSize := l / n
