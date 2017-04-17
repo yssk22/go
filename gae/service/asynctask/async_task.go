@@ -4,10 +4,10 @@ package asynctask
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
-	"github.com/speedland/go/x/xcontext"
 	"golang.org/x/net/context"
 
 	"github.com/speedland/go/gae/service"
@@ -15,6 +15,7 @@ import (
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/x/xcontext"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 )
@@ -61,6 +62,25 @@ func (t *AsyncTask) LastProgress() *Progress {
 	return &t.Progress[l-1]
 }
 
+// NewMonitorResponse returns a new *MonitorResponse exposed externally
+func (t *AsyncTask) NewMonitorResponse() *MonitorResponse {
+	m := &MonitorResponse{
+		ID:     t.ID,
+		Status: t.Status,
+	}
+	if !t.StartAt.IsZero() {
+		m.StartAt = &(t.StartAt)
+	}
+	if !t.FinishAt.IsZero() {
+		m.FinishAt = &(t.FinishAt)
+	}
+	if t.Error != "" {
+		m.Error = &(t.Error)
+	}
+	m.Progress = t.LastProgress()
+	return m
+}
+
 // Progress is a struct that represents the task progress
 type Progress struct {
 	Total   int        `json:"total,omitempty"`
@@ -85,7 +105,9 @@ func (f Func) Run(req *web.Request, t *AsyncTask) (*Progress, error) {
 // Config is an configuration object to configure endpoints on the task.
 type Config struct {
 	Queue     *taskqueue.PushQueue
+	service   *service.Service
 	validator web.Handler
+	path      string
 	logic     Logic
 }
 
@@ -94,17 +116,33 @@ func (c *Config) Implement(t Logic) {
 	c.logic = t
 }
 
-type triggerResponse struct {
+// Schedule adds the cron endpoint for the async task
+func (c *Config) Schedule(sched string, description string) {
+	p := path.Join(c.path, "cron/")
+	c.service.AddCron(p, sched, description,
+		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
+			path := fmt.Sprintf("%s?cron=true", c.service.Path(c.path))
+			err := c.Queue.PushTask(req.Context(), path, url.Values{})
+			if err != nil {
+				return response.NewError(err)
+			}
+			return response.NewText("OK")
+		}),
+	)
+}
+
+type TriggerResponse struct {
 	ID string `json:"id"`
 }
 
-type monitorResponse struct {
-	ID       string    `json:"id"`
-	Status   Status    `json:"status"`
-	Progress *Progress `json:"progress,omitempty"`
+type MonitorResponse struct {
+	ID       string     `json:"id"`
+	Status   Status     `json:"status"`
+	StartAt  *time.Time `json:"start_at,omitempty"`
+	FinishAt *time.Time `json:"finish_at,omitempty"`
+	Error    *string    `json:"error,omitempty"`
+	Progress *Progress  `json:"progress,omitempty"`
 }
-
-var kind = &AsyncTaskKind{}
 
 // New adds a new push queue for the asynchronous task execution and returns a *Config value
 // to implement the business logic
@@ -119,24 +157,20 @@ func New(s *service.Service, path string) *Config {
 	queue := s.AddPushQueue(name)
 
 	config := &Config{
-		Queue: queue,
+		Queue:   queue,
+		service: s,
+		path:    path,
 	}
 
 	// GET /path/:taskid.json
 	// endpoint to get the latest status of the given taskid.
 	s.Get(fmt.Sprintf("%s:taskid.json", path),
 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			t := kind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
+			t := DefaultAsyncTaskKind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
 			if t == nil {
 				return nil
 			}
-			return response.NewJSON(
-				&monitorResponse{
-					ID:       t.ID,
-					Status:   t.Status,
-					Progress: t.LastProgress(),
-				},
-			)
+			return response.NewJSON(t.NewMonitorResponse())
 		}))
 
 	// POST /path/:taskid.json
@@ -146,22 +180,21 @@ func New(s *service.Service, path string) *Config {
 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 			// TODO: There would be orphan tasks that need to be cleaned up since
 			// a task progress is tracked on datastore, and we use MustPut() to update the record without any retries.
-			t := kind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
+			t := DefaultAsyncTaskKind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
 			if t == nil {
 				return nil
 			}
-			if t.Status != StatusReady && t.Status != StatusRunning {
-				return response.NewErrorWithStatus(
-					fmt.Errorf("task %q is already in %s", t.ID, t.Status),
-					response.HTTPStatusPreconditionFailed,
-				)
-			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
+			if t.Status != StatusReady && t.Status != StatusRunning {
+				// return 200 for GAE not to retry the task.
+				logger.Warnf("task %q is already in %s", t.ID, t.Status)
+				return response.NewText("OK")
+			}
 			if t.Status == StatusReady {
 				logger.Infof("Start a task")
 				t.StartAt = xtime.Now()
 				t.Status = StatusRunning
-				kind.MustPut(req.Context(), t)
+				DefaultAsyncTaskKind.MustPut(req.Context(), t)
 			}
 
 			var err error
@@ -176,6 +209,7 @@ func New(s *service.Service, path string) *Config {
 						if !ok {
 							err = fmt.Errorf("%v", x)
 						}
+						logger.Fatalf("rescue from panic: %v", err)
 					}
 				}()
 				progress, err = config.logic.Run(req, t)
@@ -184,7 +218,7 @@ func New(s *service.Service, path string) *Config {
 			if progress != nil {
 				t.Progress = append(t.Progress, *progress)
 				if progress.Next != nil {
-					kind.MustPut(req.Context(), t)
+					DefaultAsyncTaskKind.MustPut(req.Context(), t)
 					logger.Infof("The task logic returns a progress with next params, calling a task recursively....")
 					err = queue.PushTask(req.Context(), fmt.Sprintf("%s?%s", req.URL.EscapedPath(), progress.Next.Encode()), nil)
 					if err == nil {
@@ -201,6 +235,7 @@ func New(s *service.Service, path string) *Config {
 
 			// finished the task
 			t.FinishAt = xtime.Now()
+			t.Progress = nil
 			if err == nil {
 				t.Status = StatusSuccess
 				resp = response.NewJSON(true)
@@ -209,7 +244,7 @@ func New(s *service.Service, path string) *Config {
 				t.Status = StatusFailure
 				resp = response.NewError(err)
 			}
-			kind.MustPut(req.Context(), t)
+			DefaultAsyncTaskKind.MustPut(req.Context(), t)
 			logger.Infof("The task finished with %s(tt=%s).", t.Status, t.FinishAt.Sub(t.StartAt))
 			return resp
 		}))
@@ -220,18 +255,18 @@ func New(s *service.Service, path string) *Config {
 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 			t := &AsyncTask{}
 			t.ID = uuid.New().String()
-			t.Path = path
+			t.Path = req.URL.Path
 			t.Query = req.URL.RawQuery
 			t.Status = StatusReady
-			kind.MustPut(req.Context(), t)
+			DefaultAsyncTaskKind.MustPut(req.Context(), t)
 			taskPath := fmt.Sprintf("%s%s.json?%s", req.URL.Path, t.ID, req.URL.Query().Encode())
 			if err := queue.PushTask(req.Context(), taskPath, nil); err != nil {
 				panic(err)
 			}
 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
-			logger.Infof("An AsyncTask created.")
+			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s, cron=%t)", t.ID, taskPath, queue.Name, req.Query.GetStringOr("cron", "") == "true")
 			return response.NewJSONWithStatus(
-				&triggerResponse{t.ID},
+				&TriggerResponse{t.ID},
 				response.HTTPStatusCreated,
 			)
 		}))

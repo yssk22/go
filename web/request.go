@@ -6,6 +6,7 @@ import (
 
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/uuid"
+	"github.com/speedland/go/x/xcontext"
 	"github.com/speedland/go/x/xnet/xhttp"
 
 	"golang.org/x/net/context"
@@ -28,6 +29,17 @@ type Request struct {
 	Option *Option
 }
 
+var requestContextKey = xcontext.NewKey("request")
+
+// FromContext returns a *Request associated with the context.
+func FromContext(ctx context.Context) *Request {
+	req, ok := ctx.Value(requestContextKey).(*Request)
+	if ok {
+		return req
+	}
+	return nil
+}
+
 // NewRequest returns a new *Request
 func NewRequest(r *http.Request, option *Option) *Request {
 	if option == nil {
@@ -41,12 +53,15 @@ func NewRequest(r *http.Request, option *Option) *Request {
 			cookies[c.Name] = c
 		}
 	}
-	return &Request{
+	req := &Request{
 		Request: r,
-		ctx:     initContext(r),
 		ID:      uuid.New(),
+		ctx:     initContext(r),
 		Query: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			return query.Get(key), nil
+			if val := query[key]; val != nil {
+				return val[0], nil
+			}
+			return nil, keyvalue.KeyError(key)
 		}).Proxy(),
 		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
 			return r.FormValue(key), nil
@@ -60,6 +75,7 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		}).Proxy(),
 		Option: option,
 	}
+	return req.WithValue(requestContextKey, req)
 }
 
 // Context returns the context associated with request.
