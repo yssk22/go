@@ -71,5 +71,17 @@ func Test_Do_MaxRetries(t *testing.T) {
 		return nil
 	}, interval, max)
 	a.NotNil(err)
-	a.OK(i == 3)
+	a.EqInt(4, i)
+
+	i = 0
+	max = MaxRetries(0)
+	err = Do(context.Background(), func(context.Context) error {
+		i++
+		if i < 10 {
+			return fmt.Errorf("Need retry")
+		}
+		return nil
+	}, interval, max)
+	a.OK(i == 1)
+	a.NotNil(err)
 }

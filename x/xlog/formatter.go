@@ -184,14 +184,11 @@ var defaultFuncMap = map[string]interface{}{
 	},
 	"formatstack": func(r *Record) string {
 		if r.Stack == nil {
-			return "<No stack available>"
+			return ""
 		}
 		var i = 0
 		var buff bytes.Buffer
 		for i = range r.Stack {
-			if r.Stack[i].PackageName == "" {
-				return buff.String()
-			}
 			buff.WriteString(fmt.Sprintf("\n\t%s", r.Stack[i].String()))
 		}
 		if i == 50 {

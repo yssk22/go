@@ -1,12 +1,12 @@
 package example
 
 import (
+	"encoding/json"
 	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/speedland/go/iterator/slice"
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xtime"
@@ -90,7 +90,7 @@ func TestExampleKind_GetMulti(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
-	keys, values, err := k.GetMulti(gaetest.NewContext(), "example-1", "example-2")
+	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"example-1", "example-2"})
 	a.Nil(err)
 	a.EqInt(2, len(keys))
 	a.EqInt(2, len(values))
@@ -106,7 +106,7 @@ func TestExampleKind_GetMulti_notFound(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
-	keys, values, err := k.GetMulti(gaetest.NewContext(), "aaa", "example-2")
+	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"aaa", "example-2"})
 	a.Nil(err)
 	a.EqInt(2, len(keys))
 	a.EqInt(2, len(values))
@@ -120,7 +120,7 @@ func TestExampleKind_GetMulti_useDefaultIfNil(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := (&ExampleKind{}).UseDefaultIfNil(true)
-	keys, values, err := k.GetMulti(gaetest.NewContext(), "aaa", "example-2")
+	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"aaa", "example-2"})
 	a.Nil(err)
 	a.EqInt(2, len(keys))
 	a.EqInt(2, len(values))
@@ -136,9 +136,9 @@ func TestExampleKind_GetMulti_cacheCreation(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
-	keys, values, err := k.GetMulti(gaetest.NewContext(), "example-1", "not-exists")
+	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"example-1", "not-exists"})
 	a.Nil(err)
-	a.EqInt(2, len(keys))
+	a.EqInt(2, len(keys), "%v, %v", keys, values)
 	a.EqInt(2, len(values))
 	a.NotNil(values[0])
 	a.Nil(values[1])
@@ -154,7 +154,8 @@ func TestExampleKind_GetMulti_cacheCreation(t *testing.T) {
 
 	// Delete datastore (to check cache can work)
 	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
-	_, values, _ = k.GetMulti(gaetest.NewContext(), "example-1")
+	_, values, err = k.GetMulti(gaetest.NewContext(), []string{"example-1"})
+	a.Nil(err)
 	a.NotNil(values[0])
 	a.EqStr(e1.Desc, values[0].Desc)
 }
@@ -178,7 +179,7 @@ func TestExampleKind_PutMulti(t *testing.T) {
 			a.EqStr(e.ID, keys[0].StringID())
 			a.EqTime(now, e.UpdatedAt)
 
-			_, ents, err := k.GetMulti(gaetest.NewContext(), slice.ToInterfaceSlice(keys)...)
+			_, ents, err := k.GetMulti(gaetest.NewContext(), keys)
 			a.Nil(err)
 			a.EqInt(1, len(keys))
 			a.EqInt(1, len(ents))
@@ -195,10 +196,10 @@ func TestExampleKind_DeleteMulti(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMulti.json", nil))
 
 	k := &ExampleKind{}
-	keys, err := k.DeleteMulti(gaetest.NewContext(), "example-1", "example-2")
+	keys, err := k.DeleteMulti(gaetest.NewContext(), []string{"example-1", "example-2"})
 	a.Nil(err)
 	a.EqInt(2, len(keys))
-	ents := k.MustGetMulti(gaetest.NewContext(), "example-1", "example-2")
+	ents := k.MustGetMulti(gaetest.NewContext(), []string{"example-1", "example-2"})
 	a.Nil(err)
 	a.Nil(ents[0])
 	a.Nil(ents[1])
@@ -215,4 +216,37 @@ func TestExampleQuery_GetAll(t *testing.T) {
 	a.Nil(err)
 	a.EqInt(1, len(keys))
 	a.EqStr("example-2", value[0].ID)
+}
+
+func TestExampleQuery_Run(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+
+	q := NewExampleQuery().Asc("ID").Limit(lazy.New(2))
+	p, err := q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-1", p.Data[0].ID)
+	a.EqStr("", p.Start)
+	next := p.End
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(next))
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr(next, p.Start)
+}
+
+func TestExamplePagination_MarshalJSON(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+
+	q := NewExampleQuery().Limit(lazy.New(0))
+	p, err := q.Run(gaetest.NewContext())
+	a.Nil(err)
+	b, _ := json.Marshal(p)
+	a.EqByteString(`{"start":"","end":"","data":[]}`, b)
 }

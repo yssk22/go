@@ -14,6 +14,7 @@ import (
 type Struct struct {
 	Package        string
 	Type           string
+	Kind           string
 	Instance       string
 	Fields         []*Field
 	Dependencies   map[string]string
@@ -22,9 +23,10 @@ type Struct struct {
 }
 
 // NewStruct returns a struct for the type `typeName`
-func NewStruct(typeName string) *Struct {
+func NewStruct(typeName string, kindName string) *Struct {
 	s := &Struct{
 		Type:         typeName,
+		Kind:         kindName,
 		Instance:     xstrings.ToSnakeCase(typeName)[:1],
 		Dependencies: make(map[string]string),
 	}

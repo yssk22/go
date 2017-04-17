@@ -41,6 +41,7 @@ type SessionKind struct {
 // DefaultSessionKind is a default value of *SessionKind
 var DefaultSessionKind = &SessionKind{}
 
+// SessionKindLoggerKey is a logger key name for the ent
 const SessionKindLoggerKey = "ent.session"
 
 func (k *SessionKind) UseDefaultIfNil(b bool) *SessionKind {
@@ -50,7 +51,7 @@ func (k *SessionKind) UseDefaultIfNil(b bool) *SessionKind {
 
 // Get gets the kind entity from datastore
 func (k *SessionKind) Get(ctx context.Context, key interface{}) (*datastore.Key, *Session, error) {
-	keys, ents, err := k.GetMulti(ctx, key)
+	keys, ents, err := k.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -66,19 +67,18 @@ func (k *SessionKind) MustGet(ctx context.Context, key interface{}) *Session {
 	return v
 }
 
-// GetMulti do Get with multiple keys
-func (k *SessionKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*Session, error) {
-	var size = len(keys)
+// GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
+func (k *SessionKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Session, error) {
+	var logger = xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
+	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, nil, err
+	}
+	var size = len(dsKeys)
 	var memKeys []string
-	var dsKeys []*datastore.Key
 	var ents []*Session
 	if size == 0 {
 		return nil, nil, nil
-	}
-	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
-	dsKeys = make([]*datastore.Key, size, size)
-	for i := range keys {
-		dsKeys[i] = helper.NewKey(ctx, "Session", keys[i])
 	}
 	ents = make([]*Session, size, size)
 	// Memcache access
@@ -88,7 +88,7 @@ func (k *SessionKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*dat
 		for i := range dsKeys {
 			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
 		}
-		err := memcache.GetMulti(ctx, memKeys, ents)
+		err = memcache.GetMulti(ctx, memKeys, ents)
 		if err == nil {
 			// Hit caches on all keys!!
 			return dsKeys, ents, nil
@@ -122,7 +122,7 @@ func (k *SessionKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*dat
 
 	// Datastore access
 	cacheMissingEnts := make([]*Session, cacheMissingSize, cacheMissingSize)
-	err := helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
+	err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
 		return nil, nil, err
@@ -132,7 +132,7 @@ func (k *SessionKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*dat
 		for i := 0; i < cacheMissingSize; i++ {
 			if cacheMissingEnts[i] == nil {
 				cacheMissingEnts[i] = NewSession()
-				cacheMissingEnts[i].ID = dsKeys[i].StringID() // TODO: Support non-string key as ID
+				cacheMissingEnts[i].ID = cacheMissingKeys[i].StringID() // TODO: Support non-string key as ID
 			}
 		}
 	}
@@ -182,8 +182,8 @@ func (k *SessionKind) GetMulti(ctx context.Context, keys ...interface{}) ([]*dat
 }
 
 // MustGetMulti is like GetMulti but returns only values and panic if error happens.
-func (k *SessionKind) MustGetMulti(ctx context.Context, keys ...interface{}) []*Session {
-	_, v, err := k.GetMulti(ctx, keys...)
+func (k *SessionKind) MustGetMulti(ctx context.Context, keys interface{}) []*Session {
+	_, v, err := k.GetMulti(ctx, keys)
 	if err != nil {
 		panic(err)
 	}
@@ -284,7 +284,7 @@ func (k *SessionKind) MustPutMulti(ctx context.Context, ents []*Session) []*data
 
 // Delete deletes the entity from datastore
 func (k *SessionKind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
-	keys, err := k.DeleteMulti(ctx, key)
+	keys, err := k.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
@@ -293,27 +293,26 @@ func (k *SessionKind) Delete(ctx context.Context, key interface{}) (*datastore.K
 
 // MustDelete is like Delete but panic if an error occurs
 func (k *SessionKind) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
-	keys, err := k.DeleteMulti(ctx, key)
+	_key, err := k.Delete(ctx, key)
 	if err != nil {
 		panic(err)
 	}
-	return keys[0]
+	return _key
 }
 
 // DeleteMulti do Delete with multiple keys
-func (k *SessionKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
-	var size = len(keys)
-	var dsKeys []*datastore.Key
+func (k *SessionKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	var logger = xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
+	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, err
+	}
+	var size = len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
-	dsKeys = make([]*datastore.Key, size, size)
-	for i := range keys {
-		dsKeys[i] = helper.NewKey(ctx, "Session", keys[i])
-	}
 	// Datastore access
-	err := helper.DeleteMulti(ctx, dsKeys)
+	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
 		return nil, err
@@ -324,7 +323,7 @@ func (k *SessionKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*
 		for i := range memKeys {
 			memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
 		}
-		err := memcache.DeleteMulti(ctx, memKeys)
+		err = memcache.DeleteMulti(ctx, memKeys)
 		if memcache.IsMemcacheError(err) {
 			logger.Warnf("Failed to invalidate memcache keys: %v", err)
 		}
@@ -347,12 +346,35 @@ func (k *SessionKind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*
 }
 
 // MustDeleteMulti is like DeleteMulti but panic if an error occurs
-func (k *SessionKind) MustDeleteMulti(ctx context.Context, keys ...interface{}) []*datastore.Key {
-	_keys, err := k.DeleteMulti(ctx, keys...)
+func (k *SessionKind) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	_keys, err := k.DeleteMulti(ctx, keys)
 	if err != nil {
 		panic(err)
 	}
 	return _keys
+}
+
+func (k *SessionKind) normMultiKeys(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	var dsKeys []*datastore.Key
+	switch t := keys.(type) {
+	case []string:
+		tmp := keys.([]string)
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = helper.NewKey(ctx, "Session", s)
+		}
+	case []interface{}:
+		tmp := keys.([]interface{})
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = helper.NewKey(ctx, "Session", s)
+		}
+	case []*datastore.Key:
+		dsKeys = keys.([]*datastore.Key)
+	default:
+		return nil, fmt.Errorf("getmulti: unsupported keys type: %s", t)
+	}
+	return dsKeys, nil
 }
 
 // SessionQuery helps to build and execute a query
@@ -420,6 +442,24 @@ func (q *SessionQuery) Desc(name string) *SessionQuery {
 	return q
 }
 
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) Limit(n lazy.Value) *SessionQuery {
+	q.q = q.q.Limit(n)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) Start(value lazy.Value) *SessionQuery {
+	q.q = q.q.Start(value)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *SessionQuery) End(value lazy.Value) *SessionQuery {
+	q.q = q.q.End(value)
+	return q
+}
+
 // GetAll returns all key and value of the query.
 func (q *SessionQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Session, error) {
 	var v []*Session
@@ -471,4 +511,60 @@ func (q *SessionQuery) MustCount(ctx context.Context) int {
 		panic(err)
 	}
 	return c
+}
+
+type SessionPagination struct {
+	Start string           `json:"start"`
+	End   string           `json:"end"`
+	Data  []*Session       `json:"data"`
+	Keys  []*datastore.Key `json:"-"`
+}
+
+// Run returns the a result as *SessionPagination object
+func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
+	iter, err := q.q.Run(ctx)
+	if err != nil {
+		return nil, err
+	}
+	pagination := &SessionPagination{}
+	keys := []*datastore.Key{}
+	data := []*Session{}
+	for {
+		var ent Session
+		key, err := iter.Next(&ent)
+		if err == datastore.Done {
+			end, err := iter.Cursor()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
+			}
+			if pagination.Start == "" {
+				pagination.Start = end.String()
+			}
+			pagination.Keys = keys
+			pagination.Data = data
+			pagination.End = end.String()
+			return pagination, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if pagination.Start == "" {
+			start, err := iter.Cursor()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+			}
+			pagination.Start = start.String()
+		}
+		keys = append(keys, key)
+		data = append(data, &ent)
+	}
+}
+
+// MustRun is like Run but panic if an error occurrs
+func (q *SessionQuery) MustRun(ctx context.Context) *SessionPagination {
+	p, err := q.Run(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }

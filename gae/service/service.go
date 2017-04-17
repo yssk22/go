@@ -80,8 +80,6 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		return next(req.WithContext(ctx))
 	}))
 
-	s.Get("/__/cron.yaml", web.HandlerFunc(s.serveCronYAML))
-	s.Get("/__/queue.yaml", web.HandlerFunc(s.serveQueueYAML))
 	return s
 }
 

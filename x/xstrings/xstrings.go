@@ -8,11 +8,29 @@ import (
 
 // SplitAndTrim is like strings.Split but spaces in each of item are trimmed
 func SplitAndTrim(s string, sep string) []string {
-	list := strings.Split(s, sep)
-	for i, v := range list {
-		list[i] = strings.TrimSpace(v)
+	var list []string
+	splitted := strings.Split(s, sep)
+	for _, v := range splitted {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			list = append(list, s)
+		}
 	}
 	return list
+}
+
+// SplitAndTrimAsMap is like SplitAndTrim but returns an map[string]bool
+// where the map key is the string flagment included in
+func SplitAndTrimAsMap(s string, sep string) map[string]struct{} {
+	var m = make(map[string]struct{})
+	splitted := strings.Split(s, sep)
+	for _, v := range splitted {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			m[s] = struct{}{}
+		}
+	}
+	return m
 }
 
 // ToSnakeCase converts the string to the one by snake case.

@@ -16,11 +16,13 @@ var (
 	kind      = flag.String("kind", "", "kind to export")
 	namespace = flag.String("namespace", "", "namespace on the kind")
 	host      = flag.String("host", "", "appengine host name")
-	output    = flag.String("output", "", "output file")
+	output    = flag.String("input", "", "input file")
+	appID     = flag.String("appid", "", "appid (needed if you import the data exported by another app)")
+	skip      = flag.Int("skip", 0, "skip N rows (useful to resume import operation to recover errors)")
 )
 
 func main() {
-	log.SetPrefix("[dsexport] ")
+	log.SetPrefix("[dsimport] ")
 	log.SetFlags(0)
 	flag.Parse()
 	if len(*kind) == 0 {
@@ -42,13 +44,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.Create(*output)
+	f, err := os.Open(*output)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	option := &dsutil.ExportOption{}
-	if err := dsutil.Export(ctx, *kind, f, option); err != nil {
-		log.Fatal(err)
+	option := &dsutil.ImportOption{}
+	option.AppID = *appID
+	option.Skip = *skip
+	if n, err := dsutil.Import(ctx, *kind, f, option); err != nil {
+		log.Fatalf("%v, you can resume using -skip=%d", err, *skip+n)
 	}
 }
