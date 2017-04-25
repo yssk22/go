@@ -34,15 +34,24 @@ func (p *GetProxy) Get(key string) (interface{}, error) {
 
 // GetOr is shorthand for keyvalue.GetOr.
 func (p *GetProxy) GetOr(key string, or interface{}) interface{} {
+	if p == nil {
+		return or
+	}
 	return GetOr(p.g, key, or)
 }
 
 // GetStringOr is shorthand for keyvalue.GetStringOr.
 func (p *GetProxy) GetStringOr(key string, or string) string {
+	if p == nil {
+		return or
+	}
 	return GetStringOr(p.g, key, or)
 }
 
 // GetIntOr is shorthand for keyvalue.GetIntOr.
 func (p *GetProxy) GetIntOr(key string, or int) int {
+	if p == nil {
+		return or
+	}
 	return GetIntOr(p.g, key, or)
 }
