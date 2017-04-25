@@ -13,7 +13,10 @@ type _html struct {
 }
 
 func (h *_html) Render(ctx context.Context, w io.Writer) {
-	h.template.Execute(w, h.data)
+	err := h.template.Execute(w, h.data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // NewHTML returns a new *HTML

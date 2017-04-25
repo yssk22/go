@@ -32,6 +32,9 @@ func (e KeyError) Error() string {
 
 // GetOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key interface{}, or interface{}) interface{} {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -41,6 +44,9 @@ func GetOr(g Getter, key interface{}, or interface{}) interface{} {
 
 // GetStringOr is string version of GetOr.
 func GetStringOr(g Getter, key interface{}, or string) string {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -60,6 +66,9 @@ func GetStringOr(g Getter, key interface{}, or string) string {
 
 // GetIntOr is int version of GetOr.
 func GetIntOr(g Getter, key interface{}, or int) int {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or

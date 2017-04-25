@@ -108,7 +108,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				}
 			})
 			request.Params = pathParams
-			return route.pipeline.Process(request, nil)
+			return route.pipeline.Process(request.WithValue(requestContextKey, request), nil)
 		}),
 	)
 	if res == nil {
