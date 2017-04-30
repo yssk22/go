@@ -2,6 +2,7 @@
 package asynctask
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
@@ -39,6 +40,24 @@ const (
 	StatusFailure
 )
 
+// TaskStore is a type alias for []byte
+type TaskStore []byte
+
+// MarshalJSON implements json.MarshalJSON()
+func (cs TaskStore) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(cs))
+}
+
+// UnmarshalJSON implements json.Unmarshaler#UnmarshalJSON([]byte)
+func (cs *TaskStore) UnmarshalJSON(b []byte) error {
+	var v []byte
+	if err := json.Unmarshal(b, v); err != nil {
+		return err
+	}
+	*cs = TaskStore(v)
+	return nil
+}
+
 // AsyncTask is a record to track a task progress
 //go:generate ent -type=AsyncTask
 type AsyncTask struct {
@@ -48,9 +67,30 @@ type AsyncTask struct {
 	Status    Status     `json:"status"`
 	Error     string     `json:"error" datastore:",noindex"`
 	Progress  []Progress `json:"progress" datastore:",noindex"`
+	TaskStore TaskStore  `json:"-" datastore",noindex"`
 	StartAt   time.Time  `json:"start_at"`
 	FinishAt  time.Time  `json:"finish_at"`
 	UpdatedAt time.Time  `json:"updated_at" ent:"timestamp"`
+}
+
+// IsStoreEmpty returns whether TaskStore field is empty or not
+func (t *AsyncTask) IsStoreEmpty() bool {
+	return t.TaskStore == nil || len(t.TaskStore) == 0
+}
+
+// SaveStore updates the task store
+func (t *AsyncTask) SaveStore(v interface{}) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	t.TaskStore = TaskStore(b)
+	return nil
+}
+
+// LoadStore updates the task store
+func (t *AsyncTask) LoadStore(v interface{}) error {
+	return json.Unmarshal(t.TaskStore, v)
 }
 
 // LastProgress returns the last progress of the task
@@ -258,6 +298,7 @@ func New(s *service.Service, path string) *Config {
 			t.Path = req.URL.Path
 			t.Query = req.URL.RawQuery
 			t.Status = StatusReady
+			t.TaskStore = nil
 			DefaultAsyncTaskKind.MustPut(req.Context(), t)
 			taskPath := fmt.Sprintf("%s%s.json?%s", req.URL.Path, t.ID, req.URL.Query().Encode())
 			if err := queue.PushTask(req.Context(), taskPath, nil); err != nil {
