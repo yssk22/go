@@ -7,6 +7,7 @@ machine:
 
 dependencies:
   override:
+    - sudo /opt/google-cloud-sdk/bin/gcloud --quiet components install app-engine-go
     - go get -u github.com/jstemmer/go-junit-report
     - mkdir -p "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}"
     - ln -sf "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
