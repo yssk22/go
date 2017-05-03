@@ -13,4 +13,5 @@ const (
 	tagValueResetIfMissing = "resetifmissing"
 	tagValueForm           = "form"
 	tagValueTimestamp      = "timestamp"
+	tagValueSearch         = "search"
 )
