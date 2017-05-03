@@ -228,6 +228,7 @@ func TestExampleQuery_Run(t *testing.T) {
 	a.Nil(err)
 	a.EqInt(2, len(p.Data))
 	a.EqStr("example-1", p.Data[0].ID)
+	a.EqStr("example-2", p.Data[1].ID)
 	a.EqStr("", p.Start)
 	next := p.End
 
@@ -236,7 +237,20 @@ func TestExampleQuery_Run(t *testing.T) {
 	a.Nil(err)
 	a.EqInt(2, len(p.Data))
 	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr("example-4", p.Data[1].ID)
 	a.EqStr(next, p.Start)
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(p.Start))
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr("example-4", p.Data[1].ID)
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(p.End))
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(0, len(p.Data))
 }
 
 func TestExamplePagination_MarshalJSON(t *testing.T) {

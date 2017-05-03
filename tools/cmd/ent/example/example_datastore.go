@@ -18,6 +18,8 @@ import (
 	"google.golang.org/appengine/search"
 )
 
+const ExampleSearchIndexName = "ent.Example"
+
 // ExampleSearchDoc is a object for search indexes.
 type ExampleSearchDoc struct {
 	ID           string // TODO: Support non-string key as ID
@@ -28,7 +30,7 @@ type ExampleSearchDoc struct {
 }
 
 // ToSearchDoc returns a new *ExampleSearchDoc
-func (e *Example) ToSearchDoc(ctx context.Context) *ExampleSearchDoc {
+func (e *Example) ToSearchDoc() *ExampleSearchDoc {
 	s := &ExampleSearchDoc{}
 	s.ID = e.ID
 	s.ContentBytes = ent.BytesToHTML(e.ContentBytes)
@@ -83,6 +85,7 @@ type ExampleKind struct {
 	AfterSave         func(ent *Example) error
 	useDefaultIfNil   bool
 	noCache           bool
+	noSearchIndexing  bool
 	noTimestampUpdate bool
 }
 
@@ -262,6 +265,8 @@ func (k *ExampleKind) MustPut(ctx context.Context, ent *Example) *datastore.Key 
 func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datastore.Key, error) {
 	var size = len(ents)
 	var dsKeys []*datastore.Key
+	var searchDocs []interface{} // to adopt search.Index#PutMulti()
+	var searchKeys []string
 	if size == 0 {
 		return nil, nil
 	}
@@ -277,6 +282,14 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		dsKeys[i] = ents[i].NewKey(ctx)
 	}
 
+	if !k.noSearchIndexing {
+		searchKeys := make([]string, size, size)
+		searchDocs = make([]interface{}, size, size)
+		for i := range ents {
+			searchKeys[i] = dsKeys[i].Encode()
+			searchDocs[i] = ents[i].ToSearchDoc()
+		}
+	}
 	if !k.noTimestampUpdate {
 		for i := range ents {
 			ents[i].UpdatedAt = xtime.Now()
@@ -299,6 +312,19 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		}
 	}
 
+	if !k.noSearchIndexing {
+		// TODO: should limit 200 docs per a call
+		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
+		index, err := search.Open(ExampleSearchIndexName)
+		if err != nil {
+			logger.Warnf("Failed to create search indexes (could not open index): %v ", err)
+		} else {
+			_, err = index.PutMulti(ctx, searchKeys, searchDocs)
+			if err != nil {
+				logger.Warnf("Failed to create search indexes (PutMulti error): %v ", err)
+			}
+		}
+	}
 	logger.Debug(func(p *xlog.Printer) {
 		p.Printf(
 			"Example#PutMulti [Datastore] (NoCache: %t)\n",
@@ -577,6 +603,11 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 	pagination := &ExamplePagination{}
 	keys := []*datastore.Key{}
 	data := []*Example{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
 	for {
 		var ent Example
 		key, err := iter.Next(&ent)
@@ -585,9 +616,6 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			if pagination.Start == "" {
-				pagination.Start = end.String()
-			}
 			pagination.Keys = keys
 			pagination.Data = data
 			pagination.End = end.String()
@@ -595,13 +623,6 @@ func (q *ExampleQuery) Run(ctx context.Context) (*ExamplePagination, error) {
 		}
 		if err != nil {
 			return nil, err
-		}
-		if pagination.Start == "" {
-			start, err := iter.Cursor()
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-			}
-			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)
