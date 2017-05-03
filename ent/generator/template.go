@@ -377,6 +377,16 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
     if size == 0 {
         return nil, nil
     }
+	{{if .IsSearchable -}}
+	var searchKeys []string
+	if !k.noSearchIndexing {
+		searchKeys = make([]string, size, size)
+		for i, k := range dsKeys {
+			searchKeys[i] = k.Encode()
+		}
+	}
+	{{end -}}
+
     // Datastore access
     err = helper.DeleteMulti(ctx, dsKeys)
     if helper.IsDatastoreError(err) {
@@ -394,6 +404,23 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
             logger.Warnf("Failed to invalidate memcache keys: %v", err)
         }
     }
+
+	{{if .IsSearchable -}}
+	if !k.noSearchIndexing {
+		// TODO: should limit 200 docs per a call
+		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
+		index, err := search.Open({{.Type}}SearchIndexName)
+		if err != nil {
+            logger.Warnf("Failed to delete search indexes (could not open index): %v ", err)
+		} else {
+			err = index.DeleteMulti(ctx, searchKeys)
+			if err != nil {
+	            logger.Warnf("Failed to delete search indexes (PutMulti error): %v ", err)
+			}
+		}
+	}
+	{{end -}}
+
 
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
