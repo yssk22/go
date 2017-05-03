@@ -256,6 +256,9 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
     if size == 0 {
         return nil, nil
     }
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
     logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
 
     dsKeys = make([]*datastore.Key, size, size)
@@ -377,6 +380,10 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
     if size == 0 {
         return nil, nil
     }
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
 	{{if .IsSearchable -}}
 	var searchKeys []string
 	if !k.noSearchIndexing {
@@ -609,6 +616,7 @@ func (q *{{.Type}}Query) MustCount(ctx context.Context) int {
 type {{.Type}}Pagination struct {` +
 	"Start string           `json:\"start\"`\n" +
 	"End   string           `json:\"end\"`\n" +
+	"Count int              `json:\"count,omitempty\"`\n" +
 	"Data  []*{{.Type}}     `json:\"data\"`\n" +
 	"Keys  []*datastore.Key `json:\"-\"`\n" + `
 }
