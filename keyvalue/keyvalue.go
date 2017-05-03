@@ -90,3 +90,30 @@ func GetIntOr(g Getter, key interface{}, or int) int {
 		return or
 	}
 }
+
+// GetFloatOr is float64 version of GetOr.
+func GetFloatOr(g Getter, key interface{}, or float64) float64 {
+	if g == nil {
+		return or
+	}
+	v, e := g.Get(key)
+	if e != nil {
+		return or
+	}
+	switch v.(type) {
+	case int8:
+		return float64(v.(int8))
+	case int16:
+		return float64(v.(int16))
+	case int32:
+		return float64(v.(int32))
+	case int64:
+		return float64(v.(int64))
+	case int:
+		return float64(v.(int))
+	case string:
+		return number.ParseFloat64Or(v.(string), or)
+	default:
+		return or
+	}
+}
