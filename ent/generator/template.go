@@ -14,6 +14,30 @@ import(
     {{end }}
 )
 
+{{if .IsSearchable -}}
+// {{.Type}}SearchDoc is a object for search indexes.
+type {{.Type}}SearchDoc struct {
+	{{.IDField}} string // TODO: Support non-string key as ID
+	{{range .Fields -}}{{if .IsSearch -}}
+	{{.FieldName}} {{.SearchFieldTypeName}}
+    {{end -}}{{end -}}
+}
+
+// ToSearchDoc returns a new *{{.Type}}SearchDoc
+func ({{$v}} *{{.Type}}) ToSearchDoc(ctx context.Context) *{{.Type}}SearchDoc {
+	s := &{{.Type}}SearchDoc{}
+	s.{{.IDField}} = {{$v}}.{{.IDField}}
+	{{range .Fields -}}{{if .IsSearch -}}
+	{{ if .SearchFieldConverter -}}
+	s.{{.FieldName}} = {{.SearchFieldConverter}}({{$v}}.{{.FieldName}})
+	{{ else -}}
+	s.{{.FieldName}} = {{$v}}.{{.FieldName}}
+	{{end -}}{{end -}}{{end -}}
+	return s
+}
+
+{{end -}}
+
 func ({{$v}} *{{.Type}}) NewKey(ctx context.Context) *datastore.Key {
     return helper.NewKey(ctx, "{{.Kind}}", {{$v}}.{{.IDField}})
 }

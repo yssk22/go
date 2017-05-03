@@ -13,8 +13,30 @@ import (
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/search"
 )
+
+// ExampleSearchDoc is a object for search indexes.
+type ExampleSearchDoc struct {
+	ID           string // TODO: Support non-string key as ID
+	ContentBytes search.HTML
+	BoolType     search.Atom
+	FloatType    float64
+	Location     appengine.GeoPoint
+}
+
+// ToSearchDoc returns a new *ExampleSearchDoc
+func (e *Example) ToSearchDoc(ctx context.Context) *ExampleSearchDoc {
+	s := &ExampleSearchDoc{}
+	s.ID = e.ID
+	s.ContentBytes = ent.BytesToHTML(e.ContentBytes)
+	s.BoolType = ent.BoolToAtom(e.BoolType)
+	s.FloatType = e.FloatType
+	s.Location = e.Location
+	return s
+}
 
 func (e *Example) NewKey(ctx context.Context) *datastore.Key {
 	return helper.NewKey(ctx, "Example", e.ID)
