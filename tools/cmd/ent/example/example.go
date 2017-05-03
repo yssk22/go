@@ -12,7 +12,7 @@ import (
 type Example struct {
 	ID                  string             `json:"id" ent:"id"`
 	Digit               int                `json:"digit" ent:"form,resetifmissing" default:"10"`
-	Desc                string             `json:"desc" ent:"form" default:"This is default value"`
+	Desc                string             `json:"desc" ent:"form,search" default:"This is default value"`
 	ContentBytes        []byte             `json:"content_bytes" ent:"form,search"`
 	SliceType           []string           `json:"slice_type" ent:"form"`
 	BoolType            bool               `json:"bool_type" ent:"form,search"`

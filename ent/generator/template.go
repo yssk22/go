@@ -273,7 +273,7 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
 
 	{{if .IsSearchable -}}
 	if !k.noSearchIndexing {
-		searchKeys := make([]string, size, size)
+		searchKeys = make([]string, size, size)
 		searchDocs = make([]interface{}, size, size)
 		for i := range ents {
 			searchKeys[i] = dsKeys[i].Encode()
@@ -664,4 +664,58 @@ func (q *{{.Type}}Query) MustRun(ctx context.Context) *{{.Type}}Pagination {
     }
     return p
 }
+
+{{if .IsSearchable -}}
+// SearchKeys returns the a result as *{{.Type}}Pagination object. It only containd valid []*datastore.Keys
+func (k *{{.Type}}Kind) SearchKeys(ctx context.Context, query string, opts *search.SearchOptions) (*{{.Type}}Pagination, error) {
+    var logger = xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
+	index, err := search.Open({{.Type}}SearchIndexName)
+	if err != nil {
+        return nil, err
+    }
+	// we don't need to grab document data since we can grab documents from datastore.
+	if opts == nil {
+		opts = &search.SearchOptions{}
+	}
+	opts.IDsOnly = true
+	iter := index.Search(ctx, query, opts)
+    pagination := &{{.Type}}Pagination{}
+    keys := []*datastore.Key{}
+	pagination.Start = string(iter.Cursor())
+	pagination.Count = iter.Count()
+    for {
+        var ent {{.Type}}SearchDoc
+        id, err := iter.Next(&ent)
+        if err == search.Done {
+            pagination.Keys = keys
+            pagination.End = string(iter.Cursor())
+            return pagination, nil
+        }
+        if err != nil {
+            return nil, err
+        }
+		key, err := datastore.DecodeKey(id)
+		if err != nil {
+			logger.Warnf("unexpected search doc id found: %s (%s), skipping...", id, err)
+		}else{
+	        keys = append(keys, key)
+		}
+    }
+}
+
+// SearchValues returns the a result as *{{.Type}}Pagination object with filling Data field.
+func (k *{{.Type}}Kind) SearchValues(ctx context.Context, query string, opts *search.SearchOptions) (*{{.Type}}Pagination, error) {
+	p, err := k.SearchKeys(ctx, query, opts)
+	if err != nil {
+		return nil, err
+	}
+	_, values, err := k.GetMulti(ctx, p.Keys)
+	if err != nil {
+		return nil, err
+	}
+	p.Data = values
+	return p, nil
+}
+{{end -}}
+
 `

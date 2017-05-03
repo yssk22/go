@@ -264,3 +264,32 @@ func TestExamplePagination_MarshalJSON(t *testing.T) {
 	b, _ := json.Marshal(p)
 	a.EqByteString(`{"start":"","end":"","data":[]}`, b)
 }
+
+func TestExampleKind_SearchKeys(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_Search.json", nil))
+	examples, err := NewExampleQuery().Asc("ID").GetAllValues(gaetest.NewContext())
+	a.Nil(err)
+	_, err = DefaultExampleKind.PutMulti(gaetest.NewContext(), examples)
+	a.Nil(err)
+
+	p, err := DefaultExampleKind.SearchKeys(gaetest.NewContext(), "Desc: example-2", nil)
+	a.Nil(err)
+	a.EqInt(1, len(p.Keys))
+}
+
+func TestExampleKind_SearchValues(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_Search.json", nil))
+	examples, err := NewExampleQuery().Asc("ID").GetAllValues(gaetest.NewContext())
+	a.Nil(err)
+	_, err = DefaultExampleKind.PutMulti(gaetest.NewContext(), examples)
+	a.Nil(err)
+
+	p, err := DefaultExampleKind.SearchValues(gaetest.NewContext(), "Desc: example-2", nil)
+	a.Nil(err)
+	a.EqInt(1, len(p.Data))
+	a.EqStr("example-2 description", p.Data[0].Desc)
+}
