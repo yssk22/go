@@ -12,7 +12,7 @@ var searchTypes = map[string]*searchTypeDef{
 		Converter: "github.com/speedland/go/ent.BoolToAtom",
 	},
 	"string": &searchTypeDef{
-		Type: "google.golang.org/appengine/search.Atom",
+		Type: "string",
 	},
 	"[]byte": &searchTypeDef{
 		Type:      "google.golang.org/appengine/search.HTML",
