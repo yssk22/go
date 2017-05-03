@@ -110,6 +110,7 @@ func (s *Struct) inspectGenDecl(decl *ast.GenDecl) bool {
 			)
 			if s.Fields[i].IsSearch {
 				s.IsSearchable = true
+				s.AddDependency("google.golang.org/appengine/search")
 			}
 		}
 		return true
