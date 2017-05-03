@@ -75,7 +75,7 @@ func TestExampleKind_New(t *testing.T) {
 func TestExampleKind_Get(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_Get.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_Get.json", nil))
 
 	k := &ExampleKind{}
 	_, value, err := k.Get(gaetest.NewContext(), "example-1")
@@ -87,7 +87,7 @@ func TestExampleKind_Get(t *testing.T) {
 func TestExampleKind_GetMulti(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
 	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"example-1", "example-2"})
@@ -103,7 +103,7 @@ func TestExampleKind_GetMulti(t *testing.T) {
 func TestExampleKind_GetMulti_notFound(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
 	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"aaa", "example-2"})
@@ -117,7 +117,7 @@ func TestExampleKind_GetMulti_notFound(t *testing.T) {
 func TestExampleKind_GetMulti_useDefaultIfNil(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := (&ExampleKind{}).UseDefaultIfNil(true)
 	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"aaa", "example-2"})
@@ -133,7 +133,7 @@ func TestExampleKind_GetMulti_useDefaultIfNil(t *testing.T) {
 func TestExampleKind_GetMulti_cacheCreation(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_GetMulti.json", nil))
 
 	k := &ExampleKind{}
 	keys, values, err := k.GetMulti(gaetest.NewContext(), []string{"example-1", "not-exists"})
@@ -193,7 +193,7 @@ func TestExampleKind_PutMulti(t *testing.T) {
 func TestExampleKind_DeleteMulti(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMulti.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMulti.json", nil))
 
 	k := &ExampleKind{}
 	keys, err := k.DeleteMulti(gaetest.NewContext(), []string{"example-1", "example-2"})
@@ -208,7 +208,7 @@ func TestExampleKind_DeleteMulti(t *testing.T) {
 func TestExampleQuery_GetAll(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_GetAll.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_GetAll.json", nil))
 
 	q := NewExampleQuery()
 	q.Eq("ID", lazy.New("example-2"))
@@ -221,7 +221,7 @@ func TestExampleQuery_GetAll(t *testing.T) {
 func TestExampleQuery_Run(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
 
 	q := NewExampleQuery().Asc("ID").Limit(lazy.New(2))
 	p, err := q.Run(gaetest.NewContext())
@@ -256,7 +256,7 @@ func TestExampleQuery_Run(t *testing.T) {
 func TestExamplePagination_MarshalJSON(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
 
 	q := NewExampleQuery().Limit(lazy.New(0))
 	p, err := q.Run(gaetest.NewContext())
