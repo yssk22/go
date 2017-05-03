@@ -18,3 +18,11 @@ func GetMemcacheKey(k *datastore.Key) string {
 	}
 	return fmt.Sprintf("datastore.%s.%s", k.Kind(), k.IntID())
 }
+
+// MaxEntsPerPutDelete is a maxmum number of entities to be passed to PutMulti or DeleteMulti.
+const MaxEntsPerPutDelete = 200
+
+var (
+	// ErrTooManyEnts is returned when the user passes too many entities to PutMulti or DeleteMulti.
+	ErrTooManyEnts = fmt.Errorf("ent: too many documents given to put or delete (max is %d)", MaxEntsPerPutDelete)
+)
