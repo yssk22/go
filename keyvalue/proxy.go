@@ -55,3 +55,11 @@ func (p *GetProxy) GetIntOr(key string, or int) int {
 	}
 	return GetIntOr(p.g, key, or)
 }
+
+// GetFloatOr is shorthand for keyvalue.GetFloatOr.
+func (p *GetProxy) GetFloatOr(key string, or float64) float64 {
+	if p == nil {
+		return or
+	}
+	return GetFloatOr(p.g, key, or)
+}
