@@ -20,6 +20,7 @@ type Struct struct {
 	Dependencies   map[string]string
 	IDField        string
 	TimestampField string
+	IsSearchable   bool
 }
 
 // NewStruct returns a struct for the type `typeName`
@@ -65,7 +66,7 @@ func (s *Struct) Inspect(node ast.Node) bool {
 		return true
 	case *ast.GenDecl:
 		decl := node.(*ast.GenDecl)
-		return s.inspecgGenDecl(decl)
+		return s.inspectGenDecl(decl)
 	default:
 		return true
 	}
@@ -86,7 +87,7 @@ func (s *Struct) GenSource(w io.Writer) error {
 	return t.Execute(w, s)
 }
 
-func (s *Struct) inspecgGenDecl(decl *ast.GenDecl) bool {
+func (s *Struct) inspectGenDecl(decl *ast.GenDecl) bool {
 	if decl.Tok != token.TYPE {
 		return true
 	}
@@ -107,6 +108,10 @@ func (s *Struct) inspecgGenDecl(decl *ast.GenDecl) bool {
 			s.Fields[i] = s.newField(
 				structType.Fields.List[i],
 			)
+			if s.Fields[i].IsSearch {
+				s.IsSearchable = true
+				s.AddDependency("google.golang.org/appengine/search")
+			}
 		}
 		return true
 	}
@@ -136,17 +141,22 @@ func (s *Struct) newField(f *ast.Field) *Field {
 					field.IsTimestamp = hasTagValue(tagValueTimestamp, values)
 					field.IsForm = hasTagValue(tagValueForm, values)
 					field.ResetIfMissing = hasTagValue(tagValueResetIfMissing, values)
+					field.IsSearch = hasTagValue(tagValueSearch, values)
 				default:
 					break
 				}
 			}
 		}
 	}
+	// TODO: Refactoring the field generation here!!!!! avoid modification both on f and s.
 	if field.IsID {
 		s.IDField = field.FieldName()
 	}
 	if field.IsTimestamp {
 		s.TimestampField = field.FieldName()
+	}
+	if field.IsSearch {
+		field.SearchFieldTypeName, field.SearchFieldConverter = field.GetSearchFieldTypeName()
 	}
 	if field.IsForm {
 		field.Form = field.GetFormExpr()
