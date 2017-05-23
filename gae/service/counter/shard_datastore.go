@@ -31,11 +31,13 @@ func NewShard() *Shard {
 }
 
 type ShardKind struct {
-	BeforeSave        func(ent *Shard) error
-	AfterSave         func(ent *Shard) error
-	useDefaultIfNil   bool
-	noCache           bool
-	noTimestampUpdate bool
+	BeforeSave                func(ent *Shard) error
+	AfterSave                 func(ent *Shard) error
+	useDefaultIfNil           bool
+	noCache                   bool
+	noSearchIndexing          bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate         bool
 }
 
 // DefaultShardKind is a default value of *ShardKind
@@ -217,6 +219,9 @@ func (k *ShardKind) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.K
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
 	logger := xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
@@ -311,6 +316,10 @@ func (k *ShardKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datas
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
@@ -516,6 +525,7 @@ func (q *ShardQuery) MustCount(ctx context.Context) int {
 type ShardPagination struct {
 	Start string           `json:"start"`
 	End   string           `json:"end"`
+	Count int              `json:"count,omitempty"`
 	Data  []*Shard         `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -529,6 +539,11 @@ func (q *ShardQuery) Run(ctx context.Context) (*ShardPagination, error) {
 	pagination := &ShardPagination{}
 	keys := []*datastore.Key{}
 	data := []*Shard{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
 	for {
 		var ent Shard
 		key, err := iter.Next(&ent)
@@ -537,9 +552,6 @@ func (q *ShardQuery) Run(ctx context.Context) (*ShardPagination, error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			if pagination.Start == "" {
-				pagination.Start = end.String()
-			}
 			pagination.Keys = keys
 			pagination.Data = data
 			pagination.End = end.String()
@@ -547,13 +559,6 @@ func (q *ShardQuery) Run(ctx context.Context) (*ShardPagination, error) {
 		}
 		if err != nil {
 			return nil, err
-		}
-		if pagination.Start == "" {
-			start, err := iter.Cursor()
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-			}
-			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)
