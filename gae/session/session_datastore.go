@@ -31,11 +31,13 @@ func NewSession() *Session {
 }
 
 type SessionKind struct {
-	BeforeSave        func(ent *Session) error
-	AfterSave         func(ent *Session) error
-	useDefaultIfNil   bool
-	noCache           bool
-	noTimestampUpdate bool
+	BeforeSave                func(ent *Session) error
+	AfterSave                 func(ent *Session) error
+	useDefaultIfNil           bool
+	noCache                   bool
+	noSearchIndexing          bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate         bool
 }
 
 // DefaultSessionKind is a default value of *SessionKind
@@ -217,6 +219,9 @@ func (k *SessionKind) PutMulti(ctx context.Context, ents []*Session) ([]*datasto
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
 	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
@@ -311,6 +316,10 @@ func (k *SessionKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*dat
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
@@ -516,6 +525,7 @@ func (q *SessionQuery) MustCount(ctx context.Context) int {
 type SessionPagination struct {
 	Start string           `json:"start"`
 	End   string           `json:"end"`
+	Count int              `json:"count,omitempty"`
 	Data  []*Session       `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -529,6 +539,11 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 	pagination := &SessionPagination{}
 	keys := []*datastore.Key{}
 	data := []*Session{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
 	for {
 		var ent Session
 		key, err := iter.Next(&ent)
@@ -537,9 +552,6 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			if pagination.Start == "" {
-				pagination.Start = end.String()
-			}
 			pagination.Keys = keys
 			pagination.Data = data
 			pagination.End = end.String()
@@ -547,13 +559,6 @@ func (q *SessionQuery) Run(ctx context.Context) (*SessionPagination, error) {
 		}
 		if err != nil {
 			return nil, err
-		}
-		if pagination.Start == "" {
-			start, err := iter.Cursor()
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-			}
-			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)

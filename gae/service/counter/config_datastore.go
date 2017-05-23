@@ -31,11 +31,13 @@ func NewConfig() *Config {
 }
 
 type ConfigKind struct {
-	BeforeSave        func(ent *Config) error
-	AfterSave         func(ent *Config) error
-	useDefaultIfNil   bool
-	noCache           bool
-	noTimestampUpdate bool
+	BeforeSave                func(ent *Config) error
+	AfterSave                 func(ent *Config) error
+	useDefaultIfNil           bool
+	noCache                   bool
+	noSearchIndexing          bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate         bool
 }
 
 // DefaultConfigKind is a default value of *ConfigKind
@@ -217,6 +219,9 @@ func (k *ConfigKind) PutMulti(ctx context.Context, ents []*Config) ([]*datastore
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
 	logger := xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
@@ -311,6 +316,10 @@ func (k *ConfigKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*data
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
@@ -516,6 +525,7 @@ func (q *ConfigQuery) MustCount(ctx context.Context) int {
 type ConfigPagination struct {
 	Start string           `json:"start"`
 	End   string           `json:"end"`
+	Count int              `json:"count,omitempty"`
 	Data  []*Config        `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -529,6 +539,11 @@ func (q *ConfigQuery) Run(ctx context.Context) (*ConfigPagination, error) {
 	pagination := &ConfigPagination{}
 	keys := []*datastore.Key{}
 	data := []*Config{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
 	for {
 		var ent Config
 		key, err := iter.Next(&ent)
@@ -537,9 +552,6 @@ func (q *ConfigQuery) Run(ctx context.Context) (*ConfigPagination, error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			if pagination.Start == "" {
-				pagination.Start = end.String()
-			}
 			pagination.Keys = keys
 			pagination.Data = data
 			pagination.End = end.String()
@@ -547,13 +559,6 @@ func (q *ConfigQuery) Run(ctx context.Context) (*ConfigPagination, error) {
 		}
 		if err != nil {
 			return nil, err
-		}
-		if pagination.Start == "" {
-			start, err := iter.Cursor()
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-			}
-			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)

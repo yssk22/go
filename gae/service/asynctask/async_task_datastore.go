@@ -31,11 +31,13 @@ func NewAsyncTask() *AsyncTask {
 }
 
 type AsyncTaskKind struct {
-	BeforeSave        func(ent *AsyncTask) error
-	AfterSave         func(ent *AsyncTask) error
-	useDefaultIfNil   bool
-	noCache           bool
-	noTimestampUpdate bool
+	BeforeSave                func(ent *AsyncTask) error
+	AfterSave                 func(ent *AsyncTask) error
+	useDefaultIfNil           bool
+	noCache                   bool
+	noSearchIndexing          bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate         bool
 }
 
 // DefaultAsyncTaskKind is a default value of *AsyncTaskKind
@@ -217,6 +219,9 @@ func (k *AsyncTaskKind) PutMulti(ctx context.Context, ents []*AsyncTask) ([]*dat
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
 	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
 
 	dsKeys = make([]*datastore.Key, size, size)
@@ -311,6 +316,10 @@ func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
 	if size == 0 {
 		return nil, nil
 	}
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
@@ -516,6 +525,7 @@ func (q *AsyncTaskQuery) MustCount(ctx context.Context) int {
 type AsyncTaskPagination struct {
 	Start string           `json:"start"`
 	End   string           `json:"end"`
+	Count int              `json:"count,omitempty"`
 	Data  []*AsyncTask     `json:"data"`
 	Keys  []*datastore.Key `json:"-"`
 }
@@ -529,6 +539,11 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 	pagination := &AsyncTaskPagination{}
 	keys := []*datastore.Key{}
 	data := []*AsyncTask{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
 	for {
 		var ent AsyncTask
 		key, err := iter.Next(&ent)
@@ -537,9 +552,6 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
-			if pagination.Start == "" {
-				pagination.Start = end.String()
-			}
 			pagination.Keys = keys
 			pagination.Data = data
 			pagination.End = end.String()
@@ -547,13 +559,6 @@ func (q *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskPagination, error) 
 		}
 		if err != nil {
 			return nil, err
-		}
-		if pagination.Start == "" {
-			start, err := iter.Cursor()
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
-			}
-			pagination.Start = start.String()
 		}
 		keys = append(keys, key)
 		data = append(data, &ent)

@@ -83,12 +83,13 @@ func NewExample() *Example {
 }
 
 type ExampleKind struct {
-	BeforeSave        func(ent *Example) error
-	AfterSave         func(ent *Example) error
-	useDefaultIfNil   bool
-	noCache           bool
-	noSearchIndexing  bool
-	noTimestampUpdate bool
+	BeforeSave                func(ent *Example) error
+	AfterSave                 func(ent *Example) error
+	useDefaultIfNil           bool
+	noCache                   bool
+	noSearchIndexing          bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate         bool
 }
 
 // DefaultExampleKind is a default value of *ExampleKind
@@ -322,11 +323,21 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
 		index, err := search.Open(ExampleSearchIndexName)
 		if err != nil {
-			logger.Warnf("Failed to create search indexes (could not open index): %v ", err)
+			err = fmt.Errorf("search.Open(%q) returns errors: %v", ExampleSearchIndexName, err)
+			if !k.ignoreSearchIndexingError {
+				return nil, err
+			} else {
+				logger.Warnf(err.Error())
+			}
 		} else {
 			_, err = index.PutMulti(ctx, searchKeys, searchDocs)
 			if err != nil {
-				logger.Warnf("Failed to create search indexes (PutMulti error): %v ", err)
+				err = fmt.Errorf("index.PutMulti returns errors: %v", err)
+				if !k.ignoreSearchIndexingError {
+					return nil, err
+				} else {
+					logger.Warnf(err.Error())
+				}
 			}
 		}
 	}
