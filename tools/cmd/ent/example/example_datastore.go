@@ -718,14 +718,21 @@ func (k *ExampleKind) SearchKeys(ctx context.Context, query string, opts *search
 
 // SearchValues returns the a result as *ExamplePagination object with filling Data field.
 func (k *ExampleKind) SearchValues(ctx context.Context, query string, opts *search.SearchOptions) (*ExamplePagination, error) {
+	var logger = xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	p, err := k.SearchKeys(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}
-	_, values, err := k.GetMulti(ctx, p.Keys)
+	keys, values, err := k.GetMulti(ctx, p.Keys)
 	if err != nil {
 		return nil, err
 	}
-	p.Data = values
+	for i, v := range values {
+		if v == nil {
+			logger.Warnf("search index found, but no ent found - (Kind:Example, Key:%s)", keys[i].StringID())
+		} else {
+			p.Data = append(p.Data, v)
+		}
+	}
 	return p, nil
 }
