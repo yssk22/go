@@ -736,4 +736,28 @@ func (k *{{.Type}}Kind) SearchValues(ctx context.Context, query string, opts *se
 }
 {{end -}}
 
+// DeleteMached deletes the all ents that match with the query.
+// This func modify StartKey condition in the query so that you should restore it
+// if you want to reuse the query.
+func (k *{{.Type}}Kind) DeleteMached(ctx context.Context, q *{{.Type}}Query) (int, error) {
+	var numDeletes int
+	var startKey string
+	// TODO: canceling the context
+	for {
+		if startKey != "" {
+			q.Start(lazy.New(startKey))
+		}
+		page := q.MustRun(ctx)
+		if len(page.Keys) == 0 {
+			return numDeletes, nil
+		}
+		_, err := k.DeleteMulti(ctx, page.Keys)
+		if err != nil {
+			return numDeletes, fmt.Errorf("couldn't delete matched ents: %v", err)
+		} else {
+			numDeletes += len(page.Keys)
+		}
+		startKey = page.End
+	}
+}
 `

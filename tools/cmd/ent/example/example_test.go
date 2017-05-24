@@ -293,3 +293,20 @@ func TestExampleKind_SearchValues(t *testing.T) {
 	a.EqInt(1, len(p.Data))
 	a.EqStr("example-2 description", p.Data[0].Desc)
 }
+
+func TestExampleKind_DeleteMatched(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_DeleteMatched.json", nil))
+	a.EqInt(4, NewExampleQuery().MustCount(gaetest.NewContext()))
+	q := NewExampleQuery().Le("Digit", lazy.New(2))
+	a.EqInt(2, q.MustCount(gaetest.NewContext()))
+	deleted, err := DefaultExampleKind.DeleteMached(gaetest.NewContext(), q)
+	a.Nil(err)
+	a.EqInt(2, deleted)
+	a.EqInt(2, NewExampleQuery().MustCount(gaetest.NewContext()))
+	a.Nil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-1"))
+	a.Nil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-2"))
+	a.NotNil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-3"))
+	a.NotNil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-4"))
+}
