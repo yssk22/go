@@ -40,7 +40,7 @@ func genDispatch(appName, deploymentDir, outputPath string) {
 	if outputPath == "-" {
 		output = os.Stdout
 	} else {
-		outputFile, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE, 0644)
+		outputFile, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -64,7 +64,7 @@ func genDispatch(appName, deploymentDir, outputPath string) {
 		}
 	}
 	output.Write([]byte(fmt.Sprintf("- url: \"*/*\"\n")))
-	output.Write([]byte(fmt.Sprintf(" module: default\n")))
+	output.Write([]byte(fmt.Sprintf("  module: default\n")))
 }
 
 var reModuleName = regexp.MustCompile("\\s+module:\\s*([^\\s#]+)")
