@@ -11,6 +11,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/speedland/go/tools/gaeutil"
+	"github.com/speedland/go/x/xerrors"
 )
 
 var (
@@ -32,36 +35,23 @@ func main() {
 }
 
 func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
-	files, err := ioutil.ReadDir(deploymentDir)
-	if err != nil {
-		log.Fatal(err)
-	}
+	modules, err := gaeutil.CollectModules(deploymentDir)
+	xerrors.MustNil(err)
 	dir, err := ioutil.TempDir("", "genyamltmp")
-	if err != nil {
-		log.Fatal(err)
-	}
+	xerrors.MustNil(err)
 	defer os.RemoveAll(dir)
-
 	bindings := &TemplateVar{
 		AppName: appName,
 	}
 	bindings.CronYamlPath = filepath.Join(dir, "cron.yaml")
 	bindings.QueueYamlPath = filepath.Join(dir, "queue.yaml")
-	for _, f := range files {
-		if f.IsDir() {
-			moduleName, err := extractModuleName(filepath.Join(deploymentDir, f.Name(), "app.yaml"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			if moduleName != "default" {
-				bindings.Modules = append(bindings.Modules, &Module{
-					Name:        moduleName,
-					URL:         strings.Replace(moduleName, "-", "/", -1),
-					Package:     moduleName,
-					PackagePath: filepath.Join(packageSuffix, moduleName),
-				})
-			}
-		}
+	for _, m := range modules {
+		bindings.Modules = append(bindings.Modules, &Module{
+			Name:        m,
+			URL:         strings.Replace(m, "-", "/", -1),
+			Package:     m,
+			PackagePath: filepath.Join(packageSuffix, m),
+		})
 	}
 	var goFilePath = filepath.Join(dir, "main.go")
 	var dispatchFilePath = filepath.Join(outputDir, "dispatch.yaml")
@@ -70,23 +60,23 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 	var goFile, dispatchFile *os.File
 	log.Println("generaing yaml files...")
 	dispatchFile, err = os.Create(dispatchFilePath)
-	must(err)
+	xerrors.MustNil(err)
 	defer dispatchFile.Close()
-	must(dispatchFileTemplate.Execute(dispatchFile, bindings))
+	xerrors.MustNil(dispatchFileTemplate.Execute(dispatchFile, bindings))
 	log.Println("\t", dispatchFilePath)
 
 	goFile, err = os.Create(goFilePath)
-	must(err)
+	xerrors.MustNil(err)
 	defer goFile.Close()
-	must(goFileTemplate.Execute(goFile, bindings))
+	xerrors.MustNil(goFileTemplate.Execute(goFile, bindings))
 
 	// generate other yaml files by go command
 	cmd := exec.Command("go", "run", goFilePath)
 	// cmd.Stderr = os.Stderr
-	must(cmd.Run())
-	must(cp(cronFilePath, bindings.CronYamlPath))
+	xerrors.MustNil(cmd.Run())
+	xerrors.MustNil(cp(cronFilePath, bindings.CronYamlPath))
 	log.Println("\t", cronFilePath)
-	must(cp(queueFilePath, bindings.QueueYamlPath))
+	xerrors.MustNil(cp(queueFilePath, bindings.QueueYamlPath))
 	log.Println("\t", queueFilePath)
 }
 
@@ -117,10 +107,4 @@ func cp(dst, src string) error {
 	defer d.Close()
 	_, err = io.Copy(d, s)
 	return err
-}
-
-func must(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }
