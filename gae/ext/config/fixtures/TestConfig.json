@@ -1,0 +1,30 @@
+[
+    {
+        "_kind": "ServiceConfig",
+        "_key": "urlfetch_deadline",
+        "_ns": "",
+        "Key": "urlfetch_deadline",
+        "Value": "45"
+    },
+    {
+        "_kind": "ServiceConfig",
+        "_key": "facebook_app_id",
+        "_ns": "",
+        "Key": "facebook_app_id",
+        "Value": "global-app-id"
+    },
+    {
+        "_kind": "ServiceConfig",
+        "_key": "facebook_app_id",
+        "_ns": "myapp",
+        "Key": "facebook_app_id",
+        "Value": "local-app-id"
+    },
+    {
+        "_kind": "ServiceConfig",
+        "_key": "myconfig",
+        "_ns": "myapp",
+        "Key": "myconfig",
+        "Value": "datastore value"
+    }
+]
