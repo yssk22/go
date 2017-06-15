@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 
 func TestConfig_All(t *testing.T) {
 	a := assert.New(t)
-	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext(), "", "myapp"))
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestConfig.json", nil))
 	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
 	c := New()
@@ -42,7 +42,7 @@ func TestConfig_All(t *testing.T) {
 
 func TestConfig_Get(t *testing.T) {
 	a := assert.New(t)
-	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext(), "", "myapp"))
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestConfig.json", nil))
 	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
 	c := New()
@@ -57,7 +57,7 @@ func TestConfig_Get(t *testing.T) {
 
 func TestConfig_Get_Fallback(t *testing.T) {
 	a := assert.New(t)
-	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext(), "", "myapp"))
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestConfig.json", nil))
 	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
 	c := New()
