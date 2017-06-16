@@ -1,21 +1,19 @@
-package config
+package service
 
 import (
 	"net/url"
 	"testing"
 
 	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/gae/service"
+	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
-	"speedland.net/gae/common/config"
 )
 
-func newTestService() *service.Service {
-	s := service.New("myapp")
-	c := New()
-	c.Register("myconfig", "myconfigvalue", "custom config")
-	SetupAPI(s, c, "/admin/api/configs/")
+func newTestService() *Service {
+	s := New("myapp")
+	s.Config.Register("myconfig", "myconfigvalue", "custom config")
+	DefaultBuiltinAPIConfig.ActivateEndpoints(s)
 	return s
 }
 
@@ -42,7 +40,7 @@ func Test_API_Configs_Get(t *testing.T) {
 	recorder := gaetest.NewRecorder(s)
 
 	var cfg config.ServiceConfig
-	res := recorder.TestGet("/myapp/admin/api/configs/urlfetch_deadline.json")
+	res := recorder.TestGet("/myapp/admin/api/configs/urlfetch.deadline.json")
 	a.Status(response.HTTPStatusOK, res)
 	a.JSON(&cfg, res)
 	a.EqStr("45", cfg.Value)
@@ -63,7 +61,7 @@ func Test_API_Configs_Put(t *testing.T) {
 
 	var cfg config.ServiceConfig
 	res := recorder.TestPut(
-		"/myapp/admin/api/configs/urlfetch_deadline.json",
+		"/myapp/admin/api/configs/urlfetch.deadline.json",
 		url.Values{
 			"value": []string{"20"},
 		},
@@ -72,13 +70,13 @@ func Test_API_Configs_Put(t *testing.T) {
 	a.JSON(&cfg, res)
 	a.EqStr("20", cfg.Value)
 
-	res = recorder.TestGet("/myapp/admin/api/configs/urlfetch_deadline.json")
+	res = recorder.TestGet("/myapp/admin/api/configs/urlfetch.deadline.json")
 	a.Status(response.HTTPStatusOK, res)
 	a.JSON(&cfg, res)
 	a.EqStr("20", cfg.Value)
 
 	// Check the global config value is not changed.
-	globalCfg := config.DefaultServiceConfigKind.MustGet(gaetest.NewContext(), "urlfetch_deadline")
+	globalCfg := config.DefaultServiceConfigKind.MustGet(gaetest.NewContext(), "urlfetch.deadline")
 	a.NotNil(globalCfg)
 	a.EqStr("45", globalCfg.Value)
 }

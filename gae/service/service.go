@@ -20,12 +20,15 @@ import (
 	"path"
 	"strings"
 
+	"sync"
+
+	"github.com/speedland/go/gae/service/config"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/web"
+	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 )
 
 // ContextKey is a key to get a service.
@@ -33,9 +36,14 @@ var ContextKey = xcontext.NewKey("service")
 
 // Service is a set of endpoints
 type Service struct {
-	key       string // service key
-	urlPrefix string // url base path
-	namespace string // datastore/memcache namespace for services
+	Init      func(*web.Request)
+	Every     func(*web.Request)
+	OnError   func(*web.Request, error) *response.Response
+	Config    *config.Config
+	once      sync.Once // for Init control
+	key       string    // service key
+	urlPrefix string    // url base path
+	namespace string    // datastore/memcache namespace for services
 	crons     []*cron
 	queues    []*xtaskqueue.PushQueue
 	router    *web.Router // service router
@@ -69,17 +77,13 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		urlPrefix: url,
 		namespace: namespace,
 		router:    web.NewRouter(nil),
+		Config:    config.New(),
 	}
-
-	s.router.Use(web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		ctx, err := appengine.Namespace(req.Context(), namespace)
-		if err != nil {
-			panic(err)
-		}
-		ctx = context.WithValue(ctx, ContextKey, s)
-		return next(req.WithContext(ctx))
-	}))
-
+	s.router.Use(namespaceMiddleware(s))
+	s.router.Use(errorMiddleware)
+	s.Use(initMiddleware)
+	s.Use(session.Default)
+	s.Use(everyMiddleware)
 	return s
 }
 
@@ -98,7 +102,7 @@ func (s *Service) Key() string {
 	return s.key
 }
 
-// URLPrefix returns a namespace string
+// URLPrefix returns a url prefix string
 func (s *Service) URLPrefix() string {
 	return s.urlPrefix
 }

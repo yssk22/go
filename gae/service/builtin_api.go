@@ -1,20 +1,40 @@
-package config
+package service
 
 import (
 	"path"
 
-	"github.com/speedland/go/gae/service"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 )
 
-// SetupAPI sets up API endpoints for getting/updating configs by
+// BuiltInAPIConfig is a configuration object for ActivateBuiltInAPIs, which actiate the following endpoints
 //
-//    - GET /{basePath}/
-//    - GET /{basePath}/:key.json
-//    - PUT /{basePath}/:key.json
+// [config]
 //
-func SetupAPI(s *service.Service, c *Config, basePath string) {
+//    - GET /{ConfigAPIBasePath}/
+//    - GET /{ConfigAPIBasePath}/:key.json
+//    - PUT /{ConfigAPIBasePath}/:key.json
+//
+type BuiltInAPIConfig struct {
+	ConfigAPIBasePath string
+}
+
+// ActivateEndpoints sets up builtin API endpoints on the *Service
+func (bc *BuiltInAPIConfig) ActivateEndpoints(s *Service) {
+	bc.activateConfigAPI(s)
+}
+
+// DefaultBuiltinAPIConfig is a default object of BuiltInAPIConfig
+var DefaultBuiltinAPIConfig = &BuiltInAPIConfig{
+	ConfigAPIBasePath: "/admin/api/configs/",
+}
+
+func (bc *BuiltInAPIConfig) activateConfigAPI(s *Service) {
+	if bc.ConfigAPIBasePath == "" {
+		return
+	}
+	c := s.Config
+	basePath := bc.ConfigAPIBasePath
 	s.Get(basePath, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return response.NewJSON(c.All(req.Context()))
 	}))

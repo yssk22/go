@@ -1,9 +1,9 @@
 [
     {
         "_kind": "ServiceConfig",
-        "_key": "urlfetch_deadline",
+        "_key": "urlfetch.deadline",
         "_ns": "",
-        "Key": "urlfetch_deadline",
+        "Key": "urlfetch.deadline",
         "Value": "45"
     },
     {
