@@ -10,9 +10,31 @@ import (
 	"golang.org/x/net/context"
 )
 
+func Test_Do_CancelContext(t *testing.T) {
+	a := assert.New(t)
+	var interval = ConstBackoff(500 * time.Millisecond)
+	var i = 0
+	var ut = time.Now().Add(3 * time.Second)
+	var until = Until(ut)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(1 * time.Second)
+		cancel()
+	}()
+	err := Do(ctx, func(_ context.Context) error {
+		i++
+		if i < 10 {
+			return fmt.Errorf("Need retry")
+		}
+		return nil
+	}, interval, until)
+	a.NotNil(err)
+	a.EqStr("retry canceled: context canceled", err.Error())
+}
+
 func Test_Do_Until(t *testing.T) {
 	a := assert.New(t)
-	var interval = Interval(100 * time.Millisecond)
+	var interval = ConstBackoff(100 * time.Millisecond)
 	var i = 0
 	var ut = time.Now().Add(3 * time.Second)
 	var until = Until(ut)
@@ -46,8 +68,7 @@ func Test_Do_Until(t *testing.T) {
 
 func Test_Do_MaxRetries(t *testing.T) {
 	a := assert.New(t)
-	var interval = Interval(100 * time.Millisecond)
-
+	var interval = ConstBackoff(100 * time.Millisecond)
 	var i = 0
 	var max = MaxRetries(15)
 	err := Do(context.Background(), func(_ context.Context) error {
