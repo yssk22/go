@@ -92,7 +92,7 @@ func Test_Do_MaxRetries(t *testing.T) {
 		return nil
 	}, interval, max)
 	a.NotNil(err)
-	a.EqInt(4, i)
+	a.EqInt(3, i)
 
 	i = 0
 	max = MaxRetries(0)
