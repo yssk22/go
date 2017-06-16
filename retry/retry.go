@@ -37,7 +37,7 @@ type Backoff interface {
 	Calc(context.Context, int) time.Duration
 }
 
-// ConstBackoff return a Waiter to wait for a given `t` interval.
+// ConstBackoff return a Backoff to return a constant time.Duration backoff given by `t`
 func ConstBackoff(t time.Duration) Backoff {
 	return &constBackoff{
 		interval: t,
@@ -48,7 +48,7 @@ type constBackoff struct {
 	interval time.Duration
 }
 
-// Wait implements Waiter#Wait()
+// Calc implements Backoff#Calc
 func (b *constBackoff) Calc(ctx context.Context, attempt int) time.Duration {
 	return b.interval
 }
