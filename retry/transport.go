@@ -16,14 +16,17 @@ type HTTPTransport struct {
 	Backoff HTTPBackoff
 }
 
+// HTTPBackoff is an http version of Backoff
 type HTTPBackoff interface {
 	Calc(int, *http.Request, *http.Response, error) time.Duration
 }
 
+// HTTPChecker is an http version of Checker
 type HTTPChecker interface {
 	NeedRetry(int, *http.Request, *http.Response, error) bool
 }
 
+// NewHTTPTransport returns a new http.RoundTripper instance for given checker and backoff configurations on top of base http.RoundTripper
 func NewHTTPTransport(base http.RoundTripper, checker HTTPChecker, backoff HTTPBackoff) http.RoundTripper {
 	return &HTTPTransport{
 		Base:    base,
@@ -79,7 +82,7 @@ func (t *HTTPTransport) bufferBody(req *http.Request) (*bytes.Reader, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-// HTTPConstBackoff return a Backoff to wait for a given interval
+// HTTPConstBackoff is a http version of ConstBackoff
 func HTTPConstBackoff(t time.Duration) HTTPBackoff {
 	return &httpConstBackoff{
 		interval: t,
@@ -90,11 +93,12 @@ type httpConstBackoff struct {
 	interval time.Duration
 }
 
-// Wait implements Waiter#Wait()
+// Calc implements HTTPBackoff#Calc()
 func (b *httpConstBackoff) Calc(int, *http.Request, *http.Response, error) time.Duration {
 	return b.interval
 }
 
+// HTTPAnd is a AND combination of multiple HTTPChecker instances.
 func HTTPAnd(checkers ...HTTPChecker) HTTPChecker {
 	return &httpAnd{
 		checkers: checkers,
@@ -106,7 +110,7 @@ type httpAnd struct {
 }
 
 func (and *httpAnd) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
-	var needRetry bool = true
+	var needRetry = true
 	for _, c := range and.checkers {
 		needRetry = needRetry && c.NeedRetry(attempt, req, resp, err)
 		if !needRetry {
@@ -116,6 +120,7 @@ func (and *httpAnd) NeedRetry(attempt int, req *http.Request, resp *http.Respons
 	return true
 }
 
+// HTTPMaxRetry is an http version of MaxRetry
 func HTTPMaxRetry(max int) HTTPChecker {
 	return &httpMaxRetry{
 		max: max,
@@ -130,6 +135,7 @@ func (mr *httpMaxRetry) NeedRetry(attempt int, req *http.Request, resp *http.Res
 	return attempt < mr.max
 }
 
+// HTTPServerErrorChecker returns a HTTPChecker that needs retries when http status code >= 500
 func HTTPServerErrorChecker() HTTPChecker {
 	return HTTPResponseChecker(
 		func(resp *http.Response) bool {
@@ -138,6 +144,7 @@ func HTTPServerErrorChecker() HTTPChecker {
 	)
 }
 
+// HTTPResponseChecker returns a HTTPChecker that checks *http.Response for retries
 func HTTPResponseChecker(f func(resp *http.Response) bool) HTTPChecker {
 	return &httpResponseChecker{
 		F: f,
