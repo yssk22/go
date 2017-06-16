@@ -58,9 +58,7 @@ func (c *Config) All(ctx context.Context) []*ServiceConfig {
 		c.defaultKeys,
 	)
 	for i := range serviceConfigs {
-		cfg, err := c.defaultMap.Get(c.defaultKeys[i])
-		xerrors.MustNil(err)
-		defaultCfg := cfg.(*ServiceConfig)
+		defaultCfg := c.getDefault(c.defaultKeys[i])
 		globalCfg := globalConfigs[i]
 		serviceConfigs[i] = c.normalize(serviceConfigs[i], globalCfg, defaultCfg)
 	}
@@ -70,9 +68,7 @@ func (c *Config) All(ctx context.Context) []*ServiceConfig {
 // Get gets the *ServiceConfig
 func (c *Config) Get(ctx context.Context, key string) *ServiceConfig {
 	serviceCfg := DefaultServiceConfigKind.MustGet(ctx, key)
-	cfg, err := c.defaultMap.Get(key)
-	xerrors.MustNil(err)
-	defaultCfg := cfg.(*ServiceConfig)
+	defaultCfg := c.getDefault(key)
 	globalCtx, err := appengine.Namespace(ctx, "")
 	xerrors.MustNil(err)
 	globalCfg := DefaultServiceConfigKind.MustGet(globalCtx, key)
@@ -86,9 +82,7 @@ func (c *Config) GetValue(ctx context.Context, key string) string {
 
 // GetDefaultValue returns the default value by `key`
 func (c *Config) GetDefaultValue(key string) string {
-	cfg, err := c.defaultMap.Get(key)
-	xerrors.MustNil(err)
-	return cfg.(*ServiceConfig).Value
+	return c.getDefault(key).Value
 }
 
 // GetIntValue is like GetValue and return the value as int. If invalid int value is set on `key`
@@ -104,9 +98,7 @@ func (c *Config) GetIntValue(ctx context.Context, key string) int {
 
 // GetIntDefaultValue returns the default value by `key` as int
 func (c *Config) GetIntDefaultValue(key string) int {
-	cfg, err := c.defaultMap.Get(key)
-	xerrors.MustNil(err)
-	vv, err := strconv.Atoi(cfg.(*ServiceConfig).Value)
+	vv, err := strconv.Atoi(c.GetDefaultValue(key))
 	xerrors.MustNil(err)
 	return vv
 }
@@ -164,4 +156,12 @@ func (c *Config) normalize(s *ServiceConfig, global *ServiceConfig, default_ *Se
 		s.GlobalValue = global.Value
 	}
 	return s
+}
+
+func (c *Config) getDefault(key string) *ServiceConfig {
+	cfg, err := c.defaultMap.Get(key)
+	if err != nil {
+		panic(fmt.Errorf("unexpected error while accessing %q (available keys: %q): %v", key, c.defaultKeys, err))
+	}
+	return cfg.(*ServiceConfig)
 }

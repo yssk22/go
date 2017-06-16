@@ -14,10 +14,10 @@ import (
 const HTTPClientLoggerKey = "gae.service.config.http"
 
 const (
-	ckURLFetchDeadline                = "ext.urlfetch.deadline"
-	ckURLFetchAllowInvalidCertificate = "ext.urlfetch.allow_invalid_certificate"
-	ckURLFetchMaxRetries              = "ext.urlfetch.max_retries"
-	ckURLFetchRetryBackoff            = "ext.urlfetch.retry_backoff"
+	ckURLFetchDeadline                = "urlfetch.deadline"
+	ckURLFetchAllowInvalidCertificate = "urlfetch.allow_invalid_certificate"
+	ckURLFetchMaxRetries              = "urlfetch.max_retries"
+	ckURLFetchRetryBackoff            = "urlfetch.retry_backoff"
 )
 
 func init() {
