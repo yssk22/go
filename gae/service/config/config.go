@@ -18,17 +18,6 @@ type Config struct {
 	defaultKeys []string
 }
 
-// a list of []*ServiceConfig that contains global configurations whose 'Value' as default value.
-// isGlobal in each element should be true
-var globalDefaults []*ServiceConfig
-
-// Global register a service configuration shared in whole applications, and it can be overwritten by a service.
-func Global(key string, defaultValue string, description string) {
-	sc := newServiceConfig(key, defaultValue, description)
-	sc.isGlobal = true
-	globalDefaults = append(globalDefaults, sc)
-}
-
 // New returns a new *Config object
 func New() *Config {
 	c := &Config{
@@ -93,6 +82,13 @@ func (c *Config) Get(ctx context.Context, key string) *ServiceConfig {
 // GetValue is like Get but returns only the value as string.
 func (c *Config) GetValue(ctx context.Context, key string) string {
 	return c.Get(ctx, key).Value
+}
+
+// GetDefaultValue returns the default value by `key`
+func (c *Config) GetDefaultValue(key string) string {
+	cfg, err := c.defaultMap.Get(key)
+	xerrors.MustNil(err)
+	return cfg.(*ServiceConfig).Value
 }
 
 // GetIntValue is like GetValue and return the value as int. If invalid int value is set on `key`
