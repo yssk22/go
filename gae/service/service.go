@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/speedland/go/gae/service/config"
+	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
@@ -135,6 +136,13 @@ func (s *Service) Put(path string, handlers ...web.Handler) {
 // Delete defines an endpoint for DELETE
 func (s *Service) Delete(path string, handlers ...web.Handler) {
 	s.router.Delete(s.Path(path), handlers...)
+}
+
+// Page defines an endpoint for view.Page interaface
+func (s *Service) Page(path string, p view.Page) {
+	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		return p.Render(req)
+	}))
 }
 
 // Path returns an absolute path for this s.
