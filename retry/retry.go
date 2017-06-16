@@ -85,5 +85,5 @@ type maxRetries struct {
 }
 
 func (mr *maxRetries) NeedRetry(ctx context.Context, attempt int, err error) bool {
-	return attempt <= mr.max
+	return attempt < mr.max
 }
