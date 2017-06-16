@@ -20,8 +20,9 @@ type BuiltInAPIConfig struct {
 }
 
 // ActivateEndpoints sets up builtin API endpoints on the *Service
-func (bc *BuiltInAPIConfig) ActivateEndpoints(s *Service) {
+func (bc *BuiltInAPIConfig) ActivateEndpoints(s *Service) *Service {
 	bc.activateConfigAPI(s)
+	return s
 }
 
 // DefaultBuiltinAPIConfig is a default object of BuiltInAPIConfig
