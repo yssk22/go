@@ -15,7 +15,7 @@ var processStartAt = fmt.Sprintf("%d", xtime.Now().Unix())
 
 var ReactPageDefaults = &ReactPage{
 	stylesheets: []interface{}{
-		fmt.Sprintf("/static/page.css?%s", processStartAt),
+	// fmt.Sprintf("/static/page.css?%s", processStartAt),
 	},
 	javascripts: []interface{}{
 		fmt.Sprintf("/static/page.js?%s", processStartAt),
@@ -25,6 +25,7 @@ var ReactPageDefaults = &ReactPage{
 // ReactPage is a Page implementation for react applications
 type ReactPage struct {
 	title          interface{}
+	serviceData    map[string]interface{}
 	metaProperties map[string]interface{}
 	appData        map[string]interface{}
 	stylesheets    []interface{}
@@ -32,7 +33,11 @@ type ReactPage struct {
 }
 
 func New() *ReactPage {
-	return &ReactPage{}
+	return &ReactPage{
+		serviceData:    make(map[string]interface{}),
+		metaProperties: make(map[string]interface{}),
+		appData:        make(map[string]interface{}),
+	}
 }
 
 // Title sets the title
@@ -42,7 +47,19 @@ func (rp *ReactPage) Title(title interface{}) *ReactPage {
 	return rp
 }
 
-// AppData sets the app data passed to data-{key} attribute on react module.
+const (
+	serviceDataKeyReactModulePath = "reactModulePath"
+	serviceDataKeyCSRFToken       = "csrfToken"
+)
+
+// ReactModulePath sets the react module path
+func (rp *ReactPage) ReactModulePath(modulePath interface{}) *ReactPage {
+	validateType(modulePath, false, "ReactModulePath")
+	rp.serviceData[serviceDataKeyReactModulePath] = modulePath
+	return rp
+}
+
+// MetaProperty sets the meta tag key value pairs
 func (rp *ReactPage) MetaProperty(key string, value interface{}) *ReactPage {
 	validateType(value, true, fmt.Sprintf("MetaProperty[%q]", key))
 	rp.metaProperties[key] = value
@@ -80,7 +97,7 @@ func (rp *ReactPage) Render(req *web.Request) *response.Response {
 	data := ReactPageDefaults.genVar(req)
 	data.Merge(rp.genVar(req))
 	if sess := session.FromContext(ctx); sess != nil {
-		data.AppData["csrfSecret"] = sess.CSRFSecret.String()
+		data.ServiceData[serviceDataKeyCSRFToken] = sess.CSRFSecret.String()
 	}
 	return response.NewHTMLWithStatus(
 		ReactPageTemplate,
@@ -94,8 +111,12 @@ func (rp *ReactPage) genVar(req *web.Request) *ReactPageVars {
 	data := &ReactPageVars{
 		Status:         response.HTTPStatusOK,
 		Title:          genString(ctx, rp.title),
+		ServiceData:    make(map[string]interface{}),
 		MetaProperties: make(map[string]string),
 		AppData:        make(map[string]interface{}),
+	}
+	for key, val := range rp.serviceData {
+		data.ServiceData[key] = genObject(ctx, val)
 	}
 	for key, val := range rp.metaProperties {
 		data.MetaProperties[key] = genString(ctx, val)

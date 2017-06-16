@@ -14,6 +14,7 @@ type ReactPageVars struct {
 	Title          string
 	Body           template.HTML
 	MetaProperties map[string]string
+	ServiceData    map[string]interface{}
 	AppData        map[string]interface{}
 	Stylesheets    []string
 	Javascripts    []string
@@ -28,6 +29,9 @@ func (rpv *ReactPageVars) Merge(rpv2 *ReactPageVars) {
 		} else {
 			rpv.Title = fmt.Sprintf("%s - %s", rpv2.Title, rpv.Title)
 		}
+	}
+	for key, val := range rpv2.ServiceData {
+		rpv.ServiceData[key] = val
 	}
 	for key, val := range rpv2.MetaProperties {
 		rpv.MetaProperties[key] = val
@@ -70,7 +74,9 @@ var ReactPageTemplate = template.Must(template.New("react").Funcs(reactPageTempl
 </head>
 <body>
   <div id="fb-root"></div>
-  <div id="main" data-app={{json .AppData}}>
+  <div id="main"
+  	data-app="{{json .AppData}}"
+	data-service="{{json .ServiceData}}">
   	<div class="body">{{.Body}}</div>
   </div>
   {{range .Javascripts -}}
