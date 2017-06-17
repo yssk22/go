@@ -60,24 +60,45 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 			module.Name, module.URL, module.Package, module.PackagePath,
 		)
 	}
-	var goFilePath = filepath.Join(dir, "main.go")
+
+	log.Println("generaing yaml files on each deployment directory...")
+	for _, m := range bindings.Modules {
+		generateConfigs(bindings.AppName, filepath.Join(deploymentDir, m.Name), m)
+	}
+
+	log.Println("generaing yaml files on defualt directory...")
+	// dispatch.yaml
 	var dispatchFilePath = filepath.Join(outputDir, "dispatch.yaml")
-	var cronFilePath = filepath.Join(outputDir, "cron.yaml")
-	var queueFilePath = filepath.Join(outputDir, "queue.yaml")
-	var goFile, dispatchFile *os.File
-	log.Println("generaing yaml files...")
+	var dispatchFile *os.File
 	dispatchFile, err = os.Create(dispatchFilePath)
 	xerrors.MustNil(err)
 	defer dispatchFile.Close()
 	xerrors.MustNil(dispatchFileTemplate.Execute(dispatchFile, bindings))
 	log.Println("\t", dispatchFilePath)
 
+	// configs for default
+	generateConfigs(appName, outputDir, bindings.Modules...)
+}
+
+func generateConfigs(appName string, outputDir string, modules ...*Module) {
+	// create a generator go file
+	dir, err := ioutil.TempDir("", "genyamltmp")
+	xerrors.MustNil(err)
+	defer os.RemoveAll(dir)
+	var goFile *os.File
+	var goFilePath = filepath.Join(dir, "main.go")
 	goFile, err = os.Create(goFilePath)
 	xerrors.MustNil(err)
 	defer goFile.Close()
+	bindings := &TemplateVar{
+		AppName: appName,
+	}
+	bindings.CronYamlPath = filepath.Join(dir, "cron.yaml")
+	bindings.QueueYamlPath = filepath.Join(dir, "queue.yaml")
+	bindings.Modules = modules
 	xerrors.MustNil(goFileTemplate.Execute(goFile, bindings))
 
-	// generate other yaml files by go command
+	// execute generator
 	var buff bytes.Buffer
 	cmd := exec.Command("go", "run", goFilePath)
 	cmd.Stderr = &buff
@@ -92,6 +113,10 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 		log.Println("  - package must export `func NewService() *service.Service` function")
 		os.Exit(1)
 	}
+
+	// copy the file to the final destination
+	cronFilePath := filepath.Join(outputDir, "cron.yaml")
+	queueFilePath := filepath.Join(outputDir, "queue.yaml")
 	xerrors.MustNil(cp(cronFilePath, bindings.CronYamlPath))
 	log.Println("\t", cronFilePath)
 	xerrors.MustNil(cp(queueFilePath, bindings.QueueYamlPath))
