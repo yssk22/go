@@ -43,12 +43,13 @@ func main() {
 	args = append(args, "--storage_path", ".localdata")
 	args = append(args, "--datastore_consistency_policy", "consistent")
 	args = append(args, dispatchFilePath)
+	args = append(args, filepath.Join(*deploymentDir, "default/app.yaml"))
 	for _, m := range modules {
 		args = append(args, filepath.Join(*deploymentDir, fmt.Sprintf("%s/app.yaml", m)))
 	}
-	args = append(args, filepath.Join(*deploymentDir, "default/app.yaml"))
 
 	cmd := exec.Command("dev_appserver.py", args...)
+	log.Println(strings.Join(append([]string{"$ dev_appserver.py"}, args...), " "))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
