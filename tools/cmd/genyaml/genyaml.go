@@ -12,6 +12,8 @@ import (
 	"regexp"
 	"strings"
 
+	"bytes"
+
 	"github.com/speedland/go/tools/gaeutil"
 	"github.com/speedland/go/x/xerrors"
 )
@@ -46,12 +48,17 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 	bindings.CronYamlPath = filepath.Join(dir, "cron.yaml")
 	bindings.QueueYamlPath = filepath.Join(dir, "queue.yaml")
 	for _, m := range modules {
-		bindings.Modules = append(bindings.Modules, &Module{
+		module := &Module{
 			Name:        m,
 			URL:         strings.Replace(m, "-", "/", -1),
 			Package:     m,
 			PackagePath: filepath.Join(packageSuffix, m),
-		})
+		}
+		bindings.Modules = append(bindings.Modules, module)
+		log.Printf(
+			"Service: Name=%s, URL=%s, Package=%s, PackagePath=%s\n",
+			module.Name, module.URL, module.Package, module.PackagePath,
+		)
 	}
 	var goFilePath = filepath.Join(dir, "main.go")
 	var dispatchFilePath = filepath.Join(outputDir, "dispatch.yaml")
@@ -71,9 +78,20 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 	xerrors.MustNil(goFileTemplate.Execute(goFile, bindings))
 
 	// generate other yaml files by go command
+	var buff bytes.Buffer
 	cmd := exec.Command("go", "run", goFilePath)
-	// cmd.Stderr = os.Stderr
-	xerrors.MustNil(cmd.Run())
+	cmd.Stderr = &buff
+	if err := cmd.Run(); err != nil {
+		log.Println("Failed to run the generator go file: ")
+		fmt.Fprintln(os.Stderr, buff.String())
+		log.Println("generator file source:")
+		content, _ := ioutil.ReadFile(goFilePath)
+		fmt.Fprintln(os.Stderr, string(content))
+		log.Println("Please check your source is:")
+		log.Println("  - package name must be the same name with the directory name")
+		log.Println("  - package must export `func NewService() *service.Service` function")
+		os.Exit(1)
+	}
 	xerrors.MustNil(cp(cronFilePath, bindings.CronYamlPath))
 	log.Println("\t", cronFilePath)
 	xerrors.MustNil(cp(queueFilePath, bindings.QueueYamlPath))
