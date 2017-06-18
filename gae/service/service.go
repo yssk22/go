@@ -171,7 +171,7 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 			return apierrors.Forbidden.ToResponse()
 		}
 		taskID := req.Params.GetStringOr("taskid", "")
-		progress, err := taskConfig.Process(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), req.Request.URL.Query())
+		progress, err := taskConfig.Process(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), req.Request.URL.Query())
 		if err != nil {
 			if err == asynctask.ErrNoTaskInstance {
 				return nil
