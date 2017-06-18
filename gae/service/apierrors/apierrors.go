@@ -18,3 +18,12 @@ func (err *Error) ToResponse() *response.Response {
 	}
 	return response.NewJSONWithStatus(err, err.Status)
 }
+
+// General API errors
+var (
+	Forbidden = &Error{
+		Code:    "forbidden",
+		Message: "you do not have an access to the resource",
+		Status:  response.HTTPStatusForbidden,
+	}
+)

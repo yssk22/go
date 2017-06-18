@@ -3,22 +3,10 @@ package asynctask
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"path"
-	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
-	"github.com/speedland/go/gae/service"
-	"github.com/speedland/go/gae/taskqueue"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtime"
 )
 
 // LoggerKey is a xlog key for this package
@@ -62,15 +50,19 @@ func (cs *TaskStore) UnmarshalJSON(b []byte) error {
 //go:generate ent -type=AsyncTask
 type AsyncTask struct {
 	ID        string     `json:"id" ent:"id"`
-	Path      string     `json:"path"`
-	Query     string     `json:"query"  datastore:",noindex"`
+	ConfigKey string     `json:"config_key"`
+	Params    string     `json:"params" datastore:",noindex"`
 	Status    Status     `json:"status"`
 	Error     string     `json:"error" datastore:",noindex"`
 	Progress  []Progress `json:"progress" datastore:",noindex"`
-	TaskStore TaskStore  `json:"-" datastore",noindex"`
+	TaskStore TaskStore  `json:"taskstore" datastore",noindex"`
 	StartAt   time.Time  `json:"start_at"`
 	FinishAt  time.Time  `json:"finish_at"`
 	UpdatedAt time.Time  `json:"updated_at" ent:"timestamp"`
+
+	// Deprecated
+	Path  string `json:"path"  datastore:",noindex"`
+	Query string `json:"query"  datastore:",noindex"`
 }
 
 // IsStoreEmpty returns whether TaskStore field is empty or not
@@ -102,23 +94,23 @@ func (t *AsyncTask) LastProgress() *Progress {
 	return &t.Progress[l-1]
 }
 
-// NewMonitorResponse returns a new *MonitorResponse exposed externally
-func (t *AsyncTask) NewMonitorResponse() *MonitorResponse {
-	m := &MonitorResponse{
+// GetStatus returns a new *TaskStatus exposed to clients.
+func (t *AsyncTask) GetStatus() *TaskStatus {
+	st := &TaskStatus{
 		ID:     t.ID,
 		Status: t.Status,
 	}
 	if !t.StartAt.IsZero() {
-		m.StartAt = &(t.StartAt)
+		st.StartAt = &(t.StartAt)
 	}
 	if !t.FinishAt.IsZero() {
-		m.FinishAt = &(t.FinishAt)
+		st.FinishAt = &(t.FinishAt)
 	}
 	if t.Error != "" {
-		m.Error = &(t.Error)
+		st.Error = &(t.Error)
 	}
-	m.Progress = t.LastProgress()
-	return m
+	st.Progress = t.LastProgress()
+	return st
 }
 
 // Progress is a struct that represents the task progress
@@ -129,53 +121,8 @@ type Progress struct {
 	Next    url.Values `json:"-" datastore:"-"`
 }
 
-// Logic is an interface to execute a task
-type Logic interface {
-	Run(*web.Request, *AsyncTask) (*Progress, error)
-}
-
-// Func is an function to implement Logic
-type Func func(*web.Request, *AsyncTask) (*Progress, error)
-
-// Run implements Logic#Run
-func (f Func) Run(req *web.Request, t *AsyncTask) (*Progress, error) {
-	return f(req, t)
-}
-
-// Config is an configuration object to configure endpoints on the task.
-type Config struct {
-	Queue     *taskqueue.PushQueue
-	service   *service.Service
-	validator web.Handler
-	path      string
-	logic     Logic
-}
-
-// Implement defines the task logic
-func (c *Config) Implement(t Logic) {
-	c.logic = t
-}
-
-// Schedule adds the cron endpoint for the async task
-func (c *Config) Schedule(sched string, description string) {
-	p := path.Join(c.path, "cron/")
-	c.service.AddCron(p, sched, description,
-		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
-			path := fmt.Sprintf("%s?cron=true", c.service.Path(c.path))
-			err := c.Queue.PushTask(req.Context(), path, url.Values{})
-			if err != nil {
-				return response.NewError(err)
-			}
-			return response.NewText("OK")
-		}),
-	)
-}
-
-type TriggerResponse struct {
-	ID string `json:"id"`
-}
-
-type MonitorResponse struct {
+// TaskStatus is a struct that can be used in task manager clients.
+type TaskStatus struct {
 	ID       string     `json:"id"`
 	Status   Status     `json:"status"`
 	StartAt  *time.Time `json:"start_at,omitempty"`
@@ -184,132 +131,163 @@ type MonitorResponse struct {
 	Progress *Progress  `json:"progress,omitempty"`
 }
 
-// New adds a new push queue for the asynchronous task execution and returns a *Config value
-// to implement the business logic
-func New(s *service.Service, path string) *Config {
-	if !strings.HasSuffix(path, "/") {
-		panic(fmt.Errorf("asynctask path must ends with '/' (got %q)", path))
-	}
+// // Config is an configuration object to configure endpoints on the task.
+// type Config struct {
+// 	Queue     *taskqueue.PushQueue
+// 	service   *service.Service
+// 	validator web.Handler
+// 	path      string
+// 	logic     Logic
+// }
 
-	name := path[1 : len(path)-1]              // remove prefix/suffix slash.
-	name = strings.Replace(name, ":", "", -1)  // remove path parameters (/:param/ => /param/)
-	name = strings.Replace(name, "/", "-", -1) // replace '/' with '-' (/path/to/queue/ => path-to-queue)
-	queue := s.AddPushQueue(name)
+// // Implement defines the task logic
+// func (c *Config) Implement(t Logic) {
+// 	c.logic = t
+// }
 
-	config := &Config{
-		Queue:   queue,
-		service: s,
-		path:    path,
-	}
+// // Schedule adds the cron endpoint for the async task
+// func (c *Config) Schedule(sched string, description string) {
+// 	p := path.Join(c.path, "cron/")
+// 	c.service.AddCron(p, sched, description,
+// 		web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
+// 			path := fmt.Sprintf("%s?cron=true", c.service.Path(c.path))
+// 			err := c.Queue.PushTask(req.Context(), path, url.Values{})
+// 			if err != nil {
+// 				return response.NewError(err)
+// 			}
+// 			return response.NewText("OK")
+// 		}),
+// 	)
+// }
 
-	// GET /path/:taskid.json
-	// endpoint to get the latest status of the given taskid.
-	s.Get(fmt.Sprintf("%s:taskid.json", path),
-		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			t := DefaultAsyncTaskKind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
-			if t == nil {
-				return nil
-			}
-			return response.NewJSON(t.NewMonitorResponse())
-		}))
+// type TriggerResponse struct {
+// 	ID string `json:"id"`
+// }
 
-	// POST /path/:taskid.json
-	// endpoint to execute a task logic, only called via pushtask
-	s.Post(fmt.Sprintf("%s:taskid.json", path),
-		queue.RequestValidator(),
-		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			// TODO: There would be orphan tasks that need to be cleaned up since
-			// a task progress is tracked on datastore, and we use MustPut() to update the record without any retries.
-			t := DefaultAsyncTaskKind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
-			if t == nil {
-				return nil
-			}
-			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
-			if t.Status != StatusReady && t.Status != StatusRunning {
-				// return 200 for GAE not to retry the task.
-				logger.Warnf("task %q is already in %s", t.ID, t.Status)
-				return response.NewText("OK")
-			}
-			if t.Status == StatusReady {
-				logger.Infof("Start a task")
-				t.StartAt = xtime.Now()
-				t.Status = StatusRunning
-				DefaultAsyncTaskKind.MustPut(req.Context(), t)
-			}
+// type MonitorResponse struct {
+// 	ID       string     `json:"id"`
+// 	Status   Status     `json:"status"`
+// 	StartAt  *time.Time `json:"start_at,omitempty"`
+// 	FinishAt *time.Time `json:"finish_at,omitempty"`
+// 	Error    *string    `json:"error,omitempty"`
+// 	Progress *Progress  `json:"progress,omitempty"`
+// }
 
-			var err error
-			var progress *Progress
-			var resp *response.Response
+// // New adds a new push queue for the asynchronous task execution and returns a *Config value
+// // to implement the business logic
+// func New(s *service.Service, path string) *Config {
+// 	if !strings.HasSuffix(path, "/") {
+// 		panic(fmt.Errorf("asynctask path must ends with '/' (got %q)", path))
+// 	}
 
-			func() {
-				defer func() {
-					var ok bool
-					if x := recover(); x != nil {
-						err, ok = x.(error)
-						if !ok {
-							err = fmt.Errorf("%v", x)
-						}
-						logger.Fatalf("rescue from panic: %v", err)
-					}
-				}()
-				progress, err = config.logic.Run(req, t)
-			}()
+// 	name := path[1 : len(path)-1]              // remove prefix/suffix slash.
+// 	name = strings.Replace(name, ":", "", -1)  // remove path parameters (/:param/ => /param/)
+// 	name = strings.Replace(name, "/", "-", -1) // replace '/' with '-' (/path/to/queue/ => path-to-queue)
+// 	queue := s.AddPushQueue(name)
 
-			if progress != nil {
-				t.Progress = append(t.Progress, *progress)
-				if progress.Next != nil {
-					DefaultAsyncTaskKind.MustPut(req.Context(), t)
-					logger.Infof("The task logic returns a progress with next params, calling a task recursively....")
-					err = queue.PushTask(req.Context(), fmt.Sprintf("%s?%s", req.URL.EscapedPath(), progress.Next.Encode()), nil)
-					if err == nil {
-						// response next parameters to client.
-						// this is used only for TestRunner to call the next
-						return response.NewJSON(progress.Next)
-					}
-				} else {
-					logger.Infof("The task logic returns a progress without next parameters.")
-				}
-			} else {
-				logger.Infof("The task logic doesn't return a progress.")
-			}
+// 	config := &Config{
+// 		Queue:   queue,
+// 		service: s,
+// 		path:    path,
+// 	}
 
-			// finished the task
-			t.FinishAt = xtime.Now()
-			t.Progress = nil
-			if err == nil {
-				t.Status = StatusSuccess
-				resp = response.NewJSON(true)
-			} else {
-				t.Error = err.Error()
-				t.Status = StatusFailure
-				resp = response.NewError(err)
-			}
-			DefaultAsyncTaskKind.MustPut(req.Context(), t)
-			logger.Infof("The task finished with %s(tt=%s).", t.Status, t.FinishAt.Sub(t.StartAt))
-			return resp
-		}))
+// 	// POST /path/:taskid.json
+// 	// endpoint to execute a task logic, only called via pushtask
+// 	s.Post(fmt.Sprintf("%s:taskid.json", path),
+// 		queue.RequestValidator(),
+// 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+// 			// TODO: There would be orphan tasks that need to be cleaned up since
+// 			// a task progress is tracked on datastore, and we use MustPut() to update the record without any retries.
+// 			t := DefaultAsyncTaskKind.MustGet(req.Context(), req.Params.GetStringOr("taskid", ""))
+// 			if t == nil {
+// 				return nil
+// 			}
+// 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
+// 			if t.Status != StatusReady && t.Status != StatusRunning {
+// 				// return 200 for GAE not to retry the task.
+// 				logger.Warnf("task %q is already in %s", t.ID, t.Status)
+// 				return response.NewText("OK")
+// 			}
+// 			if t.Status == StatusReady {
+// 				logger.Infof("Start a task")
+// 				t.StartAt = xtime.Now()
+// 				t.Status = StatusRunning
+// 				DefaultAsyncTaskKind.MustPut(req.Context(), t)
+// 			}
 
-	// POST /path/
-	// endpoint to create a new task record and call /path/:taskid.json via pushtask.
-	s.Post(path,
-		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			t := &AsyncTask{}
-			t.ID = uuid.New().String()
-			t.Path = req.URL.Path
-			t.Query = req.URL.RawQuery
-			t.Status = StatusReady
-			t.TaskStore = nil
-			DefaultAsyncTaskKind.MustPut(req.Context(), t)
-			taskPath := fmt.Sprintf("%s%s.json?%s", req.URL.Path, t.ID, req.URL.Query().Encode())
-			if err := queue.PushTask(req.Context(), taskPath, nil); err != nil {
-				panic(err)
-			}
-			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
-			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s, cron=%t)", t.ID, taskPath, queue.Name, req.Query.GetStringOr("cron", "") == "true")
-			return response.NewJSONWithStatus(
-				&TriggerResponse{t.ID},
-				response.HTTPStatusCreated,
-			)
-		}))
-	return config
-}
+// 			var err error
+// 			var progress *Progress
+// 			var resp *response.Response
+
+// 			func() {
+// 				defer func() {
+// 					var ok bool
+// 					if x := recover(); x != nil {
+// 						err, ok = x.(error)
+// 						if !ok {
+// 							err = fmt.Errorf("%v", x)
+// 						}
+// 						logger.Fatalf("rescue from panic: %v", err)
+// 					}
+// 				}()
+// 				progress, err = config.logic.Run(req, t)
+// 			}()
+
+// 			if progress != nil {
+// 				t.Progress = append(t.Progress, *progress)
+// 				if progress.Next != nil {
+// 					DefaultAsyncTaskKind.MustPut(req.Context(), t)
+// 					logger.Infof("The task logic returns a progress with next params, calling a task recursively....")
+// 					err = queue.PushTask(req.Context(), fmt.Sprintf("%s?%s", req.URL.EscapedPath(), progress.Next.Encode()), nil)
+// 					if err == nil {
+// 						// response next parameters to client.
+// 						// this is used only for TestRunner to call the next
+// 						return response.NewJSON(progress.Next)
+// 					}
+// 				} else {
+// 					logger.Infof("The task logic returns a progress without next parameters.")
+// 				}
+// 			} else {
+// 				logger.Infof("The task logic doesn't return a progress.")
+// 			}
+
+// 			// finished the task
+// 			t.FinishAt = xtime.Now()
+// 			t.Progress = nil
+// 			if err == nil {
+// 				t.Status = StatusSuccess
+// 				resp = response.NewJSON(true)
+// 			} else {
+// 				t.Error = err.Error()
+// 				t.Status = StatusFailure
+// 				resp = response.NewError(err)
+// 			}
+// 			DefaultAsyncTaskKind.MustPut(req.Context(), t)
+// 			logger.Infof("The task finished with %s(tt=%s).", t.Status, t.FinishAt.Sub(t.StartAt))
+// 			return resp
+// 		}))
+
+// 	// POST /path/
+// 	// endpoint to create a new task record and call /path/:taskid.json via pushtask.
+// 	s.Post(path,
+// 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+// 			t := &AsyncTask{}
+// 			t.ID = uuid.New().String()
+// 			t.Path = req.URL.Path
+// 			t.Query = req.URL.RawQuery
+// 			t.Status = StatusReady
+// 			t.TaskStore = nil
+// 			DefaultAsyncTaskKind.MustPut(req.Context(), t)
+// 			taskPath := fmt.Sprintf("%s%s.json?%s", req.URL.Path, t.ID, req.URL.Query().Encode())
+// 			if err := queue.PushTask(req.Context(), taskPath, nil); err != nil {
+// 				panic(err)
+// 			}
+// 			logger := xlog.WithContext(context.WithValue(req.Context(), TaskIDContextKey, t.ID)).WithKey(LoggerKey)
+// 			logger.Infof("An AsyncTask created: %s (path:%s, queue:%s, cron=%t)", t.ID, taskPath, queue.Name, req.Query.GetStringOr("cron", "") == "true")
+// 			return response.NewJSONWithStatus(
+// 				&TriggerResponse{t.ID},
+// 				response.HTTPStatusCreated,
+// 			)
+// 		}))
+// 	return config
+// }
