@@ -57,15 +57,8 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		Request: r,
 		ID:      uuid.New(),
 		ctx:     initContext(r),
-		Query: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			if val := query[key]; val != nil {
-				return val[0], nil
-			}
-			return nil, keyvalue.KeyError(key)
-		}).Proxy(),
-		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			return r.FormValue(key), nil
-		}).Proxy(),
+		Query:   keyvalue.NewQueryProxy(query),
+		Form:    keyvalue.NewQueryProxy(r.Form),
 		Cookies: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
 			v, ok := cookies[key]
 			if !ok {
