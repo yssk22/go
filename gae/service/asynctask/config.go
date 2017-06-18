@@ -9,6 +9,7 @@ import (
 
 	"github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/keyvalue"
+	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xruntime"
 	"github.com/speedland/go/x/xtime"
@@ -28,12 +29,20 @@ type Config struct {
 func NewConfig(key string, queue *taskqueue.PushQueue, logic Logic) *Config {
 	caller := xruntime.CaptureCaller()
 	desc := fmt.Sprintf("defined in %s:%d", caller.FullFilePath, caller.LineNumber)
+	if key == "" {
+		panic(fmt.Errorf("asynctask.Config key must not be empty"))
+	}
 	return &Config{
 		key:         key,
 		queue:       queue,
 		logic:       logic,
 		description: desc,
 	}
+}
+
+// GetKey returns a key string for the async task
+func (c *Config) GetKey() string {
+	return c.key
 }
 
 // WithDescription sets the description for the async task
@@ -65,6 +74,21 @@ func (c *Config) GetStatus(ctx context.Context, taskID string) *TaskStatus {
 		return nil
 	}
 	return t.GetStatus()
+}
+
+// GetRecentTasks returns a list of recent tasks ordered by StartAt
+func (c *Config) GetRecentTasks(ctx context.Context, n int) []*TaskStatus {
+	const defaultNum = 5
+	const maxNum = 20
+	if n <= 0 || n > maxNum {
+		n = defaultNum
+	}
+	tasks := NewAsyncTaskQuery().Eq("ConfigKey", lazy.New(c.key)).Desc("StartAt").Limit(lazy.New(n)).MustGetAllValues(ctx)
+	list := make([]*TaskStatus, len(tasks))
+	for i, t := range tasks {
+		list[i] = t.GetStatus()
+	}
+	return list
 }
 
 // errors

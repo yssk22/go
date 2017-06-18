@@ -15,19 +15,25 @@ import (
 //    - GET /{ConfigAPIBasePath}/:key.json
 //    - PUT /{ConfigAPIBasePath}/:key.json
 //
+// [asynctask]
+//    - GET /{AsyncTaskListAPIPath}/
+//
 type BuiltInAPIConfig struct {
-	ConfigAPIBasePath string
+	ConfigAPIBasePath    string
+	AsyncTaskListAPIPath string
 }
 
 // ActivateEndpoints sets up builtin API endpoints on the *Service
 func (bc *BuiltInAPIConfig) ActivateEndpoints(s *Service) *Service {
 	bc.activateConfigAPI(s)
+	bc.activateAsyncTaskListAPI(s)
 	return s
 }
 
 // DefaultBuiltinAPIConfig is a default object of BuiltInAPIConfig
 var DefaultBuiltinAPIConfig = &BuiltInAPIConfig{
-	ConfigAPIBasePath: "/admin/api/configs/",
+	ConfigAPIBasePath:    "/admin/api/configs/",
+	AsyncTaskListAPIPath: "/admin/api/asynctasks/",
 }
 
 func (bc *BuiltInAPIConfig) activateConfigAPI(s *Service) {
@@ -56,5 +62,29 @@ func (bc *BuiltInAPIConfig) activateConfigAPI(s *Service) {
 		cfg.UpdateByForm(req.Form)
 		c.Set(req.Context(), cfg)
 		return response.NewJSON(cfg)
+	}))
+}
+
+// AsyncTaskListItem is an list item of AsyncTaskList API reponse.
+type AsyncTaskListItem struct {
+	Path        string `json:"path"`
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
+func (bc *BuiltInAPIConfig) activateAsyncTaskListAPI(s *Service) {
+	if bc.AsyncTaskListAPIPath == "" {
+		return
+	}
+	s.Get(bc.AsyncTaskListAPIPath, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		var list []*AsyncTaskListItem
+		for _, def := range s.tasks {
+			list = append(list, &AsyncTaskListItem{
+				Path:        def.path,
+				Key:         def.config.GetKey(),
+				Description: def.config.GetDescription(),
+			})
+		}
+		return response.NewJSON(list)
 	}))
 }

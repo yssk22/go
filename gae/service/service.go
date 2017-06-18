@@ -52,7 +52,7 @@ type Service struct {
 	namespace string    // datastore/memcache namespace for services
 	crons     []*cron
 	queues    []*xtaskqueue.PushQueue
-	tasks     []*asynctask.Config
+	tasks     []*asynctaskEndpoint
 	router    *web.Router // service router
 }
 
@@ -187,12 +187,18 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 		}
 		return response.NewJSON(progress.Next)
 	}))
+
 	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		taskID := uuid.New().String()
-		status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), req.Request.URL.Query())
+		status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), req.Request.URL.Query())
 		xerrors.MustNil(err)
 		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
 	}))
+
+	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		return response.NewJSON(taskConfig.GetRecentTasks(req.Context(), req.Query.GetIntOr("n", 5)))
+	}))
+
 	if schedule := taskConfig.GetSchedule(); schedule != "" {
 		const CronHeader = "X-AppEngine-Cron"
 		s.AddCron(fmt.Sprintf("%s/cron/", path), schedule, taskConfig.GetDescription(), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -207,6 +213,10 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
 		}))
 	}
+	s.tasks = append(s.tasks, &asynctaskEndpoint{
+		path:   s.Path(path),
+		config: taskConfig,
+	})
 }
 
 // Path returns an absolute path for this s.
