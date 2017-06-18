@@ -110,14 +110,13 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 	if t == nil {
 		return nil, ErrNoTaskInstance
 	}
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey)
-	logPrefix := fmt.Sprintf("AsyncTask:%s:%s", c.key, t.ID)
+	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(t.GetLogPrefix())
 	if t.Status != StatusReady && t.Status != StatusRunning {
 		// return 200 for GAE not to retry the task.
 		return nil, ErrAlreadyProcessing
 	}
 	if t.Status == StatusReady {
-		logger.Infof("[%s] Starting", logPrefix)
+		logger.Infof("Starting")
 		t.StartAt = xtime.Now()
 		t.Status = StatusRunning
 		DefaultAsyncTaskKind.MustPut(ctx, t)
@@ -134,14 +133,14 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 				if !ok {
 					err = fmt.Errorf("%v", x)
 				}
-				logger.Fatalf("[%s] Rescue from panic: %v", logPrefix, err)
+				logger.Fatalf("Rescue from panic: %v", err)
 			}
 		}()
 		progress, err = c.logic.Run(ctx, keyvalue.NewQueryProxy(params), t)
 	})
-	logger.Infof("[%s] The logic takes %s", logPrefix, timeTaken)
+	logger.Infof("The logic takes %s", timeTaken)
 	if timeTaken > executionTimeWarningThreshold {
-		logger.Warnf("[%s] The logic takes too long time with 10 minutes limitation, please check and reduce the time in a single execution.")
+		logger.Warnf("The logic takes too long time with 10 minutes limitation, please check and reduce the time in a single execution.")
 	}
 
 	if progress != nil {
@@ -151,7 +150,7 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 			return progress, nil
 		}
 		// if PushTask fails, AsyncTask is marked as 'failure'
-		logger.Infof("[%s] PushTask fails due to %v, stopping the task", logPrefix, err)
+		logger.Infof("PushTask fails due to %v, stopping the task", err)
 	}
 
 	// finished the task
@@ -164,9 +163,9 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 		t.Error = err.Error()
 	}
 	if err != nil {
-		logger.Errorf("[%s] Finished with %s in %s: %v", logPrefix, t.Status, t.FinishAt.Sub(t.StartAt), err)
+		logger.Errorf("Finished with %s in %s: %v", t.Status, t.FinishAt.Sub(t.StartAt), err)
 	} else {
-		logger.Infof("[%s] Finished with %s in %s.", logPrefix, t.Status, t.FinishAt.Sub(t.StartAt))
+		logger.Infof("Finished with %s in %s.", t.Status, t.FinishAt.Sub(t.StartAt))
 	}
 	DefaultAsyncTaskKind.MustPut(ctx, t)
 	return nil, nil
@@ -186,14 +185,13 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	t.Status = StatusReady
 	t.TaskStore = nil
 	DefaultAsyncTaskKind.MustPut(ctx, t)
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey)
-	logPrefix := fmt.Sprintf("AsyncTask:%s:%s", c.key, t.ID)
+	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(t.GetLogPrefix())
 	if err := c.pushTask(ctx, instancePath, params); err != nil {
-		logger.Infof("[%s] PushTask fails due to %v, clean up...", logPrefix, err)
+		logger.Infof("PushTask fails due to %v, clean up...", err)
 		DefaultAsyncTaskKind.MustDelete(ctx, taskID)
 		return nil, ErrPushTaskFailed
 	}
-	logger.Infof("[%s] Prepared", logPrefix)
+	logger.Infof("Prepared")
 	return t.GetStatus(), nil
 }
 
