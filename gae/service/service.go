@@ -65,6 +65,15 @@ func FromContext(ctx context.Context) *Service {
 	return nil
 }
 
+// MustFromContext is like FromContext but panics if a service is not in the context
+func MustFromContext(ctx context.Context) *Service {
+	service, ok := ctx.Value(ContextKey).(*Service)
+	if !ok {
+		panic(fmt.Errorf("not a service context"))
+	}
+	return service
+}
+
 // New returns a new *Service instance
 func New(key string) *Service {
 	return NewWithURLAndNamespace(
