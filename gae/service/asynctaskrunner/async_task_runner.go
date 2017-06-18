@@ -45,7 +45,7 @@ func (runner *AsyncTaskRunner) Run(ctx context.Context, path string, query url.V
 	recorder := gaetest.NewRecorder(runner.service)
 
 	// trigger the task
-	var triggered asynctask.TriggerResponse
+	var triggered asynctask.TaskStatus
 	res := recorder.TestPost(triggerPath, nil)
 	a.Status(response.HTTPStatusCreated, res)
 	a.JSON(&triggered, res)

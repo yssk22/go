@@ -20,15 +20,20 @@ import (
 	"path"
 	"strings"
 
+	"github.com/speedland/go/gae/service/apierrors"
+
 	"sync"
 
+	"github.com/speedland/go/gae/service/asynctask"
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
+	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
+	"github.com/speedland/go/x/xerrors"
 	"golang.org/x/net/context"
 )
 
@@ -47,6 +52,7 @@ type Service struct {
 	namespace string    // datastore/memcache namespace for services
 	crons     []*cron
 	queues    []*xtaskqueue.PushQueue
+	tasks     []*asynctask.Config
 	router    *web.Router // service router
 }
 
@@ -143,6 +149,64 @@ func (s *Service) Page(path string, p view.Page) {
 	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return p.Render(req)
 	}))
+}
+
+// AsyncTask defines endpoints for asynctask execution
+func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
+	if !strings.HasSuffix(path, "/") {
+		panic(fmt.Errorf("AsyncTask path must ends with '/' (got %q)", path))
+	}
+	fullPath := s.Path(path)
+	s.Get(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		status := taskConfig.GetStatus(req.Context(), req.Params.GetStringOr("taskid", ""))
+		if status == nil {
+			return nil
+		}
+		return response.NewJSON(status)
+	}))
+
+	const TaskQueueHeader = "X-AppEngine-TaskName"
+	s.Post(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		if req.Header.Get(TaskQueueHeader) == "" {
+			return apierrors.Forbidden.ToResponse()
+		}
+		taskID := req.Params.GetStringOr("taskid", "")
+		progress, err := taskConfig.Process(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), req.Request.URL.Query())
+		if err != nil {
+			if err == asynctask.ErrNoTaskInstance {
+				return nil
+			}
+			return (&apierrors.Error{
+				Code:    "invalid_asynctask_call",
+				Message: err.Error(),
+				Status:  response.HTTPStatusBadRequest,
+			}).ToResponse()
+		}
+		if progress == nil {
+			return response.NewJSON(true)
+		}
+		return response.NewJSON(progress.Next)
+	}))
+	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		taskID := uuid.New().String()
+		status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), req.Request.URL.Query())
+		xerrors.MustNil(err)
+		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
+	}))
+	if schedule := taskConfig.GetSchedule(); schedule != "" {
+		const CronHeader = "X-AppEngine-Cron"
+		s.AddCron(fmt.Sprintf("%s/cron/", path), schedule, taskConfig.GetDescription(), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+			if req.Header.Get(CronHeader) == "" {
+				return apierrors.Forbidden.ToResponse()
+			}
+			taskID := uuid.New().String()
+			params := req.Request.URL.Query()
+			params.Set("cron", "true")
+			status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), params)
+			xerrors.MustNil(err)
+			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
+		}))
+	}
 }
 
 // Path returns an absolute path for this s.
