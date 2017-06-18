@@ -46,9 +46,10 @@ type Option struct {
 // Logger the logger
 type Logger struct {
 	*Option
-	key  interface{}
-	sink Sink
-	ctx  context.Context
+	key    interface{}
+	sink   Sink
+	ctx    context.Context
+	prefix string
 }
 
 // New returns a new Logger instance.
@@ -84,9 +85,17 @@ func (l *Logger) WithKey(key interface{}) *Logger {
 	return l2
 }
 
+// WithPrefix returns a shallow copy of Logger with its prefix changed to `prefix`.
+func (l *Logger) WithPrefix(prefix string) *Logger {
+	l2 := new(Logger)
+	*l2 = *l
+	l2.prefix = prefix
+	return l2
+}
+
 // Tracef to write text log with LevelTrace
 func (l *Logger) Tracef(s string, v ...interface{}) {
-	l.write(LevelTrace, fmt.Sprintf(s, v...))
+	l.write(LevelTrace, l.format(s, v...))
 }
 
 // Trace to write data log with LevelTrace
@@ -96,7 +105,7 @@ func (l *Logger) Trace(v interface{}) {
 
 // Debugf to write text log with LevelDebug
 func (l *Logger) Debugf(s string, v ...interface{}) {
-	l.write(LevelDebug, fmt.Sprintf(s, v...))
+	l.write(LevelDebug, l.format(s, v...))
 }
 
 // Debug to write data log with LevelDebug
@@ -106,7 +115,7 @@ func (l *Logger) Debug(v interface{}) {
 
 // Infof to write text log with LevelInfo
 func (l *Logger) Infof(s string, v ...interface{}) {
-	l.write(LevelInfo, fmt.Sprintf(s, v...))
+	l.write(LevelInfo, l.format(s, v...))
 }
 
 // Info to write data log with LevelInfo
@@ -116,7 +125,7 @@ func (l *Logger) Info(v interface{}) {
 
 // Warnf to write text log with LevelWarn
 func (l *Logger) Warnf(s string, v ...interface{}) {
-	l.write(LevelError, fmt.Sprintf(s, v...))
+	l.write(LevelError, l.format(s, v...))
 }
 
 // Warn to write data log with LevelWarn
@@ -126,7 +135,7 @@ func (l *Logger) Warn(v interface{}) {
 
 // Errorf to write text log with LevelError
 func (l *Logger) Errorf(s string, v ...interface{}) {
-	l.write(LevelError, fmt.Sprintf(s, v...))
+	l.write(LevelError, l.format(s, v...))
 }
 
 // Error to write data log with LevelError
@@ -136,12 +145,19 @@ func (l *Logger) Error(v interface{}) {
 
 // Fatalf to write text log with LevelTrace
 func (l *Logger) Fatalf(s string, v ...interface{}) {
-	l.write(LevelFatal, fmt.Sprintf(s, v...))
+	l.write(LevelFatal, l.format(s, v...))
 }
 
 // Fatal to write text log with LevelFatal
 func (l *Logger) Fatal(v interface{}) {
 	l.write(LevelFatal, v)
+}
+
+func (l *Logger) format(s string, v ...interface{}) string {
+	if l.prefix == "" {
+		return fmt.Sprintf(s, v...)
+	}
+	return fmt.Sprintf("%s%s", l.prefix, fmt.Sprintf(s, v...))
 }
 
 func (l *Logger) write(level Level, data interface{}) {

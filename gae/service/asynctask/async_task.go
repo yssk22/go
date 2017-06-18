@@ -3,6 +3,7 @@ package asynctask
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -63,6 +64,11 @@ type AsyncTask struct {
 	// Deprecated
 	Path  string `json:"path"  datastore:",noindex"`
 	Query string `json:"query"  datastore:",noindex"`
+}
+
+// GetLogPrefix returns a prefix string for logger
+func (t *AsyncTask) GetLogPrefix() string {
+	return fmt.Sprintf("[AsyncTask:%s:%s] ", t.ConfigKey, t.ID)
 }
 
 // IsStoreEmpty returns whether TaskStore field is empty or not
