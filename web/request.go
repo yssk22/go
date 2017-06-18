@@ -12,6 +12,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+const defaultMaxMemory = 32 << 20 // 32 MB
+
 // Request is a wrapper for net/http.Request
 // The original `*net/http.Request` functions and fields are embedded in struct and provides
 // some utility functions (especially to support context.Context)
@@ -58,7 +60,15 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		ID:      uuid.New(),
 		ctx:     initContext(r),
 		Query:   keyvalue.NewQueryProxy(query),
-		Form:    keyvalue.NewQueryProxy(r.Form),
+		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
+			if r.Form == nil {
+				r.ParseMultipartForm(defaultMaxMemory)
+			}
+			if vs := r.Form[key]; len(vs) > 0 {
+				return vs[0], nil
+			}
+			return nil, keyvalue.KeyError(key)
+		}).Proxy(),
 		Cookies: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
 			v, ok := cookies[key]
 			if !ok {
