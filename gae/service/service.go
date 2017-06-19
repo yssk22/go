@@ -65,6 +65,11 @@ func FromContext(ctx context.Context) *Service {
 	return nil
 }
 
+// WithContext returns a new context.Context associated with the service
+func WithContext(ctx context.Context, s *Service) context.Context {
+	return context.WithValue(ctx, ContextKey, s)
+}
+
 // MustFromContext is like FromContext but panics if a service is not in the context
 func MustFromContext(ctx context.Context) *Service {
 	service, ok := ctx.Value(ContextKey).(*Service)
