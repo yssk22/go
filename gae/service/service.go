@@ -24,6 +24,8 @@ import (
 
 	"sync"
 
+	"os"
+
 	"github.com/speedland/go/gae/service/asynctask"
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/gae/service/view"
@@ -35,6 +37,7 @@ import (
 	"github.com/speedland/go/x/xcontext"
 	"github.com/speedland/go/x/xerrors"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 )
 
 // ContextKey is a key to get a service.
@@ -131,6 +134,15 @@ func (s *Service) URLPrefix() string {
 // Namespace returns a namespace string
 func (s *Service) Namespace() string {
 	return s.namespace
+}
+
+// WithNamespace sets the namespace of the given context
+func (s *Service) WithNamespace(ctx context.Context) context.Context {
+	ctx, err := appengine.Namespace(ctx, s.namespace)
+	if err != nil {
+		panic(err)
+	}
+	return ctx
 }
 
 // Use adds the middleware onto the service router
@@ -239,6 +251,7 @@ func (s *Service) Path(p string) string {
 		if path.Ext(p) == "" {
 			return path.Join("/", s.urlPrefix, p) + "/"
 		}
+		fmt.Fprintln(os.Stderr, path.Join("/", s.urlPrefix, p))
 		return path.Join("/", s.urlPrefix, p)
 	}
 	if p == "/" {
