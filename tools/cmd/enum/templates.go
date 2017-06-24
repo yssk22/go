@@ -12,13 +12,21 @@ var supportedFuncs = []string{
 	if val, ok := _%[1]sStringToValue[s]; ok {
 		return val, nil
 	}
-	return %[1]s(0), fmt.Errorf("Invalid value %%q for %[1]s", s)
+	return %[1]s(0), fmt.Errorf("invalid value %%q for %[1]s", s)
 }
 `,
 	`func Parse%[1]sOr(s string, or %[1]s) %[1]s {
 	val, err :=  Parse%[1]s(s)
 	if err != nil {
 		return or
+	}
+	return val
+}
+`,
+	`func MustParse%[1]s(s string) %[1]s {
+	val, err :=  Parse%[1]s(s)
+	if err != nil {
+		panic(err)
 	}
 	return val
 }
@@ -34,7 +42,7 @@ var supportedFuncs = []string{
 `,
 	`func (i *%[1]s) UnmarshalJSON(b []byte) (error) {
 	if b[0] != '"' || b[len(b)-1] != '"' {
-		return fmt.Errorf("Invalid string")
+		return fmt.Errorf("invalid JSON string")
 	}
 	newval, err := Parse%[1]s(string(b[1 : len(b)-1]))
 	if err != nil {
