@@ -178,6 +178,7 @@ func TestExampleKind_PutMulti(t *testing.T) {
 			a.EqInt(1, len(keys))
 			a.EqStr(e.ID, keys[0].StringID())
 			a.EqTime(now, e.UpdatedAt)
+			a.OK(e.BeforeSaveProcessed)
 
 			_, ents, err := k.GetMulti(gaetest.NewContext(), keys)
 			a.Nil(err)
@@ -186,6 +187,7 @@ func TestExampleKind_PutMulti(t *testing.T) {
 			a.NotNil(ents[0])
 			a.EqStr(e.ID, ents[0].ID)
 			a.EqStr(e.Desc, ents[0].Desc)
+			a.OK(ents[0].BeforeSaveProcessed)
 		},
 	)
 }

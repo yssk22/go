@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/speedland/go/rgb"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 )
 
@@ -21,9 +22,13 @@ type Example struct {
 	UpdatedAt           time.Time          `json:"updated_at" ent:"timestamp"`
 	DefaultTime         time.Time          `json:"default_time" default:"2016-01-01T20:12:10Z"`
 	BeforeSaveProcessed bool               `json:"before_save_processed"`
-	AfterSaveProcessed  bool               `json:"after_save_processed"`
 	CustomType          rgb.RGB            `json:"custom_type" ent:"form" parser:"github.com/speedland/go/rgb.MustParseRGB"`
 	Location            appengine.GeoPoint `json:"location" ent:"search"`
+}
+
+func (e *Example) BeforeSave(ctx context.Context) error {
+	e.BeforeSaveProcessed = true
+	return nil
 }
 
 type AliasNotUsed int

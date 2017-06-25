@@ -31,8 +31,6 @@ func NewConfig() *Config {
 }
 
 type ConfigKind struct {
-	BeforeSave                func(ent *Config) error
-	AfterSave                 func(ent *Config) error
 	useDefaultIfNil           bool
 	noCache                   bool
 	noSearchIndexing          bool
@@ -226,8 +224,8 @@ func (k *ConfigKind) PutMulti(ctx context.Context, ents []*Config) ([]*datastore
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
-		if k.BeforeSave != nil {
-			if err := k.BeforeSave(ents[i]); err != nil {
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
 				return nil, err
 			}
 		}

@@ -83,8 +83,6 @@ func NewExample() *Example {
 }
 
 type ExampleKind struct {
-	BeforeSave                func(ent *Example) error
-	AfterSave                 func(ent *Example) error
 	useDefaultIfNil           bool
 	noCache                   bool
 	noSearchIndexing          bool
@@ -280,8 +278,8 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
-		if k.BeforeSave != nil {
-			if err := k.BeforeSave(ents[i]); err != nil {
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
 				return nil, err
 			}
 		}

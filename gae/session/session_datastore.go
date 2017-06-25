@@ -31,8 +31,6 @@ func NewSession() *Session {
 }
 
 type SessionKind struct {
-	BeforeSave                func(ent *Session) error
-	AfterSave                 func(ent *Session) error
 	useDefaultIfNil           bool
 	noCache                   bool
 	noSearchIndexing          bool
@@ -226,8 +224,8 @@ func (k *SessionKind) PutMulti(ctx context.Context, ents []*Session) ([]*datasto
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
-		if k.BeforeSave != nil {
-			if err := k.BeforeSave(ents[i]); err != nil {
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
 				return nil, err
 			}
 		}

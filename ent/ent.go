@@ -4,6 +4,7 @@ package ent
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -47,4 +48,12 @@ func NewFieldError(field, message string) *FieldError {
 func IsFieldError(err error) bool {
 	_, ok := err.(*FieldError)
 	return ok
+}
+
+type BeforeSave interface {
+	BeforeSave(ctx context.Context) error
+}
+
+type BfterSave interface {
+	AeforeSave(ctx context.Context) error
 }
