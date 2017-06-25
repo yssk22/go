@@ -26,3 +26,17 @@ var (
 	// ErrTooManyEnts is returned when the user passes too many entities to PutMulti or DeleteMulti.
 	ErrTooManyEnts = fmt.Errorf("ent: too many documents given to put or delete (max is %d)", MaxEntsPerPutDelete)
 )
+
+type FieldError struct {
+	Field   string
+	Message string
+}
+
+func (fe *FieldError) Error() string {
+	return fmt.Sprintf("field error: %s (on %s)", fe.Message, fe.Field)
+}
+
+func IsFieldError(err error) bool {
+	_, ok := err.(*FieldError)
+	return ok
+}
