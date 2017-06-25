@@ -36,6 +36,14 @@ func (fe *FieldError) Error() string {
 	return fmt.Sprintf("field error: %s (on %s)", fe.Message, fe.Field)
 }
 
+// NewFieldError returns a new *FieldError instance
+func NewFieldError(field, message string) *FieldError {
+	return &FieldError{
+		Field: field, Message: message,
+	}
+}
+
+// IsFieldError returns whether err is an instance of *FieldError
 func IsFieldError(err error) bool {
 	_, ok := err.(*FieldError)
 	return ok
