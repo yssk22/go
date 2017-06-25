@@ -575,10 +575,10 @@ func (q *ServiceConfigQuery) MustRun(ctx context.Context) *ServiceConfigPaginati
 	return p
 }
 
-// DeleteMached deletes the all ents that match with the query.
+// DeleteMatched deletes the all ents that match with the query.
 // This func modify Limit/StartKey condition in the query so that you should restore it
 // if you want to reuse the query.
-func (k *ServiceConfigKind) DeleteMached(ctx context.Context, q *ServiceConfigQuery) (int, error) {
+func (k *ServiceConfigKind) DeleteMatched(ctx context.Context, q *ServiceConfigQuery) (int, error) {
 	var numDeletes int
 	var startKey string
 	q.Limit(lazy.New(ent.MaxEntsPerPutDelete - 5))

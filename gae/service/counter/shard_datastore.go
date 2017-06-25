@@ -572,10 +572,10 @@ func (q *ShardQuery) MustRun(ctx context.Context) *ShardPagination {
 	return p
 }
 
-// DeleteMached deletes the all ents that match with the query.
+// DeleteMatched deletes the all ents that match with the query.
 // This func modify Limit/StartKey condition in the query so that you should restore it
 // if you want to reuse the query.
-func (k *ShardKind) DeleteMached(ctx context.Context, q *ShardQuery) (int, error) {
+func (k *ShardKind) DeleteMatched(ctx context.Context, q *ShardQuery) (int, error) {
 	var numDeletes int
 	var startKey string
 	q.Limit(lazy.New(ent.MaxEntsPerPutDelete - 5))
