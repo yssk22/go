@@ -734,10 +734,10 @@ func (k *{{.Type}}Kind) SearchValues(ctx context.Context, query string, opts *se
 }
 {{end -}}
 
-// DeleteMached deletes the all ents that match with the query.
+// DeleteMatched deletes the all ents that match with the query.
 // This func modify Limit/StartKey condition in the query so that you should restore it
 // if you want to reuse the query.
-func (k *{{.Type}}Kind) DeleteMached(ctx context.Context, q *{{.Type}}Query) (int, error) {
+func (k *{{.Type}}Kind) DeleteMatched(ctx context.Context, q *{{.Type}}Query) (int, error) {
 	var numDeletes int
 	var startKey string
 	q.Limit(lazy.New(ent.MaxEntsPerPutDelete-5))

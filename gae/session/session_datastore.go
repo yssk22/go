@@ -572,10 +572,10 @@ func (q *SessionQuery) MustRun(ctx context.Context) *SessionPagination {
 	return p
 }
 
-// DeleteMached deletes the all ents that match with the query.
+// DeleteMatched deletes the all ents that match with the query.
 // This func modify Limit/StartKey condition in the query so that you should restore it
 // if you want to reuse the query.
-func (k *SessionKind) DeleteMached(ctx context.Context, q *SessionQuery) (int, error) {
+func (k *SessionKind) DeleteMatched(ctx context.Context, q *SessionQuery) (int, error) {
 	var numDeletes int
 	var startKey string
 	q.Limit(lazy.New(ent.MaxEntsPerPutDelete - 5))

@@ -303,7 +303,7 @@ func TestExampleKind_DeleteMatched(t *testing.T) {
 	a.EqInt(4, NewExampleQuery().MustCount(gaetest.NewContext()))
 	q := NewExampleQuery().Le("Digit", lazy.New(2))
 	a.EqInt(2, q.MustCount(gaetest.NewContext()))
-	deleted, err := DefaultExampleKind.DeleteMached(gaetest.NewContext(), q)
+	deleted, err := DefaultExampleKind.DeleteMatched(gaetest.NewContext(), q)
 	a.Nil(err)
 	a.EqInt(2, deleted)
 	a.EqInt(2, NewExampleQuery().MustCount(gaetest.NewContext()))
