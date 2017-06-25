@@ -31,8 +31,6 @@ func NewShard() *Shard {
 }
 
 type ShardKind struct {
-	BeforeSave                func(ent *Shard) error
-	AfterSave                 func(ent *Shard) error
 	useDefaultIfNil           bool
 	noCache                   bool
 	noSearchIndexing          bool
@@ -226,8 +224,8 @@ func (k *ShardKind) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.K
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
-		if k.BeforeSave != nil {
-			if err := k.BeforeSave(ents[i]); err != nil {
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
 				return nil, err
 			}
 		}

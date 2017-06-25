@@ -34,8 +34,6 @@ func NewServiceConfig() *ServiceConfig {
 }
 
 type ServiceConfigKind struct {
-	BeforeSave                func(ent *ServiceConfig) error
-	AfterSave                 func(ent *ServiceConfig) error
 	useDefaultIfNil           bool
 	noCache                   bool
 	noSearchIndexing          bool
@@ -229,8 +227,8 @@ func (k *ServiceConfigKind) PutMulti(ctx context.Context, ents []*ServiceConfig)
 
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
-		if k.BeforeSave != nil {
-			if err := k.BeforeSave(ents[i]); err != nil {
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
 				return nil, err
 			}
 		}

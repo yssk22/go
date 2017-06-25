@@ -93,13 +93,21 @@ func ParseHTTPStatus(s string) (HTTPStatus, error) {
 	if val, ok := _HTTPStatusStringToValue[s]; ok {
 		return val, nil
 	}
-	return HTTPStatus(0), fmt.Errorf("Invalid value %q for HTTPStatus", s)
+	return HTTPStatus(0), fmt.Errorf("invalid value %q for HTTPStatus", s)
 }
 
 func ParseHTTPStatusOr(s string, or HTTPStatus) HTTPStatus {
 	val, err := ParseHTTPStatus(s)
 	if err != nil {
 		return or
+	}
+	return val
+}
+
+func MustParseHTTPStatus(s string) HTTPStatus {
+	val, err := ParseHTTPStatus(s)
+	if err != nil {
+		panic(err)
 	}
 	return val
 }
@@ -115,7 +123,7 @@ func (i HTTPStatus) MarshalJSON() ([]byte, error) {
 
 func (i *HTTPStatus) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
-		return fmt.Errorf("Invalid string")
+		return fmt.Errorf("invalid JSON string")
 	}
 	newval, err := ParseHTTPStatus(string(b[1 : len(b)-1]))
 	if err != nil {

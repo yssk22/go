@@ -35,13 +35,21 @@ func ParseStatus(s string) (Status, error) {
 	if val, ok := _StatusStringToValue[s]; ok {
 		return val, nil
 	}
-	return Status(0), fmt.Errorf("Invalid value %q for Status", s)
+	return Status(0), fmt.Errorf("invalid value %q for Status", s)
 }
 
 func ParseStatusOr(s string, or Status) Status {
 	val, err := ParseStatus(s)
 	if err != nil {
 		return or
+	}
+	return val
+}
+
+func MustParseStatus(s string) Status {
+	val, err := ParseStatus(s)
+	if err != nil {
+		panic(err)
 	}
 	return val
 }
@@ -57,7 +65,7 @@ func (i Status) MarshalJSON() ([]byte, error) {
 
 func (i *Status) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
-		return fmt.Errorf("Invalid string")
+		return fmt.Errorf("invalid JSON string")
 	}
 	newval, err := ParseStatus(string(b[1 : len(b)-1]))
 	if err != nil {

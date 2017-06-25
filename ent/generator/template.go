@@ -65,8 +65,6 @@ func New{{.Type}}() *{{.Type}} {
 }
 
 type {{.Type}}Kind struct {
-    BeforeSave func(ent *{{.Type}}) error
-    AfterSave  func(ent *{{.Type}}) error
     useDefaultIfNil bool
     noCache bool
 	noSearchIndexing bool
@@ -264,11 +262,11 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
 
     dsKeys = make([]*datastore.Key, size, size)
     for i := range ents {
-        if k.BeforeSave != nil {
-            if err := k.BeforeSave(ents[i]); err != nil {
-                return nil, err
-            }
-        }
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
         dsKeys[i] = ents[i].NewKey(ctx)
     }
 

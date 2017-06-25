@@ -41,13 +41,21 @@ func ParseLevel(s string) (Level, error) {
 	if val, ok := _LevelStringToValue[s]; ok {
 		return val, nil
 	}
-	return Level(0), fmt.Errorf("Invalid value %q for Level", s)
+	return Level(0), fmt.Errorf("invalid value %q for Level", s)
 }
 
 func ParseLevelOr(s string, or Level) Level {
 	val, err := ParseLevel(s)
 	if err != nil {
 		return or
+	}
+	return val
+}
+
+func MustParseLevel(s string) Level {
+	val, err := ParseLevel(s)
+	if err != nil {
+		panic(err)
 	}
 	return val
 }
@@ -63,7 +71,7 @@ func (i Level) MarshalJSON() ([]byte, error) {
 
 func (i *Level) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
-		return fmt.Errorf("Invalid string")
+		return fmt.Errorf("invalid JSON string")
 	}
 	newval, err := ParseLevel(string(b[1 : len(b)-1]))
 	if err != nil {
