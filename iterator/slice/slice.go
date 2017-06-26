@@ -100,3 +100,13 @@ func SplitByLength(list interface{}, eachSize int) interface{} {
 	}
 	return bucketList.Interface()
 }
+
+func ToInterface(v interface{}) []interface{} {
+	a := reflect.ValueOf(v)
+	assertSlice(a)
+	vv := make([]interface{}, a.Len())
+	for i := range vv {
+		vv[i] = a.Index(i).Interface()
+	}
+	return vv
+}
