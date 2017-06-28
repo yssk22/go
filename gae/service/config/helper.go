@@ -78,9 +78,9 @@ func (rl *retryLogger) NeedRetry(attempt int, req *http.Request, resp *http.Resp
 	needRetry := rl.base.NeedRetry(attempt, req, resp, err)
 	if needRetry {
 		if err != nil {
-			rl.logger.Warnf("Retry attempting %s (last error: %v)", req.URL.String(), err)
+			rl.logger.Infof("Retry attempting %s (last error: %v)", req.URL.String(), err)
 		} else {
-			rl.logger.Warnf("Retry attempting %s (last status code: %d)", req.URL.String(), resp.StatusCode)
+			rl.logger.Infof("Retry attempting %s (last status code: %d)", req.URL.String(), resp.StatusCode)
 		}
 		return true
 	}
