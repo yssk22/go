@@ -38,15 +38,15 @@ func (s *LogSink) Write(r *xlog.Record) error {
 	}
 	switch r.Level {
 	case xlog.LevelDebug, xlog.LevelTrace:
-		log.Debugf(ctx, string(buff))
+		log.Debugf(ctx, "%s", string(buff))
 	case xlog.LevelInfo:
-		log.Infof(ctx, string(buff))
+		log.Infof(ctx, "%s", string(buff))
 	case xlog.LevelWarn:
-		log.Warningf(ctx, string(buff))
+		log.Warningf(ctx, "%s", string(buff))
 	case xlog.LevelError:
-		log.Errorf(ctx, string(buff))
+		log.Errorf(ctx, "%s", string(buff))
 	case xlog.LevelFatal:
-		log.Criticalf(ctx, string(buff))
+		log.Criticalf(ctx, "%s", string(buff))
 	default:
 		return fmt.Errorf("unsupported log level: %q", r.Level)
 	}
