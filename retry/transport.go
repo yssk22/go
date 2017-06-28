@@ -55,7 +55,8 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if !t.Checker.NeedRetry(attempt, req, res, err) {
 			return res, err
 		}
-		if res.Body != nil {
+		// discard body content for retry.
+		if res != nil && res.Body != nil {
 			io.Copy(ioutil.Discard, res.Body)
 			res.Body.Close()
 		}
