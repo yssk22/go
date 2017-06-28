@@ -62,7 +62,8 @@ func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 					retry.HTTPMaxRetry(maxRetries),
 					retry.HTTPServerErrorChecker(),
 				),
-				logger: logger,
+				maxRetries: maxRetries,
+				logger:     logger,
 			},
 			retry.HTTPConstBackoff(backoffDuration),
 		),
@@ -70,17 +71,18 @@ func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 }
 
 type retryLogger struct {
-	base   retry.HTTPChecker
-	logger *xlog.Logger
+	base       retry.HTTPChecker
+	maxRetries int
+	logger     *xlog.Logger
 }
 
 func (rl *retryLogger) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
 	needRetry := rl.base.NeedRetry(attempt, req, resp, err)
 	if needRetry {
 		if err != nil {
-			rl.logger.Infof("Retry attempting %s (last error: %v)", req.URL.String(), err)
+			rl.logger.Infof("[%d/%d] Retry attempting %s (last error: %v)", attempt, rl.maxRetries, req.URL.String(), err)
 		} else {
-			rl.logger.Infof("Retry attempting %s (last status code: %d)", req.URL.String(), resp.StatusCode)
+			rl.logger.Infof("[%d/%d] Retry attempting %s (last status code: %d)", attempt, rl.maxRetries, req.URL.String(), resp.StatusCode)
 		}
 		return true
 	}
