@@ -3,6 +3,8 @@ package react
 import (
 	"fmt"
 
+	"github.com/speedland/go/gae/service"
+	"github.com/speedland/go/gae/service/auth"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
@@ -50,6 +52,9 @@ func (rp *ReactPage) Title(title interface{}) *ReactPage {
 const (
 	serviceDataKeyReactModulePath = "reactModulePath"
 	serviceDataKeyCSRFToken       = "csrfToken"
+	serviceDataKeyAuth            = "auth"
+	serviceDataKeyAuthAPIBasePath = "authAPIBasePath"
+	serviceDataKeyFacebookAppID   = "facebookAppID"
 )
 
 // ReactModulePath sets the react module path
@@ -98,6 +103,21 @@ func (rp *ReactPage) Render(req *web.Request) *response.Response {
 	data.Merge(rp.genVar(req))
 	if sess := session.FromContext(ctx); sess != nil {
 		data.ServiceData[serviceDataKeyCSRFToken] = sess.CSRFSecret.String()
+		a, _ := auth.Get(sess)
+		if a != nil {
+			data.ServiceData[serviceDataKeyAuth] = a
+		} else {
+			data.ServiceData[serviceDataKeyAuth] = auth.Guest
+		}
+	}
+	if s := service.FromContext(ctx); s != nil {
+		if fb := s.Config.GetFacebookConfig(ctx); fb != nil {
+			data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
+			data.MetaProperties["fb:app_id"] = fb.ClientID
+		}
+		if apiConfig := s.APIConfig; apiConfig != nil {
+			data.ServiceData[serviceDataKeyAuthAPIBasePath] = apiConfig.AuthAPIBasePath
+		}
 	}
 	return response.NewHTMLWithStatus(
 		ReactPageTemplate,
