@@ -11,14 +11,14 @@ import (
 // CronTimezone is a timezone used in cron.yaml
 var CronTimezone = "Asia/Tokyo"
 
-type cron struct {
+type Cron struct {
 	path        string
 	time        string
 	description string
 	handlers    []web.Handler
 }
 
-func (c *cron) ToYAML() string {
+func (c *Cron) ToYAML() string {
 	var buff bytes.Buffer
 	fmt.Fprintf(&buff, "- url:         %s\n", c.path)
 	fmt.Fprintf(&buff, "  schedule:    %s\n", c.time)
@@ -28,7 +28,7 @@ func (c *cron) ToYAML() string {
 }
 
 func (s *Service) AddCron(path, time, desc string, handlers ...web.Handler) {
-	c := &cron{
+	c := &Cron{
 		path:        s.Path(path),
 		time:        time,
 		description: desc,
@@ -44,4 +44,9 @@ func (s *Service) GenCronYAML(w io.Writer) {
 	for _, c := range s.crons {
 		fmt.Fprintf(w, "%s", c.ToYAML())
 	}
+}
+
+// GetCrons returns a list of queues defined in the service
+func (s *Service) GetCrons() []*Cron {
+	return s.crons
 }

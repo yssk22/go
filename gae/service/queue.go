@@ -26,3 +26,8 @@ func (s *Service) GenQueueYAML(w io.Writer) {
 		fmt.Fprintf(w, "%s", q.ToYAML())
 	}
 }
+
+// GetQueues returns a list of queues defined in the service
+func (s *Service) GetQueues() []*taskqueue.PushQueue {
+	return s.queues
+}

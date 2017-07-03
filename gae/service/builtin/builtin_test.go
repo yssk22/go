@@ -1,19 +1,20 @@
-package service
+package builtin
 
 import (
 	"net/url"
 	"testing"
 
 	"github.com/speedland/go/gae/gaetest"
+	"github.com/speedland/go/gae/service"
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
 )
 
-func newTestService() *Service {
-	s := New("myapp")
+func newTestService() *service.Service {
+	s := service.New("myapp")
 	s.Config.Register("myconfig", "myconfigvalue", "custom config")
-	DefaultBuiltinAPIConfig.ActivateEndpoints(s)
+	Setup(s)
 	return s
 }
 

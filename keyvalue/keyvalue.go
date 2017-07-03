@@ -30,6 +30,12 @@ func (e KeyError) Error() string {
 	return fmt.Sprintf("key %q is not found", string(e))
 }
 
+// IsKeyError returns the error is KeyError or not
+func IsKeyError(err error) bool {
+	_, ok := err.(KeyError)
+	return ok
+}
+
 // GetOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key interface{}, or interface{}) interface{} {
 	if g == nil {

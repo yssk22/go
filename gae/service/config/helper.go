@@ -18,6 +18,8 @@ const (
 	ckURLFetchAllowInvalidCertificate = "urlfetch.allow_invalid_certificate"
 	ckURLFetchMaxRetries              = "urlfetch.max_retries"
 	ckURLFetchRetryBackoff            = "urlfetch.retry_backoff"
+	ckFacebookAppID                   = "facebook.app_id"
+	ckFacebookAppSecret               = "facebook.app_secret"
 )
 
 func init() {
@@ -25,6 +27,27 @@ func init() {
 	Global(ckURLFetchAllowInvalidCertificate, "0", "allow urlfetch to access the invalid certificate host")
 	Global(ckURLFetchMaxRetries, "5", "allow urlfetch to retry request if an error occurred")
 	Global(ckURLFetchRetryBackoff, "1s", "retry backoff configuration (time.Duration format)")
+	Global(ckFacebookAppID, "", "facebook app id")
+	Global(ckFacebookAppSecret, "", "facebook app secret")
+}
+
+// OAuth2Config is a configuration object for oauth2 clients
+type OAuth2Config struct {
+	ClientID     string
+	ClientSecret string
+}
+
+// GetFacebookConfig returns OAuth2 config for facebook.
+func (c *Config) GetFacebookConfig(ctx context.Context) *OAuth2Config {
+	appID := c.GetValue(ctx, ckFacebookAppID)
+	if appID == "" {
+		return nil
+	}
+	appSecret := c.GetValue(ctx, ckFacebookAppSecret)
+	return &OAuth2Config{
+		ClientID:     appID,
+		ClientSecret: appSecret,
+	}
 }
 
 // NewHTTPClient returns a new *http.Client based on configurations

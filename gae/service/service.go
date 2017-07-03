@@ -20,22 +20,17 @@ import (
 	"path"
 	"strings"
 
-	"github.com/speedland/go/gae/service/apierrors"
-
 	"sync"
 
 	"os"
 
-	"github.com/speedland/go/gae/service/asynctask"
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
-	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
-	"github.com/speedland/go/x/xerrors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 )
@@ -45,18 +40,20 @@ var ContextKey = xcontext.NewKey("service")
 
 // Service is a set of endpoints
 type Service struct {
-	Init      func(*web.Request)
-	Every     func(*web.Request)
-	OnError   func(*web.Request, error) *response.Response
-	Config    *config.Config
-	once      sync.Once // for Init control
-	key       string    // service key
-	urlPrefix string    // url base path
-	namespace string    // datastore/memcache namespace for services
-	crons     []*cron
-	queues    []*xtaskqueue.PushQueue
-	tasks     []*asynctaskEndpoint
-	router    *web.Router // service router
+	Init       func(*web.Request)
+	Every      func(*web.Request)
+	OnError    func(*web.Request, error) *response.Response
+	Config     *config.Config
+	APIConfig  *BuiltInAPIConfig
+	PageConfig *BuiltInPageConfig
+	once       sync.Once // for Init control
+	key        string    // service key
+	urlPrefix  string    // url base path
+	namespace  string    // datastore/memcache namespace for services
+	crons      []*Cron
+	queues     []*xtaskqueue.PushQueue
+	tasks      []*Task
+	router     *web.Router // service router
 }
 
 // FromContext returns a service object associated with the context
@@ -102,6 +99,12 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		namespace: namespace,
 		router:    web.NewRouter(nil),
 		Config:    config.New(),
+		APIConfig: &BuiltInAPIConfig{
+			ConfigAPIBasePath:    "/admin/api/configs/",
+			AsyncTaskListAPIPath: "/admin/api/asynctasks/",
+			AuthAPIBasePath:      "/auth/api/",
+			AuthNamespace:        "",
+		},
 	}
 	s.router.Use(namespaceMiddleware(s))
 	s.router.Use(errorMiddleware)
@@ -175,74 +178,6 @@ func (s *Service) Page(path string, p view.Page) {
 	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return p.Render(req)
 	}))
-}
-
-// AsyncTask defines endpoints for asynctask execution
-func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
-	if !strings.HasSuffix(path, "/") {
-		panic(fmt.Errorf("AsyncTask path must ends with '/' (got %q)", path))
-	}
-	fullPath := s.Path(path)
-	s.Get(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		status := taskConfig.GetStatus(req.Context(), req.Params.GetStringOr("taskid", ""))
-		if status == nil {
-			return nil
-		}
-		return response.NewJSON(status)
-	}))
-
-	const TaskQueueHeader = "X-AppEngine-TaskName"
-	s.Post(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		if req.Header.Get(TaskQueueHeader) == "" {
-			return apierrors.Forbidden.ToResponse()
-		}
-		taskID := req.Params.GetStringOr("taskid", "")
-		progress, err := taskConfig.Process(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), req.Request.URL.Query())
-		if err != nil {
-			if err == asynctask.ErrNoTaskInstance {
-				return nil
-			}
-			return (&apierrors.Error{
-				Code:    "invalid_asynctask_call",
-				Message: err.Error(),
-				Status:  response.HTTPStatusBadRequest,
-			}).ToResponse()
-		}
-		if progress == nil {
-			return response.NewJSON(true)
-		}
-		return response.NewJSON(progress.Next)
-	}))
-
-	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		taskID := uuid.New().String()
-		status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), req.Request.URL.Query())
-		xerrors.MustNil(err)
-		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
-	}))
-
-	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		return response.NewJSON(taskConfig.GetRecentTasks(req.Context(), req.Query.GetIntOr("n", 5)))
-	}))
-
-	if schedule := taskConfig.GetSchedule(); schedule != "" {
-		const CronHeader = "X-AppEngine-Cron"
-		s.AddCron(fmt.Sprintf("%s/cron/", path), schedule, taskConfig.GetDescription(), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			if req.Header.Get(CronHeader) == "" {
-				return apierrors.Forbidden.ToResponse()
-			}
-			taskID := uuid.New().String()
-			params := req.Request.URL.Query()
-			params.Set("cron", "true")
-			status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), params)
-			xerrors.MustNil(err)
-			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
-		}))
-	}
-	s.tasks = append(s.tasks, &asynctaskEndpoint{
-		path:   s.Path(path),
-		config: taskConfig,
-	})
 }
 
 // Path returns an absolute path for this s.
