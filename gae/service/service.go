@@ -105,6 +105,10 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 			AuthAPIBasePath:      "/auth/api/",
 			AuthNamespace:        "",
 		},
+		PageConfig: &BuiltInPageConfig{
+			AdminAsyncTaskPath: "/admin/asynctasks/",
+			AdminConfigPath:    "/admin/configs/",
+		},
 	}
 	s.router.Use(namespaceMiddleware(s))
 	s.router.Use(errorMiddleware)
