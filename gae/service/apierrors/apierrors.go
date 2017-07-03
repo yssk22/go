@@ -21,9 +21,19 @@ func (err *Error) ToResponse() *response.Response {
 
 // General API errors
 var (
+	BadRequest = &Error{
+		Code:    "bad_request",
+		Message: "we cannot process your request",
+		Status:  response.HTTPStatusForbidden,
+	}
 	Forbidden = &Error{
 		Code:    "forbidden",
 		Message: "you do not have an access to the resource",
 		Status:  response.HTTPStatusForbidden,
+	}
+	ServerError = &Error{
+		Code:    "internal_server_error",
+		Message: "unexpected server error occurred. please try again later.",
+		Status:  response.HTTPStatusInternalServerError,
 	}
 )
