@@ -77,7 +77,7 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 			taskID := uuid.New().String()
 			params := req.Request.URL.Query()
 			params.Set("cron", "true")
-			status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s:%s.json", fullPath, taskID), params)
+			status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), params)
 			xerrors.MustNil(err)
 			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
 		}))
