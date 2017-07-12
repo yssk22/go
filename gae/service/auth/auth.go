@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -22,6 +23,7 @@ const (
 	AuthTypeEmail
 	AuthTypeFacebook
 	AuthTypeTwitter
+	AuthTypeMessenger
 )
 
 // Auth is a primary type to represent a user
@@ -29,6 +31,7 @@ const (
 type Auth struct {
 	ID          string    `json:"id" ent:"id"`
 	FacebookID  string    `json:"facebook_id"`
+	MessengerID string    `json:"messenger_id"`
 	TwitterID   string    `json:"twitter_id"`
 	Email       string    `json:"email"`
 	AuthType    AuthType  `json:"auth_type"`
@@ -41,6 +44,7 @@ type Auth struct {
 var Guest = &Auth{
 	ID:          "guest",
 	FacebookID:  "guest",
+	MessengerID: "guest",
 	TwitterID:   "guest",
 	Email:       "",
 	AuthType:    AuthTypeNone,
@@ -67,34 +71,77 @@ var (
 
 // Facebook process authorization by the given access token
 func Facebook(ctx context.Context, client *http.Client, token string) (*Auth, error) {
+	user, err := GetCurrent(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("session error: %v", err)
+	}
 	fb := facebook.NewClient(client, token)
 	me, err := fb.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var a *Auth
-	var loginAt = xtime.Now()
-	values, err := fbAuthQuery.GetAllValues(context.WithValue(ctx, fbAuthContextKey, me))
-	if err != nil {
-		return nil, err
-	}
-	if len(values) == 1 {
-		a = values[0]
-		a.LastLoginAt = loginAt
-	} else {
-		a = &Auth{
-			ID:          uuid.New().String(),
-			AuthType:    AuthTypeFacebook,
-			FacebookID:  me.ID,
-			LastLoginAt: loginAt,
-			CreatedAt:   loginAt,
+	if user == nil {
+		user, err = findExistingAuth(context.WithValue(ctx, fbAuthContextKey, me), fbAuthQuery, AuthTypeFacebook)
+		if err != nil {
+			return nil, err
 		}
 	}
-	if _, err = DefaultAuthKind.Put(ctx, a); err != nil {
-		return nil, err
+	user.FacebookID = me.ID
+	user.LastLoginAt = xtime.Now()
+	if _, err = DefaultAuthKind.Put(ctx, user); err != nil {
+		return nil, fmt.Errorf("datastore error: %v", err)
 	}
-	if err = SetCurrent(ctx, a); err != nil {
-		return nil, err
+	if err = SetCurrent(ctx, user); err != nil {
+		return nil, fmt.Errorf("session error: %v", err)
 	}
-	return a, nil
+	return user, nil
+}
+
+var (
+	messengerAuthContextKey = struct{}{}
+	messengerAuthQuery      = NewAuthQuery().Eq("MessengerID", lazy.Func(func(ctx context.Context) (interface{}, error) {
+		val := ctx.Value(messengerAuthContextKey)
+		if id, ok := val.(string); ok {
+			return id, nil
+		}
+		return nil, keyvalue.KeyError("messengerAuthContextKey")
+	})).Limit(lazy.New(1))
+)
+
+// Messenger process authorization by the given access token
+func Messenger(ctx context.Context, messengerID string) (*Auth, error) {
+	user, err := GetCurrent(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("session error: %v", err)
+	}
+	if user == nil {
+		user, err = findExistingAuth(context.WithValue(ctx, messengerAuthContextKey, messengerID), messengerAuthQuery, AuthTypeMessenger)
+		if err != nil {
+			return nil, err
+		}
+	}
+	user.MessengerID = messengerID
+	user.LastLoginAt = xtime.Now()
+	if _, err = DefaultAuthKind.Put(ctx, user); err != nil {
+		return nil, fmt.Errorf("datastore error: %v", err)
+	}
+	if err = SetCurrent(ctx, user); err != nil {
+		return nil, fmt.Errorf("session error: %v", err)
+	}
+	return user, nil
+}
+
+func findExistingAuth(ctx context.Context, query *AuthQuery, at AuthType) (*Auth, error) {
+	values, err := query.GetAllValues(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("datastore error: %v", err)
+	}
+	if len(values) >= 1 {
+		return values[0], nil
+	}
+	return &Auth{
+		ID:        uuid.New().String(),
+		AuthType:  at,
+		CreatedAt: xtime.Now(),
+	}, nil
 }
