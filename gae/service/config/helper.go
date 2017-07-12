@@ -1,10 +1,12 @@
 package config
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/speedland/go/retry"
+	"github.com/speedland/go/services/facebook/messenger"
 	"github.com/speedland/go/x/xlog"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
@@ -18,8 +20,11 @@ const (
 	ckURLFetchAllowInvalidCertificate = "urlfetch.allow_invalid_certificate"
 	ckURLFetchMaxRetries              = "urlfetch.max_retries"
 	ckURLFetchRetryBackoff            = "urlfetch.retry_backoff"
+	ckFacebookPageID                  = "facebook.page_id"
+	ckFacebookPageToken               = "facebook.page_token"
 	ckFacebookAppID                   = "facebook.app_id"
 	ckFacebookAppSecret               = "facebook.app_secret"
+	ckMessengerVerificationToken      = "messenger.verification_token"
 )
 
 func init() {
@@ -29,6 +34,9 @@ func init() {
 	Global(ckURLFetchRetryBackoff, "1s", "retry backoff configuration (time.Duration format)")
 	Global(ckFacebookAppID, "", "facebook app id")
 	Global(ckFacebookAppSecret, "", "facebook app secret")
+	Global(ckFacebookPageID, "", "facebook page id")
+	Global(ckFacebookPageToken, "", "facebook page access token")
+	Global(ckMessengerVerificationToken, "", "messenger verification token")
 }
 
 // OAuth2Config is a configuration object for oauth2 clients
@@ -50,7 +58,12 @@ func (c *Config) GetFacebookConfig(ctx context.Context) *OAuth2Config {
 	}
 }
 
-// NewHTTPClient returns a new *http.Client based on configurations
+// GetMessengerVerificationToken returns messenger verification token string
+func (c *Config) GetMessengerVerificationToken(ctx context.Context) string {
+	return c.GetValue(ctx, ckMessengerVerificationToken)
+}
+
+// NewHTTPClient is an http client available in this context
 func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 	const maxRetryHardLimit = 30
 	const deadlineHardLimit = 60
@@ -91,6 +104,16 @@ func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 			retry.HTTPConstBackoff(backoffDuration),
 		),
 	}
+}
+
+// NewMessengerSender returns a new *messenger.Sender from server configuration
+func (c *Config) NewMessengerSender(ctx context.Context) (*messenger.Sender, error) {
+	httpClient := c.NewHTTPClient(ctx)
+	pageToken := c.GetValue(ctx, ckFacebookPageToken)
+	if pageToken == "" {
+		return nil, fmt.Errorf("%q is configured in server configuration", ckFacebookPageToken)
+	}
+	return messenger.NewSender(httpClient, pageToken), nil
 }
 
 type retryLogger struct {
