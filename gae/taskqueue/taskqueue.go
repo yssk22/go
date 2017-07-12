@@ -57,10 +57,10 @@ func (queue *PushQueue) ToYAML() string {
 		queue.MaxDoubling != "" {
 		fmt.Fprintf(&buff, "  retry_parameters:\n")
 		if queue.RetryLimit != "" {
-			fmt.Fprintf(&buff, "    retry_limit: %s\n", queue.RetryLimit)
+			fmt.Fprintf(&buff, "    task_retry_limit: %s\n", queue.RetryLimit)
 		}
 		if queue.AgeLimit != "" {
-			fmt.Fprintf(&buff, "    age_limit: %s\n", queue.AgeLimit)
+			fmt.Fprintf(&buff, "    task_age_limit: %s\n", queue.AgeLimit)
 		}
 		if queue.MinBackoffSeconds != "" {
 			fmt.Fprintf(&buff, "    min_backoff_seconds: %s\n", queue.MinBackoffSeconds)
