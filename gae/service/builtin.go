@@ -15,12 +15,15 @@ package service
 //    - GET /{AuthAPIBasePath}/me.json
 //    - POST /{AuthAPIBasePath}/login/facebook/
 //
+// [webhook]
+//    - GET /{WebhookBasePath}/messenger/
+//
 type BuiltInAPIConfig struct {
 	ConfigAPIBasePath    string
 	AsyncTaskListAPIPath string
 	AuthAPIBasePath      string
 	AuthNamespace        string
-	AuthOnSession        bool
+	WebhookBasePath      string
 }
 
 // BuiltInPageConfig is a configuration object for setupBuiltinPages, which actiate the following pages.

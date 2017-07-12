@@ -104,6 +104,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 			AsyncTaskListAPIPath: "/admin/api/asynctasks/",
 			AuthAPIBasePath:      "/auth/api/",
 			AuthNamespace:        "",
+			WebhookBasePath:      "/webhooks/",
 		},
 		PageConfig: &BuiltInPageConfig{
 			AdminAsyncTaskPath: "/admin/asynctasks/",

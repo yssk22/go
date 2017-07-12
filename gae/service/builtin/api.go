@@ -1,11 +1,13 @@
 package builtin
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/speedland/go/gae/service"
 	"github.com/speedland/go/gae/service/apierrors"
 	"github.com/speedland/go/gae/service/auth"
+	"github.com/speedland/go/services/facebook/messenger"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xerrors"
@@ -102,5 +104,21 @@ func setupAuthAPIs(s *service.Service) {
 	s.Post(path.Join(s.APIConfig.AuthAPIBasePath, "logout/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		auth.DeleteCurrent(req.Context())
 		return response.NewJSON("OK")
+	}))
+}
+
+func setupWebhooks(s *service.Service) {
+	if s.APIConfig == nil {
+		return
+	}
+	if s.APIConfig.WebhookBasePath == "" {
+		return
+	}
+	s.Get(path.Join(s.APIConfig.WebhookBasePath, "messenger/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		token := s.Config.GetMessengerVerificationToken(req.Context())
+		if token == "" {
+			panic(fmt.Errorf("no messenger verification token is configured"))
+		}
+		return messenger.NewVericationHandler(token).Process(req, next)
 	}))
 }

@@ -8,6 +8,7 @@ func Setup(s *service.Service) *service.Service {
 	setupConfigAPIs(s)
 	setupAsyncTaskListAPIs(s)
 	setupAuthAPIs(s)
+	setupWebhooks(s)
 
 	// pages
 	setupAdminConfigPages(s)
