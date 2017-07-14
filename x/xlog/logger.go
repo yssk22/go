@@ -125,7 +125,7 @@ func (l *Logger) Info(v interface{}) {
 
 // Warnf to write text log with LevelWarn
 func (l *Logger) Warnf(s string, v ...interface{}) {
-	l.write(LevelError, l.format(s, v...))
+	l.write(LevelWarn, l.format(s, v...))
 }
 
 // Warn to write data log with LevelWarn
@@ -140,7 +140,7 @@ func (l *Logger) Errorf(s string, v ...interface{}) {
 
 // Error to write data log with LevelError
 func (l *Logger) Error(v interface{}) {
-	l.write(LevelWarn, v)
+	l.write(LevelError, v)
 }
 
 // Fatalf to write text log with LevelTrace
