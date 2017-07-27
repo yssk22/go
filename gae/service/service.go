@@ -22,8 +22,6 @@ import (
 
 	"sync"
 
-	"os"
-
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
@@ -191,7 +189,6 @@ func (s *Service) Path(p string) string {
 		if path.Ext(p) == "" {
 			return path.Join("/", s.urlPrefix, p) + "/"
 		}
-		fmt.Fprintln(os.Stderr, path.Join("/", s.urlPrefix, p))
 		return path.Join("/", s.urlPrefix, p)
 	}
 	if p == "/" {
