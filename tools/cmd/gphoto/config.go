@@ -4,7 +4,7 @@
 package main
 
 import (
-	"context"
+	"golang.org/x/net/context"
 
 	"github.com/speedland/go/services/google/photo"
 	"github.com/speedland/go/x/xtime"
