@@ -58,7 +58,6 @@ func NewRequest(r *http.Request, option *Option) *Request {
 	req := &Request{
 		Request: r,
 		ID:      uuid.New(),
-		ctx:     initContext(r),
 		Query:   keyvalue.NewQueryProxy(query),
 		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
 			if r.Form == nil {
@@ -81,11 +80,6 @@ func NewRequest(r *http.Request, option *Option) *Request {
 	return req.WithValue(requestContextKey, req)
 }
 
-// Context returns the context associated with request.
-func (r *Request) Context() context.Context {
-	return r.ctx
-}
-
 // WithContext returns a shallow copy of r with its context changed to ctx. The provided ctx must be non-nil.
 func (r *Request) WithContext(ctx context.Context) *Request {
 	if ctx == nil {
@@ -93,14 +87,14 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 	}
 	rr := new(Request)
 	*rr = *r
-	rr.ctx = ctx
+	rr.Request = rr.Request.WithContext(ctx)
 	return rr
 }
 
 // WithValue sets the request-scoped value with the in-flight http request and return a shallow copied request.
 // This is shorthand for `req.WithContext(context.WithValue(req.Context(), key, value))`
 func (r *Request) WithValue(key interface{}, value interface{}) *Request {
-	return r.WithContext(context.WithValue(r.ctx, key, value))
+	return r.WithContext(context.WithValue(r.Context(), key, value))
 }
 
 // Get implements keyvalue.Getter to enable keyvalue.GetProxy for context values.
