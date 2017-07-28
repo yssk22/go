@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/speedland/go/gae/gaetest"
@@ -10,6 +11,12 @@ import (
 	"github.com/speedland/go/web/httptest"
 	"github.com/speedland/go/web/response"
 )
+
+func TestMain(m *testing.M) {
+	os.Exit(gaetest.Run(func() int {
+		return m.Run()
+	}))
+}
 
 func newTestService() *service.Service {
 	s := service.New("myapp")
