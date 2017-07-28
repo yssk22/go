@@ -13,6 +13,7 @@ dependencies:
     - mkdir -p "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}"
     - ln -sf "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
     - cd ${SRCDIR} && go get ./...
+    - cd ${SRCDIR} && git tag -d master
 
 test:
   override:
