@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/speedland/go/x/xtesting/assert"
+
 	"golang.org/x/net/context"
-	"speedland.net/service/go/src/lib/wcg"
 )
 
 // SimplePeriodicJob is a periodic job implementation that count up the # of task executions per 100 microseconds.
@@ -33,7 +34,7 @@ func (sr *SimplePeriodicJob) ShouldRun(ctx context.Context) bool {
 }
 
 func Test_Periodic_StopBySignal(t *testing.T) {
-	assert := wcg.NewAssert(t)
+	a := assert.New(t)
 	ctx := context.Background()
 	job := &SimplePeriodicJob{}
 	p := NewPeriodic(job, 100*time.Millisecond)
@@ -41,12 +42,12 @@ func Test_Periodic_StopBySignal(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	p.Stop(ctx)
 
-	assert.EqInt(10, job.c)
-	assert.OK(!p.IsRunning())
+	a.EqInt(10, job.c)
+	a.OK(!p.IsRunning())
 }
 
 func Test_Periodic_StopByTaskCondition(t *testing.T) {
-	assert := wcg.NewAssert(t)
+	a := assert.New(t)
 	ctx := context.Background()
 
 	job := &SimplePeriodicJob{}
@@ -55,15 +56,15 @@ func Test_Periodic_StopByTaskCondition(t *testing.T) {
 	p.Start(ctx)
 	time.Sleep(1 * time.Second)
 
-	assert.EqInt(1, job.c)
-	assert.OK(!p.IsRunning())
+	a.EqInt(1, job.c)
+	a.OK(!p.IsRunning())
 
 	// it's ok to call Stop() method only once (and usually should do this to release the resources)
 	p.Stop(ctx)
 }
 
 func Test_Periodic_ContinueToRunAfterPanic(t *testing.T) {
-	assert := wcg.NewAssert(t)
+	a := assert.New(t)
 	ctx := context.Background()
 	job := &SimplePeriodicJob{}
 	job.panicAfter = 5
@@ -72,6 +73,6 @@ func Test_Periodic_ContinueToRunAfterPanic(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	p.Stop(ctx)
 
-	assert.EqInt(10, job.c)
-	assert.OK(!p.IsRunning())
+	a.EqInt(10, job.c)
+	a.OK(!p.IsRunning())
 }
