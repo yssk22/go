@@ -2,7 +2,7 @@ package asynctask
 
 import (
 	"github.com/speedland/go/keyvalue"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Logic is an interface to execute a task

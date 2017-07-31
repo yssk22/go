@@ -11,7 +11,7 @@ import (
 	"github.com/speedland/go/gae/service"
 	"github.com/speedland/go/gae/service/asynctask"
 	"github.com/speedland/go/keyvalue"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestMain(m *testing.M) {

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"

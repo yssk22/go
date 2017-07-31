@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/speedland/go/services/facebook"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Sender is a struct to send messages

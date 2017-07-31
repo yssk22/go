@@ -6,7 +6,7 @@ import (
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
-	"golang.org/x/net/context"
+	"context"
 	"golang.org/x/oauth2"
 )
 

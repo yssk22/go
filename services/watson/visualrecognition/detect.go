@@ -2,7 +2,7 @@ package visualrecognition
 
 import (
 	"github.com/speedland/go/x/xarchive/xzip"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // FaceDetectResponse is a object returned by Datect* functions.

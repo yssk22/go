@@ -1,7 +1,7 @@
 package agent
 
 import "time"
-import "golang.org/x/net/context"
+import "context"
 
 import "github.com/speedland/go/x/xlog"
 

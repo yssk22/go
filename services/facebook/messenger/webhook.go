@@ -10,7 +10,7 @@ import (
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xlog"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func NewVericationHandler(token string) web.Handler {

@@ -28,7 +28,7 @@
 //
 // * Context
 //
-// Logger can be aware of context.Context (even we support "golang.org/x/net/context")
+// Logger can be aware of context.Context (even we support "context")
 // You can associate any context by *Logger.WithContext() and write it by `{{context key .}}`
 //
 package xlog
@@ -36,7 +36,7 @@ package xlog
 import (
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 var defaultOption = &Option{

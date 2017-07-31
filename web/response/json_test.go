@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/speedland/go/x/xtesting/assert"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestJSON(t *testing.T) {

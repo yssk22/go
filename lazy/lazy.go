@@ -2,7 +2,7 @@
 package lazy
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Value is an interface to represent lazy value

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/x/xcrypto/xhmac"
 	"github.com/speedland/go/x/xtesting/assert"

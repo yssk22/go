@@ -4,7 +4,7 @@ package value
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/web"

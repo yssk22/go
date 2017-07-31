@@ -8,7 +8,7 @@ import (
 
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/x/xerrors"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine"
 )
 

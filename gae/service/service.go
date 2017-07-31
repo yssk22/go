@@ -29,7 +29,7 @@ import (
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine"
 )
 

@@ -13,7 +13,7 @@ import (
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xruntime"
 	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Config is an configuration object to define AsyncTask endpoints

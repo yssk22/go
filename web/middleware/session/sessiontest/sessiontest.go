@@ -9,7 +9,7 @@ import (
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func GetSession(ctx context.Context, w *httptest.ResponseRecorder, middleware *session.Middleware) (*session.Session, error) {

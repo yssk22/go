@@ -2,7 +2,7 @@
 package agent
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Agent is an interface to implement an agent feature

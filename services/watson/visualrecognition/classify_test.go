@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/x/xarchive/xzip"
 	"github.com/speedland/go/x/xnet/xhttp/xhttptest"

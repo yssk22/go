@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/speedland/go/x/xtesting/assert"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func Test_GetMe(t *testing.T) {

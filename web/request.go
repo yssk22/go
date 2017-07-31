@@ -9,7 +9,7 @@ import (
 	"github.com/speedland/go/x/xcontext"
 	"github.com/speedland/go/x/xnet/xhttp"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 const defaultMaxMemory = 32 << 20 // 32 MB

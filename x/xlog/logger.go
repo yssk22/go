@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/x/xruntime"
 	"github.com/speedland/go/x/xtime"

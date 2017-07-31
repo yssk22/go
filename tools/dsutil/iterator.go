@@ -9,7 +9,7 @@ import (
 
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type Iterator struct {

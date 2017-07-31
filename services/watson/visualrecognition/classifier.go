@@ -7,7 +7,7 @@ import (
 
 	"github.com/speedland/go/x/xarchive/xzip"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Status is a type alias to represent classifier status string.

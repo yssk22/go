@@ -32,6 +32,7 @@ func NewStruct(typeName string, kindName string) *Struct {
 		Dependencies: make(map[string]string),
 	}
 	s.AddDependency("fmt")
+	s.AddDependency("context")
 	s.AddDependencyAs("github.com/speedland/go/gae/datastore", "helper")
 	s.AddDependency("github.com/speedland/go/ent")
 	s.AddDependency("github.com/speedland/go/gae/memcache")
@@ -39,7 +40,6 @@ func NewStruct(typeName string, kindName string) *Struct {
 	s.AddDependency("github.com/speedland/go/lazy")
 	s.AddDependency("github.com/speedland/go/x/xlog")
 	s.AddDependency("github.com/speedland/go/x/xtime")
-	s.AddDependency("golang.org/x/net/context")
 	s.AddDependency("google.golang.org/appengine/datastore")
 	return s
 }

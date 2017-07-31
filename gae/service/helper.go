@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/urlfetch"
 )
 

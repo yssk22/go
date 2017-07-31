@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Do retries `task` function until it returns nil error.
