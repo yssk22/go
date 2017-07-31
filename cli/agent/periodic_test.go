@@ -7,7 +7,7 @@ import (
 
 	"github.com/speedland/go/x/xtesting/assert"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // SimplePeriodicJob is a periodic job implementation that count up the # of task executions per 100 microseconds.

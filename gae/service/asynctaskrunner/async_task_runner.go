@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/appengine"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/gae/gaetest"
 	"github.com/speedland/go/gae/service"

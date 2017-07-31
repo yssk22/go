@@ -11,7 +11,7 @@ import (
 	"bytes"
 
 	"github.com/speedland/go/x/xlog"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // LoggerKey is a key for this package

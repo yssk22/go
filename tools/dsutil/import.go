@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/appengine/datastore"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type ImportOption struct {

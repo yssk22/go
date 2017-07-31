@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // CachedObjectWithExpiration execute generator function and store the result with `key` and set the value into dst with expiration.

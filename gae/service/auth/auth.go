@@ -10,7 +10,7 @@ import (
 	"github.com/speedland/go/services/facebook"
 	"github.com/speedland/go/uuid"
 	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // AuthType is an enum for authentication types.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/datastore"
 )
 

@@ -9,16 +9,18 @@ import (
 
 var (
 	_AuthTypeValueToString = map[AuthType]string{
-		AuthTypeNone:     "none",
-		AuthTypeEmail:    "email",
-		AuthTypeFacebook: "facebook",
-		AuthTypeTwitter:  "twitter",
+		AuthTypeNone:      "none",
+		AuthTypeEmail:     "email",
+		AuthTypeFacebook:  "facebook",
+		AuthTypeTwitter:   "twitter",
+		AuthTypeMessenger: "messenger",
 	}
 	_AuthTypeStringToValue = map[string]AuthType{
-		"none":     AuthTypeNone,
-		"email":    AuthTypeEmail,
-		"facebook": AuthTypeFacebook,
-		"twitter":  AuthTypeTwitter,
+		"none":      AuthTypeNone,
+		"email":     AuthTypeEmail,
+		"facebook":  AuthTypeFacebook,
+		"twitter":   AuthTypeTwitter,
+		"messenger": AuthTypeMessenger,
 	}
 )
 

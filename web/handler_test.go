@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xtesting/assert"

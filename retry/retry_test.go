@@ -7,7 +7,7 @@ import (
 
 	"github.com/speedland/go/x/xtesting/assert"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func Test_Do_CancelContext(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"io"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type _html struct {

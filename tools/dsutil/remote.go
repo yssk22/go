@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 

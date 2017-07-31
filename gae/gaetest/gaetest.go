@@ -6,7 +6,7 @@ import (
 
 	"github.com/speedland/go/web/httptest"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
 )

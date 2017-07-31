@@ -12,7 +12,7 @@ import (
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
 	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestMiddleware_NewSession(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"io"
 	"reflect"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // UseFormattedJSON is a configuration variable about if json object is formatted or not.

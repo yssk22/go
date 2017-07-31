@@ -14,7 +14,7 @@ import (
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/x/xcontext"
 	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // SessionStore is an interface for session storage.

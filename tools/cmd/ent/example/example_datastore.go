@@ -3,6 +3,7 @@
 package example
 
 import (
+	"context"
 	"fmt"
 	"github.com/speedland/go/ent"
 	helper "github.com/speedland/go/gae/datastore"
@@ -12,7 +13,6 @@ import (
 	"github.com/speedland/go/rgb"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/search"

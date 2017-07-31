@@ -8,7 +8,7 @@ import (
 	"github.com/speedland/go/retry"
 	"github.com/speedland/go/services/facebook/messenger"
 	"github.com/speedland/go/x/xlog"
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/urlfetch"
 )
 

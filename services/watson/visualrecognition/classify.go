@@ -9,7 +9,7 @@ import (
 
 	"github.com/speedland/go/x/xarchive/xzip"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // ClassifyResponse is a object returned by Datect* functions

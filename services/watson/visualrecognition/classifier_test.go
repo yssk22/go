@@ -10,7 +10,7 @@ import (
 	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
 	"github.com/speedland/go/x/xtesting/assert"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestClient_CreateClassifier(t *testing.T) {

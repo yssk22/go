@@ -8,7 +8,7 @@ import (
 	"github.com/speedland/go/x/xcrypto/xhmac"
 	"github.com/speedland/go/x/xnet/xhttp"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Response represents http response.

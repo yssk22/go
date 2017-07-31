@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/speedland/go/web/middleware/session"
-	"golang.org/x/net/context"
+	"context"
 )
 
 const oauth2SessionStateKey = "web.middleware.oauth2.state"

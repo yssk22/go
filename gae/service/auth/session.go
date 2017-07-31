@@ -5,7 +5,7 @@ import (
 
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/web/middleware/session"
-	"golang.org/x/net/context"
+	"context"
 )
 
 const sessionKey = "current_user"

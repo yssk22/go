@@ -3,7 +3,7 @@ package session
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/uuid"
