@@ -5,5 +5,5 @@ COPY --from=go /usr/local/go /usr/local/go
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
-ENV PATH $PATH:/usr/local/go/bin
+ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
 RUN go get github.com/jstemmer/go-junit-report
