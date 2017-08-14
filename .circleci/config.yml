@@ -12,6 +12,10 @@ jobs:
       - checkout
       - run: mkdir -p ${TEST_RESULTS}
       - run:
+          name: Install Dependencies
+          command: |
+            go get ./...
+      - run:
           name: Unit Tests
           command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
