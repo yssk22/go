@@ -32,7 +32,7 @@ jobs:
               git fetch origin master
               git checkout master
               git merge origin/master
-              git mergedevelop --no-ff -m "Merge 'develop' (CI auto merge)"
+              git merge develop --no-ff -m "Merge 'develop' (CI auto merge)"
               git push origin master
             else
               echo "Not a develop branch"
