@@ -19,7 +19,6 @@ const defaultMaxMemory = 32 << 20 // 32 MB
 // some utility functions (especially to support context.Context)
 type Request struct {
 	*http.Request
-	ctx context.Context
 
 	// common request scoped values
 	ID      uuid.UUID
@@ -54,6 +53,10 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		if err == nil {
 			cookies[c.Name] = c
 		}
+	}
+	if option.InitContext != nil {
+		ctx := option.InitContext(r)
+		r = r.WithContext(ctx)
 	}
 	req := &Request{
 		Request: r,

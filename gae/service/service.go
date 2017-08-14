@@ -22,6 +22,8 @@ import (
 
 	"sync"
 
+	"context"
+
 	"github.com/speedland/go/gae/service/config"
 	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
@@ -29,7 +31,6 @@ import (
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xcontext"
-	"context"
 	"google.golang.org/appengine"
 )
 
@@ -91,11 +92,17 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 	if key == "" {
 		panic(fmt.Errorf("service key must not be nil"))
 	}
+	option := &web.Option{
+		HMACKey: web.DefaultOption.HMACKey,
+		InitContext: func(r *http.Request) context.Context {
+			return appengine.NewContext(r)
+		},
+	}
 	s := &Service{
 		key:       key,
 		urlPrefix: url,
 		namespace: namespace,
-		router:    web.NewRouter(nil),
+		router:    web.NewRouter(option),
 		Config:    config.New(),
 		APIConfig: &BuiltInAPIConfig{
 			ConfigAPIBasePath:    "/admin/api/configs/",
