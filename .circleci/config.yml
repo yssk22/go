@@ -22,3 +22,18 @@ jobs:
             go test ./... | tee ${TEST_RESULTS}/go-test.out
       - store_test_results:
           path: /tmp/test-results
+      - run:
+          name: Update master branch
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "develop" ]; then
+              git config --global user.name "yssk22"
+              git config --global user.email "yssk22@gmail.com"
+              git branch -D master
+              git fetch origin master
+              git checkout master
+              git merge origin/master
+              git mergedevelop --no-ff -m "Merge 'develop' (CI auto merge)"
+              git push origin master
+            else
+              echo "Not a develop branch"
+            fi
