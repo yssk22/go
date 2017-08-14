@@ -102,7 +102,7 @@ func (f *Field) GetFormExpr() string {
 	parser := f.Parser
 	if parser == "" {
 		if parser = buildInParsers[typeName]; parser == "" {
-			panic(fmt.Errorf("missing parser tag for non-builtin types (%q on %s)", typeName, f.FieldName()))
+			panic(fmt.Errorf("missing parser tag for non-builtin types (%q on %s.%s)", typeName, f.s.Type, f.FieldName()))
 		}
 	}
 	var fun string
