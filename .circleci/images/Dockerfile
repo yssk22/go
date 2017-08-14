@@ -10,7 +10,7 @@ COPY --from=node /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
-ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
+ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin:/usr/local/node_modules/.bin/
 RUN go get github.com/jstemmer/go-junit-report
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
