@@ -25,7 +25,7 @@ var (
 )
 
 func main() {
-	log.SetPrefix("[gendispatch] ")
+	log.SetPrefix("[genyaml] ")
 	log.SetFlags(0)
 	flag.Parse()
 	if len(*appName) == 0 || len(*packageSuffix) == 0 {
