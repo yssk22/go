@@ -49,9 +49,7 @@ func main(){
 }
 `))
 
-var dispatchFileTemplate = template.Must(template.New("dispatch").Parse(`application: {{.AppName}}
-
-dispatch:
+var dispatchFileTemplate = template.Must(template.New("dispatch").Parse(`dispatch:
 {{range .Modules -}}
 - url: "*/{{.URL}}/*"
   module: {{.Name}}
