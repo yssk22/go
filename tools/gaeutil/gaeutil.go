@@ -29,7 +29,7 @@ func CollectModules(deploymentDir string) ([]string, error) {
 	return list, nil
 }
 
-var reModuleName = regexp.MustCompile("\\s+module:\\s*([^\\s#]+)")
+var reModuleName = regexp.MustCompile("\\s+service:\\s*([^\\s#]+)")
 
 func extractModuleName(yamlPath string) (string, error) {
 	buff, err := ioutil.ReadFile(yamlPath)

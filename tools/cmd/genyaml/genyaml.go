@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"bytes"
@@ -121,20 +120,6 @@ func generateConfigs(appName string, outputDir string, modules ...*Module) {
 	log.Println("\t", cronFilePath)
 	xerrors.MustNil(cp(queueFilePath, bindings.QueueYamlPath))
 	log.Println("\t", queueFilePath)
-}
-
-var reModuleName = regexp.MustCompile("\\s+module:\\s*([^\\s#]+)")
-
-func extractModuleName(yamlPath string) (string, error) {
-	buff, err := ioutil.ReadFile(yamlPath)
-	if err != nil {
-		return "", err
-	}
-	matches := reModuleName.FindSubmatch(buff)
-	if matches != nil {
-		return string(matches[1]), nil
-	}
-	return "", fmt.Errorf("no module name is defined in %s", yamlPath)
 }
 
 func cp(dst, src string) error {
