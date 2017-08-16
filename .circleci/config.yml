@@ -49,4 +49,4 @@ jobs:
               GOOS=linux GOARCH=amd64 go build -o ${BIN_RESULTS}/${d} ./tools/cmd/${d}
             done
       - store_artifacts:
-          path: ${BIN_RESULTS}
+          path: /tmp/artifacts
