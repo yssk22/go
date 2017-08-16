@@ -7,14 +7,18 @@ jobs:
 
     environment:
       TEST_RESULTS: /tmp/test-results
+      BIN_RESULTS: /tmp/artifacts
 
     steps:
       - checkout
-      - run: mkdir -p ${TEST_RESULTS}
       - run:
           name: Install Dependencies
           command: |
-            go get ./...
+            go get -t ./...
+      - run:
+          name: Prepare Output Store
+          command: |
+            mkdir -p ${TEST_RESULTS} ${BIN_RESULTS}
       - run:
           name: Unit Tests
           command: |
@@ -37,3 +41,12 @@ jobs:
             else
               echo "Not a develop branch"
             fi
+      - run:
+          name: Build Binary
+          command: |
+            for d in $(ls tools/cmd/)
+            do
+              GOOS=linux GOARCH=amd64 go build -o ${BIN_RESULTS}/${d} ./tools/cmd/${d}
+            done
+      - store_artifacts:
+          path: store_artifacts
