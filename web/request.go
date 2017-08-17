@@ -58,15 +58,16 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		ctx := option.InitContext(r)
 		r = r.WithContext(ctx)
 	}
-	req := &Request{
+	var req *Request
+	req = &Request{
 		Request: r,
 		ID:      uuid.New(),
 		Query:   keyvalue.NewQueryProxy(query),
 		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			if r.Form == nil {
-				r.ParseMultipartForm(defaultMaxMemory)
+			if req.Request.Form == nil {
+				req.Request.ParseMultipartForm(defaultMaxMemory)
 			}
-			if vs := r.PostForm[key]; len(vs) > 0 {
+			if vs := req.Request.PostForm[key]; len(vs) > 0 {
 				return vs[0], nil
 			}
 			return nil, keyvalue.KeyError(key)
@@ -88,10 +89,8 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 	if ctx == nil {
 		panic("ctx must not be nil")
 	}
-	rr := new(Request)
-	*rr = *r
-	rr.Request = rr.Request.WithContext(ctx)
-	return rr
+	r.Request = r.Request.WithContext(ctx)
+	return r
 }
 
 // WithValue sets the request-scoped value with the in-flight http request and return a shallow copied request.
