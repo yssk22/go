@@ -66,7 +66,7 @@ func NewRequest(r *http.Request, option *Option) *Request {
 			if r.Form == nil {
 				r.ParseMultipartForm(defaultMaxMemory)
 			}
-			if vs := r.Form[key]; len(vs) > 0 {
+			if vs := r.PostForm[key]; len(vs) > 0 {
 				return vs[0], nil
 			}
 			return nil, keyvalue.KeyError(key)
