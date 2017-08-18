@@ -11,6 +11,7 @@ import (
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/rgb"
+	"github.com/speedland/go/x/xerrors"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 	"google.golang.org/appengine"
@@ -88,6 +89,8 @@ type ExampleKind struct {
 	noSearchIndexing          bool
 	ignoreSearchIndexingError bool
 	noTimestampUpdate         bool
+	enforceNamespace          bool
+	namespace                 string
 }
 
 // DefaultExampleKind is a default value of *ExampleKind
@@ -95,6 +98,13 @@ var DefaultExampleKind = &ExampleKind{}
 
 // ExampleKindLoggerKey is a logger key name for the ent
 const ExampleKindLoggerKey = "ent.example"
+
+// EnforceNamespace enforces namespace for Get/Put/Delete or not.
+func (k *ExampleKind) EnforceNamespace(ns string, b bool) *ExampleKind {
+	k.enforceNamespace = b
+	k.namespace = ns
+	return k
+}
 
 func (k *ExampleKind) UseDefaultIfNil(b bool) *ExampleKind {
 	k.useDefaultIfNil = b
@@ -121,18 +131,26 @@ func (k *ExampleKind) MustGet(ctx context.Context, key interface{}) *Example {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ExampleKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Example, error) {
-	var logger = xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
-	var dsKeys, err = k.normMultiKeys(ctx, keys)
-	if err != nil {
-		return nil, nil, err
-	}
-	var size = len(dsKeys)
+	var err error
+	var dsKeys []*datastore.Key
 	var memKeys []string
 	var ents []*Example
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, nil, xerrors.Wrap(err, "cannot normalize keys")
+	}
+	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil, nil
 	}
 	ents = make([]*Example, size, size)
+	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -177,7 +195,7 @@ func (k *ExampleKind) GetMulti(ctx context.Context, keys interface{}) ([]*datast
 	err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
-		return nil, nil, err
+		return nil, nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if k.useDefaultIfNil {
@@ -264,6 +282,7 @@ func (k *ExampleKind) MustPut(ctx context.Context, ent *Example) *datastore.Key 
 
 // PutMulti do Put with multiple keys
 func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datastore.Key, error) {
+	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	var searchDocs []interface{} // to adopt search.Index#PutMulti()
@@ -274,8 +293,13 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 	if size >= ent.MaxEntsPerPutDelete {
 		return nil, ent.ErrTooManyEnts
 	}
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
 	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
-
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -300,9 +324,9 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		}
 	}
 
-	_, err := helper.PutMulti(ctx, dsKeys, ents)
+	_, err = helper.PutMulti(ctx, dsKeys, ents)
 	if helper.IsDatastoreError(err) {
-		return nil, err
+		return nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if !k.noCache {
@@ -321,7 +345,7 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
 		index, err := search.Open(ExampleSearchIndexName)
 		if err != nil {
-			err = fmt.Errorf("search.Open(%q) returns errors: %v", ExampleSearchIndexName, err)
+			err = xerrors.Wrap(err, "search.Open(%q) returns errors", ExampleSearchIndexName)
 			if !k.ignoreSearchIndexingError {
 				return nil, err
 			} else {
@@ -330,7 +354,7 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 		} else {
 			_, err = index.PutMulti(ctx, searchKeys, searchDocs)
 			if err != nil {
-				err = fmt.Errorf("index.PutMulti returns errors: %v", err)
+				err = xerrors.Wrap(err, "index.PutMulti returns errors")
 				if !k.ignoreSearchIndexingError {
 					return nil, err
 				} else {
@@ -390,12 +414,19 @@ func (k *ExampleKind) MustDelete(ctx context.Context, key interface{}) *datastor
 
 // DeleteMulti do Delete with multiple keys
 func (k *ExampleKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-	var logger = xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
-	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	var err error
+	var dsKeys []*datastore.Key
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
-	var size = len(dsKeys)
+	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
@@ -410,11 +441,12 @@ func (k *ExampleKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*dat
 			searchKeys[i] = k.Encode()
 		}
 	}
+	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
-		return nil, err
+		return nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if !k.noCache {
@@ -484,7 +516,7 @@ func (k *ExampleKind) normMultiKeys(ctx context.Context, keys interface{}) ([]*d
 	case []*datastore.Key:
 		dsKeys = keys.([]*datastore.Key)
 	default:
-		return nil, fmt.Errorf("getmulti: unsupported keys type: %s", t)
+		return nil, fmt.Errorf("unsupported keys type: %s", t)
 	}
 	return dsKeys, nil
 }

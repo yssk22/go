@@ -16,6 +16,7 @@ import (
 	"github.com/speedland/go/gae/memcache"
 
 	"github.com/speedland/go/x/xtesting/assert"
+	"google.golang.org/appengine"
 	memc "google.golang.org/appengine/memcache"
 )
 
@@ -311,4 +312,42 @@ func TestExampleKind_DeleteMatched(t *testing.T) {
 	a.Nil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-2"))
 	a.NotNil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-3"))
 	a.NotNil(DefaultExampleKind.MustGet(gaetest.NewContext(), "example-4"))
+}
+
+func TestExampleKind_EnforceNamespace(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myns"))
+	ctx, err := appengine.Namespace(gaetest.NewContext(), "myns")
+	a.Nil(err)
+
+	kind := &ExampleKind{}
+	kind.EnforceNamespace("myns", true)
+
+	// Get
+	a.NotNil(kind.MustPut(gaetest.NewContext(), &Example{
+		ID: "myid",
+	}))
+	ent := DefaultExampleKind.MustGet(ctx, "myid")
+	a.NotNil(ent)
+	ent = kind.MustGet(gaetest.NewContext(), "myid")
+	a.NotNil(ent)
+
+	// Put (Update)
+	a.NotNil(kind.MustPut(gaetest.NewContext(), &Example{
+		ID:   "myid",
+		Desc: "my description",
+	}))
+	ent = DefaultExampleKind.MustGet(ctx, "myid")
+	a.NotNil(ent)
+	a.EqStr("my description", ent.Desc)
+	ent = kind.MustGet(ctx, "myid")
+	a.NotNil(ent)
+	a.EqStr("my description", ent.Desc)
+
+	// Delete
+	a.NotNil(kind.MustDelete(gaetest.NewContext(), "myid"))
+	ent = DefaultExampleKind.MustGet(ctx, "myid")
+	a.Nil(ent)
+	ent = kind.MustGet(ctx, "myid")
+	a.Nil(ent)
 }

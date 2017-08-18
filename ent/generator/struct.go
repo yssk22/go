@@ -38,8 +38,10 @@ func NewStruct(typeName string, kindName string) *Struct {
 	s.AddDependency("github.com/speedland/go/gae/memcache")
 	s.AddDependency("github.com/speedland/go/keyvalue")
 	s.AddDependency("github.com/speedland/go/lazy")
+	s.AddDependency("github.com/speedland/go/x/xerrors")
 	s.AddDependency("github.com/speedland/go/x/xlog")
 	s.AddDependency("github.com/speedland/go/x/xtime")
+	s.AddDependency("google.golang.org/appengine")
 	s.AddDependency("google.golang.org/appengine/datastore")
 	return s
 }
