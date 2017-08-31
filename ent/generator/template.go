@@ -74,6 +74,16 @@ type {{.Type}}Kind struct {
 	namespace string
 }
 
+type {{.Type}}KindReplacer interface {
+	Replace(*{{.Type}}, *{{.Type}}) *{{.Type}}
+}
+
+type {{.Type}}KindReplacerFunc func(*{{.Type}}, *{{.Type}}) *{{.Type}}
+
+func (f {{.Type}}KindReplacerFunc) Replace(ent1 *{{.Type}}, ent2 *{{.Type}}) *{{.Type}} {
+	return f(ent1, ent2)
+}
+
 // Default{{.Type}}Kind is a default value of *{{.Type}}Kind
 var Default{{.Type}}Kind = &{{.Type}}Kind{}
 
@@ -381,6 +391,36 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
         panic(err)
     }
     return keys
+}
+
+func (k *{{.Type}}Kind) ReplaceMulti(ctx context.Context, ents []*{{.Type}}, replacer {{.Type}}KindReplacer) ([]*datastore.Key, []*{{.Type}}, error) {
+	var size = len(ents)
+    var dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return dsKeys, ents, nil
+	}
+	for i := range ents {
+		dsKeys[i] = ents[i].NewKey(ctx)
+	}
+	_, existing, err := k.GetMulti(ctx, dsKeys)
+	if err != nil {
+		return nil, nil, err
+	}
+	for i, exist := range existing {
+		if exist != nil {
+			ents[i] = replacer.Replace(exist, ents[i])
+		}
+	}
+	_, err = k.PutMulti(ctx, ents)
+	return dsKeys, ents, err
+}
+
+func (k *{{.Type}}Kind) MustReplaceMulti(ctx context.Context, ents []*{{.Type}}, replacer {{.Type}}KindReplacer) ([]*datastore.Key, []*{{.Type}}) {
+    keys, ents, err := k.ReplaceMulti(ctx, ents, replacer)
+    if err != nil {
+        panic(err)
+    }
+    return keys, ents
 }
 
 // Delete deletes the entity from datastore
