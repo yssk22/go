@@ -1,15 +1,17 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
+	"google.golang.org/appengine/urlfetch"
+
 	"github.com/speedland/go/retry"
 	"github.com/speedland/go/services/facebook/messenger"
 	"github.com/speedland/go/x/xlog"
-	"context"
-	"google.golang.org/appengine/urlfetch"
+	"github.com/speedland/go/x/xtime"
 )
 
 // HTTPClientLoggerKey is a xlog key for this package
@@ -63,6 +65,34 @@ func (c *Config) GetMessengerVerificationToken(ctx context.Context) string {
 	return c.GetValue(ctx, ckMessengerVerificationToken)
 }
 
+type httpTransport struct {
+	context          context.Context
+	logger           *xlog.Logger
+	base             http.RoundTripper
+	deadline         int // second, zero means 5 second.
+	allowInvalidCert bool
+}
+
+func (transport *httpTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	ctx, cancel := context.WithTimeout(transport.context, time.Duration(transport.deadline)*time.Second)
+	defer cancel()
+	base := &urlfetch.Transport{
+		Context: ctx,
+		AllowInvalidServerCertificate: transport.allowInvalidCert,
+	}
+	t := xtime.Benchmark(func() {
+		resp, err = base.RoundTrip(req)
+	})
+	var status string
+	if resp == nil {
+		status = "FAIL"
+	} else {
+		status = resp.Status
+	}
+	transport.logger.Infof("[%s] %s (%s)", status, req.URL.String(), t)
+	return resp, err
+}
+
 // NewHTTPClient is an http client available in this context
 func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 	const maxRetryHardLimit = 30
@@ -85,13 +115,13 @@ func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 		backoffDuration, _ = time.ParseDuration(c.GetDefaultValue(ckURLFetchRetryBackoff))
 	}
 
-	ctx, _ = context.WithTimeout(ctx, time.Duration(deadline)*time.Second)
-
 	return &http.Client{
 		Transport: retry.NewHTTPTransport(
-			&urlfetch.Transport{
-				Context: ctx,
-				AllowInvalidServerCertificate: allowInvalidCert == 1,
+			&httpTransport{
+				context:          ctx,
+				logger:           logger,
+				deadline:         deadline,
+				allowInvalidCert: allowInvalidCert == 1,
 			},
 			&retryLogger{
 				base: retry.HTTPAnd(
