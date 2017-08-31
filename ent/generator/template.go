@@ -393,6 +393,24 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
     return keys
 }
 
+func (k *{{.Type}}Kind) Replace(ctx context.Context, ent *{{.Type}}, replacer {{.Type}}KindReplacer) (*datastore.Key, *{{.Type}}, error) {
+    keys, ents, err := k.ReplaceMulti(ctx, []*{{.Type}}{
+        ent,
+    }, replacer)
+    if err != nil {
+        return nil, ents[0], err
+	}
+    return keys[0], ents[0], err
+}
+
+func (k *{{.Type}}Kind) MustReplace(ctx context.Context, ent *{{.Type}}, replacer {{.Type}}KindReplacer) (*datastore.Key, *{{.Type}}) {
+    key, ent, err := k.Replace(ctx, ent, replacer)
+    if err != nil {
+        panic(err)
+    }
+    return key, ent
+}
+
 func (k *{{.Type}}Kind) ReplaceMulti(ctx context.Context, ents []*{{.Type}}, replacer {{.Type}}KindReplacer) ([]*datastore.Key, []*{{.Type}}, error) {
 	var size = len(ents)
     var dsKeys = make([]*datastore.Key, size, size)
@@ -404,7 +422,7 @@ func (k *{{.Type}}Kind) ReplaceMulti(ctx context.Context, ents []*{{.Type}}, rep
 	}
 	_, existing, err := k.GetMulti(ctx, dsKeys)
 	if err != nil {
-		return nil, nil, err
+		return nil, ents, err
 	}
 	for i, exist := range existing {
 		if exist != nil {
