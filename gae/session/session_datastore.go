@@ -10,8 +10,10 @@ import (
 	"github.com/speedland/go/gae/memcache"
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
+	"github.com/speedland/go/x/xerrors"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -36,6 +38,18 @@ type SessionKind struct {
 	noSearchIndexing          bool
 	ignoreSearchIndexingError bool
 	noTimestampUpdate         bool
+	enforceNamespace          bool
+	namespace                 string
+}
+
+type SessionKindReplacer interface {
+	Replace(*Session, *Session) *Session
+}
+
+type SessionKindReplacerFunc func(*Session, *Session) *Session
+
+func (f SessionKindReplacerFunc) Replace(ent1 *Session, ent2 *Session) *Session {
+	return f(ent1, ent2)
 }
 
 // DefaultSessionKind is a default value of *SessionKind
@@ -43,6 +57,13 @@ var DefaultSessionKind = &SessionKind{}
 
 // SessionKindLoggerKey is a logger key name for the ent
 const SessionKindLoggerKey = "ent.session"
+
+// EnforceNamespace enforces namespace for Get/Put/Delete or not.
+func (k *SessionKind) EnforceNamespace(ns string, b bool) *SessionKind {
+	k.enforceNamespace = b
+	k.namespace = ns
+	return k
+}
 
 func (k *SessionKind) UseDefaultIfNil(b bool) *SessionKind {
 	k.useDefaultIfNil = b
@@ -69,18 +90,26 @@ func (k *SessionKind) MustGet(ctx context.Context, key interface{}) *Session {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *SessionKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Session, error) {
-	var logger = xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
-	var dsKeys, err = k.normMultiKeys(ctx, keys)
-	if err != nil {
-		return nil, nil, err
-	}
-	var size = len(dsKeys)
+	var err error
+	var dsKeys []*datastore.Key
 	var memKeys []string
 	var ents []*Session
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
+	if err != nil {
+		return nil, nil, xerrors.Wrap(err, "cannot normalize keys")
+	}
+	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil, nil
 	}
 	ents = make([]*Session, size, size)
+	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -125,7 +154,7 @@ func (k *SessionKind) GetMulti(ctx context.Context, keys interface{}) ([]*datast
 	err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
-		return nil, nil, err
+		return nil, nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if k.useDefaultIfNil {
@@ -212,6 +241,7 @@ func (k *SessionKind) MustPut(ctx context.Context, ent *Session) *datastore.Key 
 
 // PutMulti do Put with multiple keys
 func (k *SessionKind) PutMulti(ctx context.Context, ents []*Session) ([]*datastore.Key, error) {
+	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	if size == 0 {
@@ -220,8 +250,13 @@ func (k *SessionKind) PutMulti(ctx context.Context, ents []*Session) ([]*datasto
 	if size >= ent.MaxEntsPerPutDelete {
 		return nil, ent.ErrTooManyEnts
 	}
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
 	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
-
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -238,9 +273,9 @@ func (k *SessionKind) PutMulti(ctx context.Context, ents []*Session) ([]*datasto
 		}
 	}
 
-	_, err := helper.PutMulti(ctx, dsKeys, ents)
+	_, err = helper.PutMulti(ctx, dsKeys, ents)
 	if helper.IsDatastoreError(err) {
-		return nil, err
+		return nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if !k.noCache {
@@ -285,6 +320,54 @@ func (k *SessionKind) MustPutMulti(ctx context.Context, ents []*Session) []*data
 	return keys
 }
 
+func (k *SessionKind) Replace(ctx context.Context, ent *Session, replacer SessionKindReplacer) (*datastore.Key, *Session, error) {
+	keys, ents, err := k.ReplaceMulti(ctx, []*Session{
+		ent,
+	}, replacer)
+	if err != nil {
+		return nil, ents[0], err
+	}
+	return keys[0], ents[0], err
+}
+
+func (k *SessionKind) MustReplace(ctx context.Context, ent *Session, replacer SessionKindReplacer) (*datastore.Key, *Session) {
+	key, ent, err := k.Replace(ctx, ent, replacer)
+	if err != nil {
+		panic(err)
+	}
+	return key, ent
+}
+
+func (k *SessionKind) ReplaceMulti(ctx context.Context, ents []*Session, replacer SessionKindReplacer) ([]*datastore.Key, []*Session, error) {
+	var size = len(ents)
+	var dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return dsKeys, ents, nil
+	}
+	for i := range ents {
+		dsKeys[i] = ents[i].NewKey(ctx)
+	}
+	_, existing, err := k.GetMulti(ctx, dsKeys)
+	if err != nil {
+		return nil, ents, err
+	}
+	for i, exist := range existing {
+		if exist != nil {
+			ents[i] = replacer.Replace(exist, ents[i])
+		}
+	}
+	_, err = k.PutMulti(ctx, ents)
+	return dsKeys, ents, err
+}
+
+func (k *SessionKind) MustReplaceMulti(ctx context.Context, ents []*Session, replacer SessionKindReplacer) ([]*datastore.Key, []*Session) {
+	keys, ents, err := k.ReplaceMulti(ctx, ents, replacer)
+	if err != nil {
+		panic(err)
+	}
+	return keys, ents
+}
+
 // Delete deletes the entity from datastore
 func (k *SessionKind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
 	keys, err := k.DeleteMulti(ctx, []interface{}{key})
@@ -305,12 +388,19 @@ func (k *SessionKind) MustDelete(ctx context.Context, key interface{}) *datastor
 
 // DeleteMulti do Delete with multiple keys
 func (k *SessionKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
-	var logger = xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
-	var dsKeys, err = k.normMultiKeys(ctx, keys)
+	var err error
+	var dsKeys []*datastore.Key
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
-	var size = len(dsKeys)
+	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
@@ -318,11 +408,12 @@ func (k *SessionKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*dat
 		return nil, ent.ErrTooManyEnts
 	}
 
+	logger := xlog.WithContext(ctx).WithKey(SessionKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
 		// we return nil even some ents hits the cache.
-		return nil, err
+		return nil, xerrors.Wrap(err, "datastore error")
 	}
 
 	if !k.noCache {
@@ -379,7 +470,7 @@ func (k *SessionKind) normMultiKeys(ctx context.Context, keys interface{}) ([]*d
 	case []*datastore.Key:
 		dsKeys = keys.([]*datastore.Key)
 	default:
-		return nil, fmt.Errorf("getmulti: unsupported keys type: %s", t)
+		return nil, fmt.Errorf("unsupported keys type: %s", t)
 	}
 	return dsKeys, nil
 }
