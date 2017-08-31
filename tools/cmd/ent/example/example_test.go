@@ -193,6 +193,45 @@ func TestExampleKind_PutMulti(t *testing.T) {
 	)
 }
 
+func TestExampleKind_ReplaceMulti(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExample_ReplaceMulti.json", nil))
+	k := &ExampleKind{}
+	r := ExampleKindReplacerFunc(func(e1 *Example, e2 *Example) *Example {
+		if e2.Desc != "" {
+			e1.Desc = e2.Desc
+		}
+		return e1
+	})
+	_, ents, err := k.ReplaceMulti(gaetest.NewContext(), []*Example{
+		&Example{
+			ID:   "example-1",
+			Desc: "",
+		},
+	}, r)
+	a.Nil(err)
+	a.EqStr("example-1 description", ents[0].Desc)
+	_, ents, err = k.ReplaceMulti(gaetest.NewContext(), []*Example{
+		&Example{
+			ID:   "example-1",
+			Desc: "replaced",
+		},
+	}, r)
+	a.Nil(err)
+	a.EqStr("replaced", ents[0].Desc)
+
+	_, ents, err = k.ReplaceMulti(gaetest.NewContext(), []*Example{
+		&Example{
+			ID:   "example-3",
+			Desc: "newone",
+		},
+	}, r)
+	a.Nil(err)
+	a.EqStr("newone", ents[0].Desc)
+	a.EqInt(2, NewExampleQuery().MustCount(gaetest.NewContext()))
+}
+
 func TestExampleKind_DeleteMulti(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
