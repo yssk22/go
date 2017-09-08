@@ -31,6 +31,11 @@ var (
 		Message: "you do not have an access to the resource",
 		Status:  response.HTTPStatusForbidden,
 	}
+	NotFound = &Error{
+		Code:    "not_found",
+		Message: "the requested resource is not found on the server",
+		Status:  response.HTTPStatusNotFound,
+	}
 	ServerError = &Error{
 		Code:    "internal_server_error",
 		Message: "unexpected server error occurred. please try again later.",
