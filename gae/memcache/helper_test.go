@@ -1,9 +1,13 @@
 package memcache
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
+
+	"google.golang.org/appengine"
 
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/web"
@@ -38,7 +42,12 @@ func Test_CachedObjectWithExpiration(t *testing.T) {
 func Test_CacheResponseWithExpire(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
-	router := web.NewRouter(web.DefaultOption)
+	router := web.NewRouter(&web.Option{
+		HMACKey: web.DefaultOption.HMACKey,
+		InitContext: func(r *http.Request) context.Context {
+			return appengine.NewContext(r)
+		},
+	})
 	expires := 5 * time.Second
 	router.Get("/", CacheResponseWithExpire(lazy.New("myname"), 5*time.Second, web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
 		now := xtime.Now()
