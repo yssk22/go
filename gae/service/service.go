@@ -185,7 +185,7 @@ func (s *Service) Delete(path string, handlers ...web.Handler) {
 
 // Page defines an endpoint for view.Page interaface
 func (s *Service) Page(path string, p view.Page) {
-	view.Mount(s.router, path, p)
+	view.Mount(s.router, s.Path(path), p)
 }
 
 // Path returns an absolute path for this s.
