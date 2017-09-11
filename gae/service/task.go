@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/speedland/go/gae/service/apierrors"
@@ -18,6 +20,7 @@ type Task struct {
 	Key         string `json:"key"`
 	Description string `json:"description"`
 	Schedule    string `json:"schedule"`
+	config      *asynctask.Config
 }
 
 // AsyncTask defines endpoints for asynctask execution
@@ -87,10 +90,26 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 		Key:         taskConfig.GetKey(),
 		Description: taskConfig.GetDescription(),
 		Schedule:    taskConfig.GetSchedule(),
+		config:      taskConfig,
 	})
 }
 
 // GetTasks returns a list of queues defined in the service
 func (s *Service) GetTasks() []*Task {
 	return s.tasks
+}
+
+func (s *Service) RunTask(ctx context.Context, path string, params url.Values) (*asynctask.TaskStatus, error) {
+	fullPath := s.Path(path)
+	for _, t := range s.tasks {
+		if t.Path == fullPath {
+			taskID := uuid.New().String()
+			if params == nil {
+				params = url.Values{}
+			}
+			params.Set("__run_task", "true")
+			return t.config.Prepare(ctx, taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), params)
+		}
+	}
+	return nil, fmt.Errorf("no task path found at %s", fullPath)
 }
