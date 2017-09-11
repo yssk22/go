@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/speedland/go/lazy"
+
 	"github.com/speedland/go/x/xlog"
 
 	"github.com/speedland/go/web"
@@ -63,12 +65,12 @@ func (c cachedResponseBody) Render(ctx context.Context, w io.Writer) {
 const maxCachableBodySize = 1 * 1024 * 900 // 900KB as Memcache supports 1MB
 
 // CacheResponse wraps web.Handler to support cache
-func CacheResponse(name string, h web.Handler) web.Handler {
+func CacheResponse(name lazy.Value, h web.Handler) web.Handler {
 	return CacheResponseWithExpire(name, 0, h)
 }
 
 // CacheResponseWithExpire wraps web.Handler to support cache
-func CacheResponseWithExpire(name string, expire time.Duration, h web.Handler) web.Handler {
+func CacheResponseWithExpire(name lazy.Value, expire time.Duration, h web.Handler) web.Handler {
 	// var ckey = fmt.Sprintf("response-%s", name)
 	type cachedResponse struct {
 		Status response.HTTPStatus `json:"s"`

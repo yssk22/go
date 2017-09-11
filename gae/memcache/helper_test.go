@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 
@@ -39,7 +40,7 @@ func Test_CacheResponseWithExpire(t *testing.T) {
 	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
 	router := web.NewRouter(web.DefaultOption)
 	expires := 5 * time.Second
-	router.Get("/", CacheResponseWithExpire("mycache", 5*time.Second, web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
+	router.Get("/", CacheResponseWithExpire(lazy.New("myname"), 5*time.Second, web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
 		now := xtime.Now()
 		return response.NewText(fmt.Sprintf("HelloWorld - %s", now))
 	})))
