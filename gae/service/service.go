@@ -25,11 +25,11 @@ import (
 	"context"
 
 	"github.com/speedland/go/gae/service/config"
-	"github.com/speedland/go/gae/service/view"
 	xtaskqueue "github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
+	"github.com/speedland/go/web/response/view"
 	"github.com/speedland/go/x/xcontext"
 	"google.golang.org/appengine"
 )
@@ -185,9 +185,7 @@ func (s *Service) Delete(path string, handlers ...web.Handler) {
 
 // Page defines an endpoint for view.Page interaface
 func (s *Service) Page(path string, p view.Page) {
-	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		return p.Render(req)
-	}))
+	view.Mount(s.router, path, p)
 }
 
 // Path returns an absolute path for this s.

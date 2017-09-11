@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"github.com/speedland/go/gae/service"
-	"github.com/speedland/go/gae/service/view/react"
+	"github.com/speedland/go/web/response/view/react"
 )
 
 func setupAdminConfigPages(s *service.Service) {

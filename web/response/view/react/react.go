@@ -2,6 +2,9 @@ package react
 
 import (
 	"fmt"
+	"html/template"
+
+	"context"
 
 	"github.com/speedland/go/gae/service"
 	"github.com/speedland/go/gae/service/auth"
@@ -10,7 +13,6 @@ import (
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xtime"
-	"context"
 )
 
 var processStartAt = fmt.Sprintf("%d", xtime.Now().Unix())
@@ -24,6 +26,13 @@ var ReactPageDefaults = &ReactPage{
 	},
 }
 
+type ReactPageFunc func(*web.Request) *ReactPage
+
+func (f ReactPageFunc) Render(req *web.Request) *response.Response {
+	page := f(req)
+	return page.Render(req)
+}
+
 // ReactPage is a Page implementation for react applications
 type ReactPage struct {
 	title          interface{}
@@ -32,6 +41,7 @@ type ReactPage struct {
 	appData        map[string]interface{}
 	stylesheets    []interface{}
 	javascripts    []interface{}
+	body           interface{}
 }
 
 func New() *ReactPage {
@@ -46,6 +56,13 @@ func New() *ReactPage {
 func (rp *ReactPage) Title(title interface{}) *ReactPage {
 	validateType(title, false, "title")
 	rp.title = title
+	return rp
+}
+
+// Body sets the body
+func (rp *ReactPage) Body(body interface{}) *ReactPage {
+	validateType(body, false, "body")
+	rp.body = body
 	return rp
 }
 
@@ -128,12 +145,14 @@ func (rp *ReactPage) Render(req *web.Request) *response.Response {
 
 func (rp *ReactPage) genVar(req *web.Request) *ReactPageVars {
 	ctx := req.Context()
+
 	data := &ReactPageVars{
 		Status:         response.HTTPStatusOK,
 		Title:          genString(ctx, rp.title),
 		ServiceData:    make(map[string]interface{}),
 		MetaProperties: make(map[string]string),
 		AppData:        make(map[string]interface{}),
+		Body:           template.HTML(genString(ctx, rp.body)),
 	}
 	for key, val := range rp.serviceData {
 		data.ServiceData[key] = genObject(ctx, val)
