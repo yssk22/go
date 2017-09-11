@@ -57,11 +57,7 @@ func Instance() aetest.Instance {
 // NewRequest returns a new *http.Request bound with appengine context.Context
 func NewRequest(method string, path string, body io.Reader) (*http.Request, error) {
 	i := Instance()
-	r, err := i.NewRequest(method, path, body)
-	if err != nil {
-		return nil, err
-	}
-	return r.WithContext(appengine.NewContext(r)), nil
+	return i.NewRequest(method, path, body)
 }
 
 // NewRecorder returns a new *httptest.Recorder object
