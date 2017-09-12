@@ -101,9 +101,9 @@ func Config(c *PageConfig) PageOption {
 	}
 }
 
-func Generator(g PageVarsGenerator) PageOption {
+func GeneratorFunc(f func(req *web.Request) (*PageVars, error)) PageOption {
 	return func(p *Page) (*Page, error) {
-		p.generator = g
+		p.generator = PageVarsGeneratorFunc(f)
 		return p, nil
 	}
 }

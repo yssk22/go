@@ -73,7 +73,7 @@ func Test_Page_Render_Static(t *testing.T) {
 		}),
 		JavaScripts("/path/to/foo.js"),
 		Stylesheets("/path/to/foo.css"),
-		Generator(PageVarsGeneratorFunc(func(req *web.Request) (*PageVars, error) {
+		GeneratorFunc(func(req *web.Request) (*PageVars, error) {
 			return &PageVars{
 				Config: &PageConfig{
 					FacebookPageID: "mypage",
@@ -82,8 +82,8 @@ func Test_Page_Render_Static(t *testing.T) {
 					"url": req.URL.Path,
 				},
 			}, nil
-		})),
-	)
+		}))
+
 	doc, err := genResponse(p)
 	a.Nil(err)
 	appData, err := getAppData(doc)
