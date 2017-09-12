@@ -13,10 +13,13 @@ func setupAdminConfigPages(s *service.Service) {
 		return
 	}
 	s.Page(s.PageConfig.AdminConfigPath,
-		react.New().
-			Title("Service Configurations").
-			ReactModulePath("builtins/configs/").
-			AppData("apiBasePath", s.Path(s.APIConfig.ConfigAPIBasePath)))
+		react.Must(react.New(
+			react.Title("Service Configurations"),
+			react.Config(&react.PageConfig{
+				ReactModulePath: "builtins/configs/",
+			}),
+			react.AppData("apiBasePath", s.Path(s.APIConfig.ConfigAPIBasePath)),
+		)))
 }
 
 func setupAdminAsyncTaskPages(s *service.Service) {
@@ -27,8 +30,11 @@ func setupAdminAsyncTaskPages(s *service.Service) {
 		return
 	}
 	s.Page(s.PageConfig.AdminAsyncTaskPath,
-		react.New().
-			Title("Async Tasks").
-			ReactModulePath("builtins/asynctasks/").
-			AppData("asyncTaskListAPIPath", s.Path(s.APIConfig.AsyncTaskListAPIPath)))
+		react.Must(react.New(
+			react.Title("Async Tasks"),
+			react.Config(&react.PageConfig{
+				ReactModulePath: "builtins/asynctasks/",
+			}),
+			react.AppData("asyncTaskListAPIPath", s.Path(s.APIConfig.AsyncTaskListAPIPath)),
+		)))
 }

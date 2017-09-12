@@ -1,213 +1,196 @@
 package react
 
 import (
-	"fmt"
 	"html/template"
 
-	"context"
-
-	"github.com/speedland/go/gae/service"
-	"github.com/speedland/go/gae/service/auth"
-	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/middleware/session"
 	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xtime"
+	"github.com/speedland/go/x/xerrors"
 )
 
-var processStartAt = fmt.Sprintf("%d", xtime.Now().Unix())
-
-var ReactPageDefaults = &ReactPage{
-	stylesheets: []interface{}{
-	// fmt.Sprintf("/static/page.css?%s", processStartAt),
-	},
-	javascripts: []interface{}{
-		fmt.Sprintf("/static/page.js?%s", processStartAt),
-	},
+// PageVarsGenerator is an interface to generate a *PageVars
+type PageVarsGenerator interface {
+	Gen(req *web.Request) (*PageVars, error)
 }
 
-type ReactPageFunc func(*web.Request) *ReactPage
+// PageVarsGeneratorFunc is a func to ConfigGenerator conversion
+type PageVarsGeneratorFunc func(req *web.Request) (*PageVars, error)
 
-func (f ReactPageFunc) Render(req *web.Request) *response.Response {
-	page := f(req)
-	return page.Render(req)
+// Gen implements ConfigGenerator#Fetch
+func (f PageVarsGeneratorFunc) Gen(req *web.Request) (*PageVars, error) {
+	return f(req)
 }
 
-// ReactPage is a Page implementation for react applications
-type ReactPage struct {
-	title          interface{}
-	serviceData    map[string]interface{}
-	metaProperties map[string]interface{}
+// Page is a view.Page implementation for react applications.
+// The fields in this object is used as a default values of PageVars
+type Page struct {
+	title          string
+	metaProperties map[string]string
 	appData        map[string]interface{}
-	stylesheets    []interface{}
-	javascripts    []interface{}
-	body           interface{}
+	body           []byte
+	stylesheets    []string
+	javascripts    []string
+	config         *PageConfig
+	generator      PageVarsGenerator
 }
 
-func New() *ReactPage {
-	return &ReactPage{
-		serviceData:    make(map[string]interface{}),
-		metaProperties: make(map[string]interface{}),
+var DefaultPage = Must(New())
+
+func Must(p *Page, e error) *Page {
+	if e != nil {
+		panic(e)
+	}
+	return p
+}
+
+type PageOption func(p *Page) (*Page, error)
+
+// Title returns a PageOption to set the title
+func Title(title string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.title = title
+		return p, nil
+	}
+}
+
+// MetaProperty returns a PageOption to set the meta props.
+func MetaProperty(key string, value string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.metaProperties[key] = value
+		return p, nil
+	}
+}
+
+// AppData returns a PageOption to set the AppData field.
+func AppData(key string, value interface{}) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.appData[key] = value
+		return p, nil
+	}
+}
+
+// Body returns a PageOption to add to set body
+func Body(b []byte) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.body = b
+		return p, nil
+	}
+}
+
+// Stylesheets returns a PageOption to add urls into the stylesheet list.
+func Stylesheets(urls ...string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.stylesheets = append(p.stylesheets, urls...)
+		return p, nil
+	}
+}
+
+// JavasScripts returns a PageOption to add urls into the javascript list.
+func JavaScripts(urls ...string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.javascripts = append(p.javascripts, urls...)
+		return p, nil
+	}
+}
+
+func Config(c *PageConfig) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.config = mergeObject(p.config, c).(*PageConfig)
+		return p, nil
+	}
+}
+
+func New(options ...PageOption) (*Page, error) {
+	p := &Page{
+		metaProperties: make(map[string]string),
 		appData:        make(map[string]interface{}),
+		config:         &PageConfig{},
 	}
+	return p.Configure(options...)
 }
 
-// Title sets the title
-func (rp *ReactPage) Title(title interface{}) *ReactPage {
-	validateType(title, false, "title")
-	rp.title = title
-	return rp
-}
-
-// Body sets the body
-func (rp *ReactPage) Body(body interface{}) *ReactPage {
-	validateType(body, false, "body")
-	rp.body = body
-	return rp
-}
-
-const (
-	serviceDataKeyReactModulePath = "reactModulePath"
-	serviceDataKeyCSRFToken       = "csrfToken"
-	serviceDataKeyAuth            = "auth"
-	serviceDataKeyAuthAPIBasePath = "authAPIBasePath"
-	serviceDataKeyFacebookAppID   = "facebookAppID"
-)
-
-// ReactModulePath sets the react module path
-func (rp *ReactPage) ReactModulePath(modulePath interface{}) *ReactPage {
-	validateType(modulePath, false, "ReactModulePath")
-	rp.serviceData[serviceDataKeyReactModulePath] = modulePath
-	return rp
-}
-
-// MetaProperty sets the meta tag key value pairs
-func (rp *ReactPage) MetaProperty(key string, value interface{}) *ReactPage {
-	validateType(value, true, fmt.Sprintf("MetaProperty[%q]", key))
-	rp.metaProperties[key] = value
-	return rp
-}
-
-// AppData sets the app data passed to data-{key} attribute on react module.
-func (rp *ReactPage) AppData(key string, value interface{}) *ReactPage {
-	rp.appData[key] = value
-	return rp
-}
-
-// Stylesheets add stylesheet on the page.
-func (rp *ReactPage) Stylesheets(urls ...interface{}) *ReactPage {
-	for _, v := range urls {
-		validateType(v, true, "Stylesheets")
+func (p *Page) Configure(options ...PageOption) (*Page, error) {
+	for _, opt := range options {
+		var err error
+		p, err = opt(p)
+		if err != nil {
+			return nil, err
+		}
 	}
-	rp.stylesheets = append(rp.stylesheets, urls...)
-	return rp
-}
-
-// Javascripts add javascript on the page.
-func (rp *ReactPage) Javascripts(urls ...interface{}) *ReactPage {
-	for _, v := range urls {
-		validateType(v, true, "Javascripts")
-	}
-	rp.javascripts = append(rp.javascripts, urls...)
-	return rp
+	return p, nil
 }
 
 // Render implements view.Page#Render
-func (rp *ReactPage) Render(req *web.Request) *response.Response {
-	ctx := req.Context()
-	// s := service.FromContext(ctx)
-	data := ReactPageDefaults.genVar(req)
-	data.Merge(rp.genVar(req))
-	if sess := session.FromContext(ctx); sess != nil {
-		data.ServiceData[serviceDataKeyCSRFToken] = sess.CSRFSecret.String()
-		a, _ := auth.Get(sess)
-		if a != nil {
-			data.ServiceData[serviceDataKeyAuth] = a
-		} else {
-			data.ServiceData[serviceDataKeyAuth] = auth.Guest
-		}
+func (p *Page) Render(req *web.Request) *response.Response {
+	data, err := DefaultPage.genVar(req)
+	if err != nil {
+		panic(xerrors.Wrap(err, "genVar error on DefaultPage"))
 	}
-	if s := service.FromContext(ctx); s != nil {
-		if fb := s.Config.GetFacebookConfig(ctx); fb != nil {
-			data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
-			data.MetaProperties["fb:app_id"] = fb.ClientID
-		}
-		if apiConfig := s.APIConfig; apiConfig != nil {
-			data.ServiceData[serviceDataKeyAuthAPIBasePath] = apiConfig.AuthAPIBasePath
-		}
+	d1, err := p.genVar(req)
+	if err != nil {
+		panic(xerrors.Wrap(err, "genVar error on "))
 	}
+	data.Merge(d1)
+
+	// if fetcher := rp.ServiceDataFetcher; fetcher != nil {
+	// 	sData, err := fetcher.Fetch(ctx)
+
+	// }
+	// if fetcher != nil {
+	// 	if err == nil {
+	// 		if sData.FacebookAppID != "" {
+	// 			data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
+	// 			data.MetaProperties["fb:app_id"] = fb.ClientID
+	// 		}
+	// 	}
+	// }
+	// if s := service.FromContext(ctx); s != nil {
+	// 	if fb := s.Config.GetFacebookConfig(ctx); fb != nil {
+	// 		data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
+	// 		data.MetaProperties["fb:app_id"] = fb.ClientID
+	// 	}
+	// 	if apiConfig := s.APIConfig; apiConfig != nil {
+	// 		data.ServiceData[serviceDataKeyAuthAPIBasePath] = apiConfig.AuthAPIBasePath
+	// 	}
+	// }
 	return response.NewHTMLWithStatus(
-		ReactPageTemplate,
+		pageTemplate,
 		data,
 		data.Status,
 	)
 }
 
-func (rp *ReactPage) genVar(req *web.Request) *ReactPageVars {
+func (p *Page) genVar(req *web.Request) (*PageVars, error) {
 	ctx := req.Context()
-
-	data := &ReactPageVars{
+	// initiate PageVars from scratch
+	data := &PageVars{
 		Status:         response.HTTPStatusOK,
-		Title:          genString(ctx, rp.title),
-		ServiceData:    make(map[string]interface{}),
 		MetaProperties: make(map[string]string),
 		AppData:        make(map[string]interface{}),
-		Body:           template.HTML(genString(ctx, rp.body)),
+		Config:         &PageConfig{},
 	}
-	for key, val := range rp.serviceData {
-		data.ServiceData[key] = genObject(ctx, val)
+	if p.title != "" {
+		data.Title = p.title
 	}
-	for key, val := range rp.metaProperties {
-		data.MetaProperties[key] = genString(ctx, val)
+	if p.body != nil {
+		data.Body = template.HTML(string(p.body))
 	}
-	for key, val := range rp.appData {
-		data.AppData[key] = genObject(ctx, val)
+	data.MetaProperties = mergeStringMap(data.MetaProperties, p.metaProperties)
+	data.AppData = mergeObjectMap(data.AppData, p.appData)
+	data.Config = mergeObject(data.Config, p.config).(*PageConfig)
+	data.Javascripts = mergeStringList(data.Javascripts, p.javascripts)
+	data.Stylesheets = mergeStringList(data.Stylesheets, p.stylesheets)
+	if p.generator != nil {
+		var genData *PageVars
+		var err error
+		if genData, err = p.generator.Gen(req); err != nil {
+			return nil, err
+		}
+		data.Merge(genData)
 	}
-	for _, val := range rp.stylesheets {
-		data.Stylesheets = append(data.Stylesheets, genString(ctx, val))
+	if sess := session.FromContext(ctx); sess != nil {
+		data.CSRFToken = sess.CSRFSecret.String()
 	}
-	for _, val := range rp.javascripts {
-		data.Javascripts = append(data.Javascripts, genString(ctx, val))
-	}
-	return data
-}
-
-func validateType(v interface{}, panicIfNil bool, fieldName string) {
-	if v == nil && panicIfNil {
-		panic(fmt.Sprintf("%s: nil is not allowd", fieldName))
-	}
-	switch t := v.(type) {
-	case string:
-		return
-	case lazy.Value:
-		return
-	default:
-		panic(fmt.Sprintf("%s: %s is not allowd", fieldName, t))
-	}
-}
-
-func genString(ctx context.Context, v interface{}) string {
-	if v == nil {
-		return ""
-	}
-	switch v.(type) {
-	case string:
-		return v.(string)
-	case lazy.Value:
-		str, _ := v.(lazy.Value).Eval(ctx)
-		return str.(string)
-	default:
-		return ""
-	}
-}
-
-func genObject(ctx context.Context, v interface{}) interface{} {
-	if v == nil {
-		return nil
-	}
-	if lv, ok := v.(lazy.Value); ok {
-		evaled, _ := lv.Eval(ctx)
-		return evaled
-	}
-	return v
+	return data, nil
 }

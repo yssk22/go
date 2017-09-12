@@ -26,7 +26,9 @@ const (
 	ckFacebookPageToken               = "facebook.page_token"
 	ckFacebookAppID                   = "facebook.app_id"
 	ckFacebookAppSecret               = "facebook.app_secret"
+	ckFacebookPixelID                 = "facebook.pixel_id"
 	ckMessengerVerificationToken      = "messenger.verification_token"
+	ckGoogleAnalyticsID               = "google.analytics_id"
 )
 
 func init() {
@@ -38,7 +40,9 @@ func init() {
 	Global(ckFacebookAppSecret, "", "facebook app secret")
 	Global(ckFacebookPageID, "", "facebook page id")
 	Global(ckFacebookPageToken, "", "facebook page access token")
+	Global(ckFacebookPixelID, "", "facebook pixel id")
 	Global(ckMessengerVerificationToken, "", "messenger verification token")
+	Global(ckGoogleAnalyticsID, "", "google analytics ID")
 }
 
 // OAuth2Config is a configuration object for oauth2 clients
