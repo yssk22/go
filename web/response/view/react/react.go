@@ -101,6 +101,13 @@ func Config(c *PageConfig) PageOption {
 	}
 }
 
+func Generator(g PageVarsGenerator) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.generator = g
+		return p, nil
+	}
+}
+
 func New(options ...PageOption) (*Page, error) {
 	p := &Page{
 		metaProperties: make(map[string]string),
