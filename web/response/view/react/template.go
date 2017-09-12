@@ -75,7 +75,9 @@ func (pv *PageVars) Merge(pv2 *PageVars) {
 	if pv.Config == nil {
 		pv.Config = &PageConfig{}
 	}
-	pv.Status = pv2.Status
+	if pv2.Status >= 200 {
+		pv.Status = pv2.Status
+	}
 	pv.Body = template.HTML(mergeString(string(pv.Body), string(pv2.Body)))
 	pv.Config = mergeObject(pv.Config, pv2.Config).(*PageConfig)
 	pv.MetaProperties = mergeStringMap(pv.MetaProperties, pv2.MetaProperties)

@@ -139,7 +139,6 @@ func (p *Page) Render(req *web.Request) *response.Response {
 		panic(xerrors.Wrap(err, "genVar error on "))
 	}
 	data.Merge(d1)
-
 	// if fetcher := rp.ServiceDataFetcher; fetcher != nil {
 	// 	sData, err := fetcher.Fetch(ctx)
 
