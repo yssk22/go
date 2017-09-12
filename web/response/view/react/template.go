@@ -28,6 +28,9 @@ func (c *PageConfig) Merge(obj interface{}) interface{} {
 	if !ok {
 		return c
 	}
+	if c1 == nil {
+		return c
+	}
 	c.ReactModulePath = mergeString(c.ReactModulePath, c1.ReactModulePath)
 	c.AuthAPIBasePath = mergeString(c.AuthAPIBasePath, c1.AuthAPIBasePath)
 	c.FacebookAppID = mergeString(c.FacebookAppID, c1.FacebookAppID)
@@ -37,6 +40,13 @@ func (c *PageConfig) Merge(obj interface{}) interface{} {
 	c.TwitterID = mergeString(c.TwitterID, c1.TwitterID)
 	c.InstagramID = mergeString(c.InstagramID, c1.InstagramID)
 	return c
+}
+
+// Status returns a blank *PageVars with a status code
+func Status(s response.HTTPStatus) *PageVars {
+	return &PageVars{
+		Status: s,
+	}
 }
 
 // PageVars is a page data generated per an http request from a Page object.
