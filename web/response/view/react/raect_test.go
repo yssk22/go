@@ -73,6 +73,16 @@ func Test_Page_Render_Static(t *testing.T) {
 		}),
 		JavaScripts("/path/to/foo.js"),
 		Stylesheets("/path/to/foo.css"),
+		Generator(PageVarsGeneratorFunc(func(req *web.Request) (*PageVars, error) {
+			return &PageVars{
+				Config: &PageConfig{
+					FacebookPageID: "mypage",
+				},
+				AppData: map[string]interface{}{
+					"url": req.URL.Path,
+				},
+			}, nil
+		})),
 	)
 	doc, err := genResponse(p)
 	a.Nil(err)
@@ -86,6 +96,7 @@ func Test_Page_Render_Static(t *testing.T) {
 	a.EqStr("fb12345", doc.Find("meta[property='fb:app_id']").AttrOr("content", ""), dumpHtml(doc))
 	a.EqStr("fbp12345", cfg.FacebookPixelID)
 	a.EqStr("bar", appData["foo"].(string))
+	a.EqStr("/", appData["url"].(string))
 	a.EqInt(1, doc.Find("script[src='/path/to/foo.js']").Length())
 	a.EqInt(1, doc.Find("link[href='/path/to/foo.css']").Length(), dumpHtml(doc))
 }
