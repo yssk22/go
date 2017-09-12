@@ -14,13 +14,15 @@ import (
 	"github.com/speedland/go/x/xtesting/assert"
 )
 
-func genResponse(p *Page) (*goquery.Document, error) {
+func genResponse(p *Page) (*goquery.Document, *httptest.ResponseRecorder) {
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	xerrors.MustNil(err)
 	req := web.NewRequest(r, nil)
 	p.Render(req).Render(req.Context(), w)
-
-	return goquery.NewDocumentFromReader(w.Body)
+	doc, err := goquery.NewDocumentFromReader(w.Body)
+	xerrors.MustNil(err)
+	return doc, w
 }
 
 type html interface {
@@ -84,8 +86,8 @@ func Test_Page_Render_Static(t *testing.T) {
 			}, nil
 		}))
 
-	doc, err := genResponse(p)
-	a.Nil(err)
+	doc, s := genResponse(p)
+	a.EqInt(200, s.Code)
 	appData, err := getAppData(doc)
 	a.Nil(err)
 	cfg, err := getConfig(doc)
