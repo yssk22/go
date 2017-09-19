@@ -10,6 +10,7 @@ import (
 
 	"github.com/speedland/go/retry"
 	"github.com/speedland/go/services/facebook/messenger"
+	"github.com/speedland/go/web/response/view/react"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xtime"
 )
@@ -49,6 +50,15 @@ func init() {
 type OAuth2Config struct {
 	ClientID     string
 	ClientSecret string
+}
+
+// GenPageConfig returns *react.PageConfig from configuration datastore.
+func (c *Config) GenPageConfig(ctx context.Context) *react.PageConfig {
+	return &react.PageConfig{
+		FacebookAppID:     c.GetValue(ctx, ckFacebookAppID),
+		FacebookPixelID:   c.GetValue(ctx, ckFacebookPixelID),
+		GoogleAnalyticsID: c.GetValue(ctx, ckGoogleAnalyticsID),
+	}
 }
 
 // GetFacebookConfig returns OAuth2 config for facebook.
