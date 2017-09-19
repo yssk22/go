@@ -22,7 +22,7 @@ func (c *Cron) ToYAML() string {
 	var buff bytes.Buffer
 	fmt.Fprintf(&buff, "- url:         %s\n", c.path)
 	fmt.Fprintf(&buff, "  schedule:    %s\n", c.time)
-	fmt.Fprintf(&buff, "  description: %s\n", c.description)
+	fmt.Fprintf(&buff, "  description: \"%s\"\n", c.description)
 	fmt.Fprintf(&buff, "  timezone:    %s\n", CronTimezone)
 	return buff.String()
 }
