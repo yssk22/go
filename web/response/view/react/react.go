@@ -26,7 +26,9 @@ func (f PageVarsGeneratorFunc) Gen(req *web.Request) (*PageVars, error) {
 // The fields in this object is used as a default values of PageVars
 type Page struct {
 	title          string
+	metaNames      map[string]string
 	metaProperties map[string]string
+	template       *template.Template
 	appData        map[string]interface{}
 	body           []byte
 	stylesheets    []string
@@ -58,6 +60,14 @@ func Title(title string) PageOption {
 func MetaProperty(key string, value string) PageOption {
 	return func(p *Page) (*Page, error) {
 		p.metaProperties[key] = value
+		return p, nil
+	}
+}
+
+// MetaName returns a PageOption to set the meta name.
+func MetaName(key string, value string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.metaNames[key] = value
 		return p, nil
 	}
 }
@@ -94,6 +104,7 @@ func JavaScripts(urls ...string) PageOption {
 	}
 }
 
+// Config returns a PageOption to set PageConfig
 func Config(c *PageConfig) PageOption {
 	return func(p *Page) (*Page, error) {
 		p.config = mergeObject(p.config, c).(*PageConfig)
@@ -101,6 +112,7 @@ func Config(c *PageConfig) PageOption {
 	}
 }
 
+// GeneratorFunc returns a PageOption to set a *PageVar generator function
 func GeneratorFunc(f func(req *web.Request) (*PageVars, error)) PageOption {
 	return func(p *Page) (*Page, error) {
 		p.generator = PageVarsGeneratorFunc(f)
@@ -108,11 +120,22 @@ func GeneratorFunc(f func(req *web.Request) (*PageVars, error)) PageOption {
 	}
 }
 
+// Template returns a PageOption to overwrite the default template
+func Template(str string) PageOption {
+	return func(p *Page) (*Page, error) {
+		var err error
+		p.template, err = template.New("page-template").Parse(str)
+		return p, err
+	}
+}
+
 func New(options ...PageOption) (*Page, error) {
 	p := &Page{
+		metaNames:      make(map[string]string),
 		metaProperties: make(map[string]string),
 		appData:        make(map[string]interface{}),
 		config:         &PageConfig{},
+		template:       defaultPageTemplate,
 	}
 	return p.Configure(options...)
 }
@@ -139,29 +162,8 @@ func (p *Page) Render(req *web.Request) *response.Response {
 		panic(xerrors.Wrap(err, "genVar error on "))
 	}
 	data.Merge(d1)
-	// if fetcher := rp.ServiceDataFetcher; fetcher != nil {
-	// 	sData, err := fetcher.Fetch(ctx)
-
-	// }
-	// if fetcher != nil {
-	// 	if err == nil {
-	// 		if sData.FacebookAppID != "" {
-	// 			data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
-	// 			data.MetaProperties["fb:app_id"] = fb.ClientID
-	// 		}
-	// 	}
-	// }
-	// if s := service.FromContext(ctx); s != nil {
-	// 	if fb := s.Config.GetFacebookConfig(ctx); fb != nil {
-	// 		data.ServiceData[serviceDataKeyFacebookAppID] = fb.ClientID
-	// 		data.MetaProperties["fb:app_id"] = fb.ClientID
-	// 	}
-	// 	if apiConfig := s.APIConfig; apiConfig != nil {
-	// 		data.ServiceData[serviceDataKeyAuthAPIBasePath] = apiConfig.AuthAPIBasePath
-	// 	}
-	// }
 	return response.NewHTMLWithStatus(
-		pageTemplate,
+		p.template,
 		data,
 		data.Status,
 	)
@@ -172,6 +174,7 @@ func (p *Page) genVar(req *web.Request) (*PageVars, error) {
 	// initiate PageVars from scratch
 	data := &PageVars{
 		Status:         response.HTTPStatusOK,
+		MetaNames:      make(map[string]string),
 		MetaProperties: make(map[string]string),
 		AppData:        make(map[string]interface{}),
 		Config:         &PageConfig{},
