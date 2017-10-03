@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"time"
 
+	"context"
+
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/services/facebook"
 	"github.com/speedland/go/uuid"
+	"github.com/speedland/go/x/xerrors"
 	"github.com/speedland/go/x/xtime"
-	"context"
 )
 
 // AuthType is an enum for authentication types.
@@ -24,6 +26,7 @@ const (
 	AuthTypeFacebook
 	AuthTypeTwitter
 	AuthTypeMessenger
+	AuthTypeGoogle
 )
 
 // Auth is a primary type to represent a user
@@ -35,6 +38,7 @@ type Auth struct {
 	TwitterID   string    `json:"twitter_id"`
 	Email       string    `json:"email"`
 	AuthType    AuthType  `json:"auth_type"`
+	IsAdmin     bool      `json:"is_admin"`
 	CreatedAt   time.Time `json:"created_at"`
 	LastLoginAt time.Time `json:"last_login_at"`
 	UpdatedAt   time.Time `json:"updated_at" ent:"timestamp"`
@@ -112,7 +116,7 @@ var (
 func Messenger(ctx context.Context, messengerID string) (*Auth, error) {
 	user, err := GetCurrent(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("session error: %v", err)
+		return nil, xerrors.Wrap(err, "session error to get the current session")
 	}
 	if user == nil {
 		user, err = findExistingAuth(context.WithValue(ctx, messengerAuthContextKey, messengerID), messengerAuthQuery, AuthTypeMessenger)
@@ -123,10 +127,10 @@ func Messenger(ctx context.Context, messengerID string) (*Auth, error) {
 	user.MessengerID = messengerID
 	user.LastLoginAt = xtime.Now()
 	if _, err = DefaultAuthKind.Put(ctx, user); err != nil {
-		return nil, fmt.Errorf("datastore error: %v", err)
+		return nil, xerrors.Wrap(err, "datastore error")
 	}
 	if err = SetCurrent(ctx, user); err != nil {
-		return nil, fmt.Errorf("session error: %v", err)
+		return nil, xerrors.Wrap(err, "session error to set the current session")
 	}
 	return user, nil
 }
