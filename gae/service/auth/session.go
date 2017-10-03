@@ -3,9 +3,11 @@ package auth
 import (
 	"fmt"
 
+	"context"
+
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/web/middleware/session"
-	"context"
+	"google.golang.org/appengine/user"
 )
 
 const sessionKey = "current_user"
@@ -23,6 +25,14 @@ func SetCurrent(ctx context.Context, a *Auth) error {
 
 // GetCurrent is to get the auth fron the current session
 func GetCurrent(ctx context.Context) (*Auth, error) {
+	u := user.Current(ctx)
+	if u != nil {
+		return &Auth{
+			ID:       fmt.Sprintf("gae_%s", u.ID),
+			IsAdmin:  u.Admin,
+			AuthType: AuthTypeGoogle,
+		}, nil
+	}
 	s := session.FromContext(ctx)
 	if s == nil {
 		return nil, ErrNoSession
