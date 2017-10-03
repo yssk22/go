@@ -56,6 +56,7 @@ type OAuth2Config struct {
 func (c *Config) GenPageConfig(ctx context.Context) *react.PageConfig {
 	return &react.PageConfig{
 		FacebookAppID:     c.GetValue(ctx, ckFacebookAppID),
+		FacebookPageID:    c.GetValue(ctx, ckFacebookPageID),
 		FacebookPixelID:   c.GetValue(ctx, ckFacebookPixelID),
 		GoogleAnalyticsID: c.GetValue(ctx, ckGoogleAnalyticsID),
 	}
