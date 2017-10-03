@@ -53,7 +53,9 @@ func Status(s response.HTTPStatus) *PageVars {
 type PageVars struct {
 	Status         response.HTTPStatus
 	Title          string
+	CanonicalURL   string
 	Body           template.HTML
+	MetaNames      map[string]string
 	MetaProperties map[string]string
 	CSRFToken      string
 	ModulePath     string
@@ -78,8 +80,10 @@ func (pv *PageVars) Merge(pv2 *PageVars) {
 	if pv2.Status >= 200 {
 		pv.Status = pv2.Status
 	}
+	pv.CanonicalURL = mergeString(pv.CanonicalURL, pv2.CanonicalURL)
 	pv.Body = template.HTML(mergeString(string(pv.Body), string(pv2.Body)))
 	pv.Config = mergeObject(pv.Config, pv2.Config).(*PageConfig)
+	pv.MetaNames = mergeStringMap(pv.MetaNames, pv2.MetaNames)
 	pv.MetaProperties = mergeStringMap(pv.MetaProperties, pv2.MetaProperties)
 	pv.AppData = mergeObjectMap(pv.AppData, pv2.AppData)
 	pv.Javascripts = mergeStringList(pv.Javascripts, pv2.Javascripts)
@@ -88,31 +92,32 @@ func (pv *PageVars) Merge(pv2 *PageVars) {
 }
 
 // Default is a default template
-var pageTemplate = template.Must(template.New("react").Funcs(reactPageTemplateFuncs).Parse(`<!DOCTYPE html>
+var defaultPageTemplate = template.Must(template.New("react").Funcs(reactPageTemplateFuncs).Parse(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{.Title}}</title>
-  {{range $key, $val := .MetaProperties -}}
+  {{with .CanonicalURL}}<link rel="canonical" href="{{.}}">{{end}}
+  <title>{{.Title}}</title>{{range $key, $val := .MetaNames }}
+  <meta name="{{$key}}" content="{{$val}}">
+  {{- end -}}{{range $key, $val := .MetaProperties }}
   <meta property="{{$key}}" content="{{$val}}">
   {{- end -}}
-  {{with .Config.FacebookAppID -}}
-  <meta property="fb:app_id" content="{{.}}">
-  {{- end -}}
+  {{with .Config.FacebookAppID }}<meta property="fb:app_id" content="{{.}}">{{ end }}
+  {{with .Config.FacebookPageID }}<meta property="fb:pages" content="{{.}}">{{ end }}
   <!--[if lt IE 9]>
   <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
   <script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
-  <style>body {padding: 0;margin: 0;}</style>
-  {{range .Stylesheets -}}
+  <style>body {padding: 0;margin: 0;}</style>{{range .Stylesheets }}
   <link rel="stylesheet" type="text/css" href="{{.}}" />
-  {{end}}
+  {{- end -}}
 </head>
 <body>
   <div id="fb-root"></div>
   <div id="main"
+	data-auth="{{json .Auth}}"
   	data-app="{{json .AppData}}"
 	data-config="{{json .Config}}">
   	<div class="body">{{.Body}}</div>
