@@ -41,6 +41,9 @@ type Merger interface {
 }
 
 func mergeObject(o1 interface{}, o2 interface{}) interface{} {
+	if o1 == nil && o2 != nil {
+		return o2
+	}
 	if m1, ok := o1.(Merger); ok {
 		return m1.Merge(o2)
 	}
