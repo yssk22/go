@@ -1,6 +1,9 @@
 package xlog
 
-import "io"
+import (
+	"io"
+	"log"
+)
 
 // Sink is an interface for log destination
 type Sink interface {
@@ -13,6 +16,20 @@ var NullSink = &nullSink{}
 type nullSink struct{}
 
 func (*nullSink) Write(*Record) error {
+	return nil
+}
+
+// StdLogSink is a sink to write logs with log.Printf()
+var StdLogSink = &stdLogSink{}
+
+type stdLogSink struct{}
+
+func (*stdLogSink) Write(r *Record) error {
+	buff, err := defaultIOFormatter.Format(r)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s", string(buff))
 	return nil
 }
 
