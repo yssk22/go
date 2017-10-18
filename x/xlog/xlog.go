@@ -87,7 +87,7 @@ func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) 
 	if ctxLogger, ok := ctx.Value(loggerContextKey).(*Logger); ok {
 		instance = new(Logger)
 		*instance = *ctxLogger
-		if prefix != "" && instance.prefix != "" {
+		if prefix != "" {
 			instance.prefix = fmt.Sprintf("%s%s", instance.prefix, prefix)
 		}
 	} else {
