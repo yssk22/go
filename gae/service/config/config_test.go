@@ -67,4 +67,48 @@ func TestConfig_Get_Fallback(t *testing.T) {
 	a.EqStr("50", c.Get(appCtx, "urlfetch_deadline").Value)
 	a.EqStr("45", c.Get(appCtx, "urlfetch_deadline").GlobalValue)
 	a.EqStr("30", c.Get(appCtx, "urlfetch_deadline").DefaultValue)
+
+}
+func TestConfig_GetIntValue(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
+	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
+	c := New()
+	c.Register("aconfig", "5", "int config")
+	a.EqInt(5, c.GetIntValue(appCtx, "aconfig"))
+	c.SetValue(appCtx, "aconfig", "10")
+	a.EqInt(10, c.GetIntValue(appCtx, "aconfig"))
+	// invalid format, fallback to the default value
+	c.SetValue(appCtx, "aconfig", "a")
+	a.EqInt(5, c.GetIntValue(appCtx, "aconfig"))
+}
+
+func TestConfig_GetFloatValue(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
+	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
+	c := New()
+	c.Register("aconfig", "5.3", "float config")
+	a.EqFloat64(5.3, c.GetFloatValue(appCtx, "aconfig"))
+	c.SetValue(appCtx, "aconfig", "10")
+	a.EqFloat64(10.0, c.GetFloatValue(appCtx, "aconfig"))
+	c.SetValue(appCtx, "aconfig", "10.3")
+	a.EqFloat64(10.3, c.GetFloatValue(appCtx, "aconfig"))
+	// invalid format, fallback to the default value
+	c.SetValue(appCtx, "aconfig", "a")
+	a.EqFloat64(5.3, c.GetFloatValue(appCtx, "aconfig"))
+}
+
+func TestConfig_GetBoolValue(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupStorage(gaetest.NewContext(), "", "myapp"))
+	appCtx, _ := appengine.Namespace(gaetest.NewContext(), "myapp")
+	c := New()
+	c.Register("aconfig", "true", "float config")
+	a.OK(c.GetBoolValue(appCtx, "aconfig"))
+	c.SetValue(appCtx, "aconfig", "false")
+	a.OK(!c.GetBoolValue(appCtx, "aconfig"))
+	// invalid format, fallback to the default value
+	c.SetValue(appCtx, "aconfig", "a")
+	a.OK(c.GetBoolValue(appCtx, "aconfig"))
 }
