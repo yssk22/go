@@ -7,13 +7,14 @@ import (
 
 	"time"
 
+	"context"
+
 	"github.com/speedland/go/gae/taskqueue"
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
 	"github.com/speedland/go/x/xruntime"
 	"github.com/speedland/go/x/xtime"
-	"context"
 )
 
 // Config is an configuration object to define AsyncTask endpoints
@@ -110,7 +111,7 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 	if t == nil {
 		return nil, ErrNoTaskInstance
 	}
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(t.GetLogPrefix())
+	ctx, logger := xlog.WithContextAndKey(ctx, t.GetLogPrefix(), LoggerKey)
 	if t.Status != StatusReady && t.Status != StatusRunning {
 		// return 200 for GAE not to retry the task.
 		return nil, ErrAlreadyProcessing
@@ -184,8 +185,8 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	}
 	t.Status = StatusReady
 	t.TaskStore = nil
+	ctx, logger := xlog.WithContextAndKey(ctx, t.GetLogPrefix(), LoggerKey)
 	DefaultAsyncTaskKind.MustPut(ctx, t)
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(t.GetLogPrefix())
 	if err := c.pushTask(ctx, instancePath, params); err != nil {
 		logger.Infof("PushTask fails due to %v, clean up...", err)
 		DefaultAsyncTaskKind.MustDelete(ctx, taskID)

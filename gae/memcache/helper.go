@@ -80,8 +80,7 @@ func CacheResponseWithExpire(name lazy.Value, expire time.Duration, h web.Handle
 	var ckey = fmt.Sprintf("cache-response-%s", name)
 	var prefix = ckey + " "
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		ctx := req.Context()
-		logger := xlog.WithContext(ctx).WithPrefix(prefix)
+		ctx, logger := xlog.WithContext(req.Context(), prefix)
 		var cr cachedResponse
 		if err := Get(ctx, ckey, &cr); err == nil {
 			if cr.Status != 0 {

@@ -112,7 +112,7 @@ func (transport *httpTransport) RoundTrip(req *http.Request) (resp *http.Respons
 func (c *Config) NewHTTPClient(ctx context.Context) *http.Client {
 	const maxRetryHardLimit = 30
 	const deadlineHardLimit = 60
-	logger := xlog.WithContext(ctx).WithKey(HTTPClientLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", HTTPClientLoggerKey)
 	deadline := c.GetIntValue(ctx, ckURLFetchDeadline)
 	allowInvalidCert := c.GetIntValue(ctx, ckURLFetchAllowInvalidCertificate)
 	maxRetries := c.GetIntValue(ctx, ckURLFetchMaxRetries)

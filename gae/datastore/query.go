@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"context"
+
 	"github.com/speedland/go/lazy"
 	"github.com/speedland/go/x/xlog"
-	"context"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -203,8 +204,8 @@ func (q *Query) Count(ctx context.Context) (int, error) {
 }
 
 func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", LoggerKey)
 	var buff []string
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey)
 	query := datastore.NewQuery(q.kind)
 
 	if q.projects != nil {

@@ -90,6 +90,7 @@ func (k *AsyncTaskKind) MustGet(ctx context.Context, key interface{}) *AsyncTask
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*AsyncTask, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AsyncTaskKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -109,7 +110,6 @@ func (k *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}) ([]*data
 		return nil, nil, nil
 	}
 	ents = make([]*AsyncTask, size, size)
-	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -241,6 +241,7 @@ func (k *AsyncTaskKind) MustPut(ctx context.Context, ent *AsyncTask) *datastore.
 
 // PutMulti do Put with multiple keys
 func (k *AsyncTaskKind) PutMulti(ctx context.Context, ents []*AsyncTask) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AsyncTaskKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -256,7 +257,6 @@ func (k *AsyncTaskKind) PutMulti(ctx context.Context, ents []*AsyncTask) ([]*dat
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -388,6 +388,7 @@ func (k *AsyncTaskKind) MustDelete(ctx context.Context, key interface{}) *datast
 
 // DeleteMulti do Delete with multiple keys
 func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AsyncTaskKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -408,7 +409,6 @@ func (k *AsyncTaskKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*d
 		return nil, ent.ErrTooManyEnts
 	}
 
-	logger := xlog.WithContext(ctx).WithKey(AsyncTaskKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {

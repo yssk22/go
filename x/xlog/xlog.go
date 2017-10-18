@@ -34,6 +34,7 @@
 package xlog
 
 import (
+	"fmt"
 	"os"
 
 	"context"
@@ -78,7 +79,28 @@ func WithKey(name string) *Logger {
 	return defaultLogger.WithKey(name)
 }
 
+var loggerContextKey = struct{}{}
+
 // WithContext returns a shallow copy of global Logger with its context changed to ctx.
-func WithContext(ctx context.Context) *Logger {
-	return defaultLogger.WithContext(ctx)
+func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) {
+	var instance *Logger
+	if ctxLogger, ok := ctx.Value(loggerContextKey).(*Logger); ok {
+		instance = new(Logger)
+		*instance = *ctxLogger
+		if prefix != "" && instance.prefix != "" {
+			instance.prefix = fmt.Sprintf("%s%s", instance.prefix, prefix)
+		}
+	} else {
+		instance = defaultLogger.WithContext(ctx)
+		instance.prefix = prefix
+	}
+	newCtx := context.WithValue(ctx, loggerContextKey, instance)
+	instance.ctx = newCtx
+	return newCtx, instance
+}
+
+// WithContextAndKey returns a shallow copy of global Logger with its context changed to ctx and bound with `key`
+func WithContextAndKey(ctx context.Context, prefix string, key interface{}) (context.Context, *Logger) {
+	ctx, logger := WithContext(ctx, prefix)
+	return ctx, logger.WithKey(key)
 }

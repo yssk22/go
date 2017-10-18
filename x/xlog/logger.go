@@ -85,14 +85,6 @@ func (l *Logger) WithKey(key interface{}) *Logger {
 	return l2
 }
 
-// WithPrefix returns a shallow copy of Logger with its prefix changed to `prefix`.
-func (l *Logger) WithPrefix(prefix string) *Logger {
-	l2 := new(Logger)
-	*l2 = *l
-	l2.prefix = prefix
-	return l2
-}
-
 // Tracef to write text log with LevelTrace
 func (l *Logger) Tracef(s string, v ...interface{}) {
 	l.write(LevelTrace, l.format(s, v...))

@@ -47,15 +47,13 @@ func NewMiddleware(store SessionStore) *Middleware {
 }
 
 func (m *Middleware) Process(req *web.Request, next web.NextHandler) *response.Response {
-	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(req.Context(), "", SessionLoggerKey)
 	session, err := m.prepareSession(req)
 	if err != nil {
 		logger.Errorf("Failed to prepare sessoin(%v), fallback to create a new session", err)
 		session = NewSession()
 	}
-	resp := next(req.WithContext(
-		NewContext(req.Context(), session),
-	))
+	resp := next(req.WithContext(NewContext(ctx, session)))
 	cookie, err := m.storeSession(req, session)
 	if err != nil {
 		logger.Errorf("Failed to store sessoin: %v", err)
@@ -81,7 +79,7 @@ func (m *Middleware) prepareSession(req *web.Request) (*Session, error) {
 	if !ok {
 		return nil, fmt.Errorf("invalid session id: %q", strSessionID)
 	}
-	var logger = xlog.WithContext(req.Context()).WithKey(SessionLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(req.Context(), "", SessionLoggerKey)
 	session, err := m.Store.Get(req.Context(), sessionID)
 	logger.Debug(func(fmt *xlog.Printer) {
 		fmt.Printf("Getting a session with %s\n", sessionID)
@@ -98,7 +96,7 @@ func (m *Middleware) prepareSession(req *web.Request) (*Session, error) {
 	session.fromStore = true
 	if session.fromStore && session.IsExpired(m.MaxAge) {
 		logger.Debugf("Session %s is expired, deleting", session.ID)
-		m.Store.Del(req.Context(), session)
+		m.Store.Del(ctx, session)
 		return NewSession(), nil
 	}
 	return session, nil

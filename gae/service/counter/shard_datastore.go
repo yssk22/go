@@ -90,6 +90,7 @@ func (k *ShardKind) MustGet(ctx context.Context, key interface{}) *Shard {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ShardKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Shard, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ShardKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -109,7 +110,6 @@ func (k *ShardKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastor
 		return nil, nil, nil
 	}
 	ents = make([]*Shard, size, size)
-	logger := xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -241,6 +241,7 @@ func (k *ShardKind) MustPut(ctx context.Context, ent *Shard) *datastore.Key {
 
 // PutMulti do Put with multiple keys
 func (k *ShardKind) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ShardKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -256,7 +257,6 @@ func (k *ShardKind) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.K
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -388,6 +388,7 @@ func (k *ShardKind) MustDelete(ctx context.Context, key interface{}) *datastore.
 
 // DeleteMulti do Delete with multiple keys
 func (k *ShardKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ShardKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -408,7 +409,6 @@ func (k *ShardKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datas
 		return nil, ent.ErrTooManyEnts
 	}
 
-	logger := xlog.WithContext(ctx).WithKey(ShardKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {

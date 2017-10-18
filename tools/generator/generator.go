@@ -6,13 +6,13 @@ import (
 	"go/ast"
 	"go/build"
 	"go/format"
-	"go/importer"
 	"go/parser"
 	"go/token"
-	"go/types"
 	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/speedland/go/x/xerrors"
 
 	"github.com/speedland/go/number"
 )
@@ -26,7 +26,8 @@ type Generator interface {
 func Run(dir string, g Generator) ([]byte, error) {
 	_, files, err := parsePackage(dir)
 	if err != nil {
-		return nil, err
+		absPath, _ := filepath.Abs(dir)
+		return nil, xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	for _, f := range files {
 		ast.Inspect(f, g.Inspect)
@@ -56,13 +57,6 @@ func parsePackage(dir string) (*build.Package, []*ast.File, error) {
 			return nil, nil, fmt.Errorf("parse error at %s: %v", goFile, err)
 		}
 		astFiles = append(astFiles, parsedGoFile)
-	}
-	// check the package is valid.
-	config := types.Config{Importer: importer.Default(), FakeImportC: true}
-	info := &types.Info{Defs: make(map[*ast.Ident]types.Object)}
-	_, err = config.Check(dir, fs, astFiles, info)
-	if err != nil {
-		return nil, nil, err
 	}
 	return pkg, astFiles, nil
 }

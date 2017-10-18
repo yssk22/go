@@ -51,7 +51,7 @@ func (p *Periodic) Stop(ctx context.Context) error {
 }
 
 func (p *Periodic) main(ctx context.Context) {
-	var logger = xlog.WithContext(ctx)
+	ctx, logger := xlog.WithContext(ctx, "")
 	defer func() {
 		p.cancelFunc = nil
 		p.jobContext = nil
