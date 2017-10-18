@@ -90,6 +90,7 @@ func (k *AuthKind) MustGet(ctx context.Context, key interface{}) *Auth {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *AuthKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Auth, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AuthKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -109,7 +110,6 @@ func (k *AuthKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore
 		return nil, nil, nil
 	}
 	ents = make([]*Auth, size, size)
-	logger := xlog.WithContext(ctx).WithKey(AuthKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -241,6 +241,7 @@ func (k *AuthKind) MustPut(ctx context.Context, ent *Auth) *datastore.Key {
 
 // PutMulti do Put with multiple keys
 func (k *AuthKind) PutMulti(ctx context.Context, ents []*Auth) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AuthKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -256,7 +257,6 @@ func (k *AuthKind) PutMulti(ctx context.Context, ents []*Auth) ([]*datastore.Key
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(AuthKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -388,6 +388,7 @@ func (k *AuthKind) MustDelete(ctx context.Context, key interface{}) *datastore.K
 
 // DeleteMulti do Delete with multiple keys
 func (k *AuthKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", AuthKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -408,7 +409,6 @@ func (k *AuthKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datast
 		return nil, ent.ErrTooManyEnts
 	}
 
-	logger := xlog.WithContext(ctx).WithKey(AuthKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {

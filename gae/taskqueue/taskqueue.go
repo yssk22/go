@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/url"
 
+	"context"
+
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xlog"
-	"context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
 )
@@ -96,7 +97,7 @@ func (queue *PushQueue) RequestValidator() web.Handler {
 		if !appengine.IsDevAppServer() {
 			name := req.Header.Get("X-AppEngine-QueueName")
 			if queue.Name != name {
-				logger := xlog.WithContext(req.Context()).WithKey(LoggerKey)
+				_, logger := xlog.WithContextAndKey(req.Context(), "", LoggerKey)
 				logger.Warnf("Task Queue invalidation: %q != %q", queue.Name, name)
 				return response.NewErrorWithStatus(
 					fmt.Errorf("task queue validation failed"),

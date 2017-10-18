@@ -7,10 +7,11 @@ import (
 
 	"bytes"
 
+	"context"
+
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xlog"
-	"context"
 )
 
 func NewVericationHandler(token string) web.Handler {
@@ -42,8 +43,7 @@ const MaxWebhookPayloadSize = 1024 * 1024 * 512
 // NewWebhookHandler return s new web.Handler to handle webhook request
 func NewWebhookHandler(hook Webhook) web.Handler {
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		ctx := req.Context()
-		logger := xlog.WithContext(ctx).WithPrefix("[Messenger WebHook] ")
+		ctx, logger := xlog.WithContext(req.Context(), "[Messenger WebHook] ")
 		buff, err := ioutil.ReadAll(&io.LimitedReader{R: req.Body, N: MaxWebhookPayloadSize})
 		if err != nil {
 			logger.Infof("io error: %v (Content-Length = %s)", err, req.Header.Get("content-length"))

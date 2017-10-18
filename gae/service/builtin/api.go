@@ -81,9 +81,10 @@ func setupAuthAPIs(s *service.Service) {
 		token := req.Form.GetStringOr("access_token", "")
 		ctx, err := appengine.Namespace(req.Context(), s.APIConfig.AuthNamespace)
 		xerrors.MustNil(err)
+		ctx, logger := xlog.WithContext(ctx, "")
 		a, err := auth.Facebook(ctx, s.Config.NewHTTPClient(ctx), token)
 		if err != nil {
-			xlog.WithContext(ctx).Infof("failed to authenticate facebook with %q: %v", token, err)
+			logger.Infof("failed to authenticate facebook with %q: %v", token, err)
 			return apierrors.BadRequest.ToResponse()
 		}
 		if err = auth.SetCurrent(ctx, a); err != nil {

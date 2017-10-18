@@ -14,6 +14,7 @@ var (
 		AuthTypeFacebook:  "facebook",
 		AuthTypeTwitter:   "twitter",
 		AuthTypeMessenger: "messenger",
+		AuthTypeGoogle:    "google",
 	}
 	_AuthTypeStringToValue = map[string]AuthType{
 		"none":      AuthTypeNone,
@@ -21,6 +22,7 @@ var (
 		"facebook":  AuthTypeFacebook,
 		"twitter":   AuthTypeTwitter,
 		"messenger": AuthTypeMessenger,
+		"google":    AuthTypeGoogle,
 	}
 )
 

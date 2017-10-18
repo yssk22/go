@@ -10,8 +10,9 @@ import (
 
 	"bytes"
 
-	"github.com/speedland/go/x/xlog"
 	"context"
+
+	"github.com/speedland/go/x/xlog"
 )
 
 // LoggerKey is a key for this package
@@ -64,7 +65,7 @@ const (
 // Get to call GET request on the given path
 func (c *Client) Get(ctx context.Context, path string, query url.Values, v interface{}) error {
 	url := c.prepareURL(path, query, c.accessToken)
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(fmt.Sprintf("[GraphAPI:GET %s] ", url))
+	_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("[GraphAPI:GET %s] ", url), LoggerKey)
 	resp, err := c.client.Get(url)
 	return processResponse(logger, v, url, nil, resp, err)
 }
@@ -72,7 +73,7 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, v inter
 // Post to call POST request on the given path with json body specified by `content` argument.
 func (c *Client) Post(ctx context.Context, path string, query url.Values, content interface{}, v interface{}) error {
 	url := c.prepareURL(path, query, c.accessToken)
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey).WithPrefix(fmt.Sprintf("[GraphAPI:POST %s] ", url))
+	_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("[GraphAPI:POST %s] ", url), LoggerKey)
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(content)
 	if err != nil {

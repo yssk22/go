@@ -90,6 +90,7 @@ func (k *ConfigKind) MustGet(ctx context.Context, key interface{}) *Config {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ConfigKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Config, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ConfigKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -109,7 +110,6 @@ func (k *ConfigKind) GetMulti(ctx context.Context, keys interface{}) ([]*datasto
 		return nil, nil, nil
 	}
 	ents = make([]*Config, size, size)
-	logger := xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -241,6 +241,7 @@ func (k *ConfigKind) MustPut(ctx context.Context, ent *Config) *datastore.Key {
 
 // PutMulti do Put with multiple keys
 func (k *ConfigKind) PutMulti(ctx context.Context, ents []*Config) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ConfigKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -256,7 +257,6 @@ func (k *ConfigKind) PutMulti(ctx context.Context, ents []*Config) ([]*datastore
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -388,6 +388,7 @@ func (k *ConfigKind) MustDelete(ctx context.Context, key interface{}) *datastore
 
 // DeleteMulti do Delete with multiple keys
 func (k *ConfigKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ConfigKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -408,7 +409,6 @@ func (k *ConfigKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*data
 		return nil, ent.ErrTooManyEnts
 	}
 
-	logger := xlog.WithContext(ctx).WithKey(ConfigKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {

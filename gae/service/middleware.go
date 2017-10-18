@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"fmt"
 
+	"context"
+
 	"github.com/speedland/go/gae/service/apierrors"
 	"github.com/speedland/go/web"
 	"github.com/speedland/go/web/response"
 	"github.com/speedland/go/x/xlog"
-	"context"
 	"google.golang.org/appengine"
 )
 
@@ -37,7 +38,8 @@ var errInternalServerError = &apierrors.Error{
 
 var errorMiddleware = web.HandlerFunc(
 	func(req *web.Request, next web.NextHandler) *response.Response {
-		s := FromContext(req.Context())
+		ctx, logger := xlog.WithContextAndKey(req.Context(), "", loggerKeyErrorResponse)
+		s := FromContext(ctx)
 		var resp *response.Response
 		func() {
 			defer func() {
@@ -53,9 +55,7 @@ var errorMiddleware = web.HandlerFunc(
 					if ok {
 						status = httpe.Status()
 					}
-					xlog.WithContext(req.Context()).WithKey(loggerKeyErrorResponse).Fatalf(
-						"Recovering error from panic: %v", err,
-					)
+					logger.Fatalf("Recovering error from panic: %v", err)
 					if s.OnError != nil {
 						resp = s.OnError(req, err)
 					} else {
@@ -78,13 +78,11 @@ var errorMiddleware = web.HandlerFunc(
 			if code >= 500 {
 				var buff bytes.Buffer
 				resp.Body.Render(req.Context(), &buff)
-				xlog.WithContext(req.Context()).WithKey(loggerKeyErrorResponse).Errorf(
-					"Internal Server Error: %v", buff.String(),
-				)
+				logger.Errorf("Internal Server Error: %v", buff.String())
 			} else if code > 404 {
 				var buff bytes.Buffer
 				resp.Body.Render(req.Context(), &buff)
-				xlog.WithContext(req.Context()).WithKey(loggerKeyErrorResponse).Warnf(
+				logger.Warnf(
 					"Unusual client error: %v", buff.String(),
 				)
 			}

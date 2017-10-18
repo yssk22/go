@@ -141,6 +141,7 @@ func (k *ExampleKind) MustGet(ctx context.Context, key interface{}) *Example {
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ExampleKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Example, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ExampleKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -160,7 +161,6 @@ func (k *ExampleKind) GetMulti(ctx context.Context, keys interface{}) ([]*datast
 		return nil, nil, nil
 	}
 	ents = make([]*Example, size, size)
-	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -292,6 +292,7 @@ func (k *ExampleKind) MustPut(ctx context.Context, ent *Example) *datastore.Key 
 
 // PutMulti do Put with multiple keys
 func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ExampleKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -309,7 +310,6 @@ func (k *ExampleKind) PutMulti(ctx context.Context, ents []*Example) ([]*datasto
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -472,6 +472,7 @@ func (k *ExampleKind) MustDelete(ctx context.Context, key interface{}) *datastor
 
 // DeleteMulti do Delete with multiple keys
 func (k *ExampleKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ExampleKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -499,7 +500,6 @@ func (k *ExampleKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*dat
 			searchKeys[i] = k.Encode()
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {
@@ -769,7 +769,7 @@ func (q *ExampleQuery) MustRun(ctx context.Context) *ExamplePagination {
 
 // SearchKeys returns the a result as *ExamplePagination object. It only containd valid []*datastore.Keys
 func (k *ExampleKind) SearchKeys(ctx context.Context, query string, opts *search.SearchOptions) (*ExamplePagination, error) {
-	var logger = xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ExampleKindLoggerKey)
 	index, err := search.Open(ExampleSearchIndexName)
 	if err != nil {
 		return nil, err
@@ -806,7 +806,7 @@ func (k *ExampleKind) SearchKeys(ctx context.Context, query string, opts *search
 
 // SearchValues returns the a result as *ExamplePagination object with filling Data field.
 func (k *ExampleKind) SearchValues(ctx context.Context, query string, opts *search.SearchOptions) (*ExamplePagination, error) {
-	var logger = xlog.WithContext(ctx).WithKey(ExampleKindLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ExampleKindLoggerKey)
 	p, err := k.SearchKeys(ctx, query, opts)
 	if err != nil {
 		return nil, err

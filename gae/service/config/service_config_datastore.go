@@ -93,6 +93,7 @@ func (k *ServiceConfigKind) MustGet(ctx context.Context, key interface{}) *Servi
 
 // GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
 func (k *ServiceConfigKind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*ServiceConfig, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ServiceConfigKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	var memKeys []string
@@ -112,7 +113,6 @@ func (k *ServiceConfigKind) GetMulti(ctx context.Context, keys interface{}) ([]*
 		return nil, nil, nil
 	}
 	ents = make([]*ServiceConfig, size, size)
-	logger := xlog.WithContext(ctx).WithKey(ServiceConfigKindLoggerKey)
 	// Memcache access
 	if !k.noCache {
 		logger.Debugf("Trying to get entities from memcache...")
@@ -244,6 +244,7 @@ func (k *ServiceConfigKind) MustPut(ctx context.Context, ent *ServiceConfig) *da
 
 // PutMulti do Put with multiple keys
 func (k *ServiceConfigKind) PutMulti(ctx context.Context, ents []*ServiceConfig) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ServiceConfigKindLoggerKey)
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
@@ -259,7 +260,6 @@ func (k *ServiceConfigKind) PutMulti(ctx context.Context, ents []*ServiceConfig)
 			return nil, xerrors.Wrap(err, "cannot enforce namespace")
 		}
 	}
-	logger := xlog.WithContext(ctx).WithKey(ServiceConfigKindLoggerKey)
 	dsKeys = make([]*datastore.Key, size, size)
 	for i := range ents {
 		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
@@ -391,6 +391,7 @@ func (k *ServiceConfigKind) MustDelete(ctx context.Context, key interface{}) *da
 
 // DeleteMulti do Delete with multiple keys
 func (k *ServiceConfigKind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", ServiceConfigKindLoggerKey)
 	var err error
 	var dsKeys []*datastore.Key
 	if k.enforceNamespace {
@@ -411,7 +412,6 @@ func (k *ServiceConfigKind) DeleteMulti(ctx context.Context, keys interface{}) (
 		return nil, ent.ErrTooManyEnts
 	}
 
-	logger := xlog.WithContext(ctx).WithKey(ServiceConfigKindLoggerKey)
 	// Datastore access
 	err = helper.DeleteMulti(ctx, dsKeys)
 	if helper.IsDatastoreError(err) {

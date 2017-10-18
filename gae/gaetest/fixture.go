@@ -14,6 +14,7 @@ import (
 	"github.com/speedland/go/x/xtime"
 
 	"context"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
@@ -62,12 +63,13 @@ func ResetFixtureFromFile(ctx context.Context, path string, bindings interface{}
 
 // CleanupDatastore is to remove all data in datastore
 func CleanupDatastore(ctx context.Context, namespaces ...string) error {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", FixtureLoggerKey)
 	if len(namespaces) == 0 {
 		numDeleted, err := cleanupDatastore(ctx)
 		if err != nil {
 			return err
 		}
-		xlog.WithContext(ctx).WithKey(FixtureLoggerKey).Infof("Clean up %d ents", numDeleted)
+		logger.Infof("Clean up %d ents", numDeleted)
 		return nil
 	}
 	for _, ns := range namespaces {
@@ -79,7 +81,7 @@ func CleanupDatastore(ctx context.Context, namespaces ...string) error {
 		if err != nil {
 			return err
 		}
-		xlog.WithContext(ctx).WithKey(FixtureLoggerKey).Infof("Clean up %d ents in %q", numDeleted, ns)
+		logger.Infof("Clean up %d ents in %q", numDeleted, ns)
 	}
 	return nil
 }
@@ -259,7 +261,7 @@ func convertJsonValueToProperties(k string, v interface{}) []datastore.Property 
 }
 
 func loadJsonToDatastore(ctx context.Context, pkey *datastore.Key, data map[string]interface{}) error {
-	var logger = xlog.WithContext(ctx).WithKey(FixtureLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", FixtureLoggerKey)
 	var kind string
 	var ns string
 	var keyval interface{}

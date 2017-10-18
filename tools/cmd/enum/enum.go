@@ -210,7 +210,7 @@ func (pkg *Package) check(fs *token.FileSet, astFiles []*ast.File) {
 	}
 	typesPkg, err := config.Check(pkg.dir, fs, astFiles, info)
 	if err != nil {
-		log.Fatalf("checking package: %s", err)
+		log.Println("warn", err)
 	}
 	pkg.typesPkg = typesPkg
 }
