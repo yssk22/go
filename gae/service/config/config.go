@@ -6,9 +6,10 @@ import (
 	"os"
 	"strconv"
 
+	"context"
+
 	"github.com/speedland/go/keyvalue"
 	"github.com/speedland/go/x/xerrors"
-	"context"
 	"google.golang.org/appengine"
 )
 
@@ -103,8 +104,51 @@ func (c *Config) GetIntDefaultValue(key string) int {
 	return vv
 }
 
+// GetFloatValue is like GetValue and return the value as float64. If invalid int value is set on `key`
+// this will return a default value of `key`.
+func (c *Config) GetFloatValue(ctx context.Context, key string) float64 {
+	v := c.GetValue(ctx, key)
+	vv, err := strconv.ParseFloat(v, 64)
+	if err == nil {
+		return vv
+	}
+	return c.GetFloatDefaultValue(key)
+}
+
+// GetFloatDefaultValue returns the default value by `key` as float64
+func (c *Config) GetFloatDefaultValue(key string) float64 {
+	vv, err := strconv.ParseFloat(c.GetDefaultValue(key), 64)
+	xerrors.MustNil(err)
+	return vv
+}
+
+// GetBoolValue is like GetValue and return the value as bool. If invalid int value is set on `key`
+// this will return a default value of `key`.
+func (c *Config) GetBoolValue(ctx context.Context, key string) bool {
+	v := c.GetValue(ctx, key)
+	vv, err := strconv.ParseBool(v)
+	if err == nil {
+		return vv
+	}
+	return c.GetBoolDefaultValue(key)
+}
+
+// GetBoolDefaultValue returns the default value by `key` as bool
+func (c *Config) GetBoolDefaultValue(key string) bool {
+	vv, err := strconv.ParseBool(c.GetDefaultValue(key))
+	xerrors.MustNil(err)
+	return vv
+}
+
 // Set sets the *ServiceConfig
 func (c *Config) Set(ctx context.Context, cfg *ServiceConfig) {
+	DefaultServiceConfigKind.MustPut(ctx, cfg)
+}
+
+// SetValue set the new value on key
+func (c *Config) SetValue(ctx context.Context, key string, value string) {
+	cfg := c.Get(ctx, key)
+	cfg.Value = value
 	DefaultServiceConfigKind.MustPut(ctx, cfg)
 }
 
