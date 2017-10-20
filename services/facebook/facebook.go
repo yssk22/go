@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"io/ioutil"
 
@@ -53,6 +54,42 @@ func (c *Client) GetMe(ctx context.Context) (*Me, error) {
 		return nil, err
 	}
 	return &m, nil
+}
+
+// URLObject is a object returned by scraping URL
+type URLObject struct {
+	ID          string    `json:"id"`
+	URL         string    `json:"url"`
+	Type        string    `json:"type"`
+	Title       string    `json:"title"`
+	UpdatedTime time.Time `json:"updated_time"`
+	Image       struct {
+		URL    string `json:"url"`
+		Width  int    `json:"width"`
+		Height int    `json:"height"`
+	} `json:"image"`
+	Pages []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"pages"`
+	Application struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"application"`
+}
+
+func (c *Client) ScrapeURL(ctx context.Context, urlstr string) (*URLObject, error) {
+	var obj URLObject
+	err := c.Post(ctx, "/", url.Values{
+		"id":     []string{urlstr},
+		"scrape": []string{"true"},
+	}, nil, &obj)
+	if err != nil {
+		return nil, err
+	}
+	return &obj, nil
 }
 
 const (
