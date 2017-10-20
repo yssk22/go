@@ -58,6 +58,9 @@ var DefaultAuthKind = &AuthKind{}
 // AuthKindLoggerKey is a logger key name for the ent
 const AuthKindLoggerKey = "ent.auth"
 
+// AuthQueryLoggerKey is a logger key name for the ent
+const AuthQueryLoggerKey = "ent.query.auth"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *AuthKind) EnforceNamespace(ns string, b bool) *AuthKind {
 	k.enforceNamespace = b
@@ -482,7 +485,7 @@ type AuthQuery struct {
 
 func NewAuthQuery() *AuthQuery {
 	return &AuthQuery{
-		q: helper.NewQuery("Auth"),
+		q: helper.NewQuery("Auth", AuthQueryLoggerKey),
 	}
 }
 

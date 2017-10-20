@@ -61,6 +61,9 @@ var DefaultServiceConfigKind = &ServiceConfigKind{}
 // ServiceConfigKindLoggerKey is a logger key name for the ent
 const ServiceConfigKindLoggerKey = "ent.service_config"
 
+// ServiceConfigQueryLoggerKey is a logger key name for the ent
+const ServiceConfigQueryLoggerKey = "ent.query.service_config"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *ServiceConfigKind) EnforceNamespace(ns string, b bool) *ServiceConfigKind {
 	k.enforceNamespace = b
@@ -485,7 +488,7 @@ type ServiceConfigQuery struct {
 
 func NewServiceConfigQuery() *ServiceConfigQuery {
 	return &ServiceConfigQuery{
-		q: helper.NewQuery("ServiceConfig"),
+		q: helper.NewQuery("ServiceConfig", ServiceConfigQueryLoggerKey),
 	}
 }
 

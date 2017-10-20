@@ -90,6 +90,9 @@ var Default{{.Type}}Kind = &{{.Type}}Kind{}
 // {{.Type}}KindLoggerKey is a logger key name for the ent
 const {{.Type}}KindLoggerKey = "ent.{{snakecase .Kind}}"
 
+// {{.Type}}QueryLoggerKey is a logger key name for the ent
+const {{.Type}}QueryLoggerKey = "ent.query.{{snakecase .Kind}}"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *{{.Type}}Kind) EnforceNamespace(ns string, b bool) *{{.Type}}Kind {
 	k.enforceNamespace = b
@@ -576,12 +579,12 @@ func (k *{{.Type}}Kind) normMultiKeys(ctx context.Context, keys interface{}) ([]
 
 // {{.Type}}Query helps to build and execute a query
 type {{.Type}}Query struct {
-    q *helper.Query
+	q *helper.Query
 }
 
 func New{{.Type}}Query() *{{.Type}}Query {
     return &{{.Type}}Query{
-        q: helper.NewQuery("{{.Kind}}"),
+        q: helper.NewQuery("{{.Kind}}", {{.Type}}QueryLoggerKey),
     }
 }
 

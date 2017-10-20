@@ -58,6 +58,9 @@ var DefaultShardKind = &ShardKind{}
 // ShardKindLoggerKey is a logger key name for the ent
 const ShardKindLoggerKey = "ent.counter_shared"
 
+// ShardQueryLoggerKey is a logger key name for the ent
+const ShardQueryLoggerKey = "ent.query.counter_shared"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *ShardKind) EnforceNamespace(ns string, b bool) *ShardKind {
 	k.enforceNamespace = b
@@ -482,7 +485,7 @@ type ShardQuery struct {
 
 func NewShardQuery() *ShardQuery {
 	return &ShardQuery{
-		q: helper.NewQuery("CounterShared"),
+		q: helper.NewQuery("CounterShared", ShardQueryLoggerKey),
 	}
 }
 

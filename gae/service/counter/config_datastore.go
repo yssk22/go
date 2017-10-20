@@ -58,6 +58,9 @@ var DefaultConfigKind = &ConfigKind{}
 // ConfigKindLoggerKey is a logger key name for the ent
 const ConfigKindLoggerKey = "ent.counter_config"
 
+// ConfigQueryLoggerKey is a logger key name for the ent
+const ConfigQueryLoggerKey = "ent.query.counter_config"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *ConfigKind) EnforceNamespace(ns string, b bool) *ConfigKind {
 	k.enforceNamespace = b
@@ -482,7 +485,7 @@ type ConfigQuery struct {
 
 func NewConfigQuery() *ConfigQuery {
 	return &ConfigQuery{
-		q: helper.NewQuery("CounterConfig"),
+		q: helper.NewQuery("CounterConfig", ConfigQueryLoggerKey),
 	}
 }
 

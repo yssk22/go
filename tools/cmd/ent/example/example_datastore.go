@@ -109,6 +109,9 @@ var DefaultExampleKind = &ExampleKind{}
 // ExampleKindLoggerKey is a logger key name for the ent
 const ExampleKindLoggerKey = "ent.example"
 
+// ExampleQueryLoggerKey is a logger key name for the ent
+const ExampleQueryLoggerKey = "ent.query.example"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *ExampleKind) EnforceNamespace(ns string, b bool) *ExampleKind {
 	k.enforceNamespace = b
@@ -586,7 +589,7 @@ type ExampleQuery struct {
 
 func NewExampleQuery() *ExampleQuery {
 	return &ExampleQuery{
-		q: helper.NewQuery("Example"),
+		q: helper.NewQuery("Example", ExampleQueryLoggerKey),
 	}
 }
 
