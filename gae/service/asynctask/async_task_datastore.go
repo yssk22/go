@@ -58,6 +58,9 @@ var DefaultAsyncTaskKind = &AsyncTaskKind{}
 // AsyncTaskKindLoggerKey is a logger key name for the ent
 const AsyncTaskKindLoggerKey = "ent.async_task"
 
+// AsyncTaskQueryLoggerKey is a logger key name for the ent
+const AsyncTaskQueryLoggerKey = "ent.query.async_task"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *AsyncTaskKind) EnforceNamespace(ns string, b bool) *AsyncTaskKind {
 	k.enforceNamespace = b
@@ -482,7 +485,7 @@ type AsyncTaskQuery struct {
 
 func NewAsyncTaskQuery() *AsyncTaskQuery {
 	return &AsyncTaskQuery{
-		q: helper.NewQuery("AsyncTask"),
+		q: helper.NewQuery("AsyncTask", AsyncTaskQueryLoggerKey),
 	}
 }
 

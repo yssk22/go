@@ -58,6 +58,9 @@ var DefaultSessionKind = &SessionKind{}
 // SessionKindLoggerKey is a logger key name for the ent
 const SessionKindLoggerKey = "ent.session"
 
+// SessionQueryLoggerKey is a logger key name for the ent
+const SessionQueryLoggerKey = "ent.query.session"
+
 // EnforceNamespace enforces namespace for Get/Put/Delete or not.
 func (k *SessionKind) EnforceNamespace(ns string, b bool) *SessionKind {
 	k.enforceNamespace = b
@@ -482,7 +485,7 @@ type SessionQuery struct {
 
 func NewSessionQuery() *SessionQuery {
 	return &SessionQuery{
-		q: helper.NewQuery("Session"),
+		q: helper.NewQuery("Session", SessionQueryLoggerKey),
 	}
 }
 

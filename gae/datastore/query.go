@@ -22,12 +22,14 @@ type Query struct {
 	endCursor   lazy.Value
 	limit       lazy.Value
 	offset      lazy.Value
+	loggerKey   string
 }
 
 // NewQuery returns a new *Query for `kind`
-func NewQuery(kind string) *Query {
+func NewQuery(kind string, loggerKey string) *Query {
 	return &Query{
-		kind: kind,
+		kind:      kind,
+		loggerKey: loggerKey,
 	}
 }
 
@@ -204,7 +206,7 @@ func (q *Query) Count(ctx context.Context) (int, error) {
 }
 
 func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
-	ctx, logger := xlog.WithContextAndKey(ctx, "", LoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", q.loggerKey)
 	var buff []string
 	query := datastore.NewQuery(q.kind)
 
