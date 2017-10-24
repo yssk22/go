@@ -37,7 +37,7 @@ func Test_ScrapeURL(t *testing.T) {
 	if c == nil {
 		return
 	}
-	urlobj, err := c.ScrapeURL(context.Background(), "http://www.google.com/")
+	urlobj, err := c.ScrapeURL(context.Background(), "http://www.example.com/")
 	a.Nil(err)
-	a.EqStr("http://www.google.com/", urlobj.URL)
+	a.EqStr("http://www.example.com/", urlobj.URL)
 }
