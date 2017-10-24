@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
+
+	"github.com/speedland/go/x/xtime"
 
 	"io/ioutil"
 
@@ -31,7 +32,7 @@ func NewClient(client *http.Client, accessToken string) *Client {
 	return &Client{
 		client:      client,
 		accessToken: accessToken,
-		version:     "v2.9",
+		version:     "v2.10",
 	}
 }
 
@@ -58,33 +59,34 @@ func (c *Client) GetMe(ctx context.Context) (*Me, error) {
 
 // URLObject is a object returned by scraping URL
 type URLObject struct {
-	ID          string    `json:"id"`
-	URL         string    `json:"url"`
-	Type        string    `json:"type"`
-	Title       string    `json:"title"`
-	UpdatedTime time.Time `json:"updated_time"`
-	Image       struct {
+	ID          string           `json:"id"`
+	URL         string           `json:"url"`
+	Type        string           `json:"type"`
+	Title       string           `json:"title"`
+	UpdatedTime *xtime.Timestamp `json:"updated_time"`
+	Image       []struct {
 		URL    string `json:"url"`
 		Width  int    `json:"width"`
 		Height int    `json:"height"`
-	} `json:"image"`
+	} `json:"image,omitempty"`
 	Pages []struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 		URL  string `json:"url"`
-	} `json:"pages"`
+	} `json:"pages,omitempty"`
 	Application struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 		URL  string `json:"url"`
-	} `json:"application"`
+	} `json:"application,omitempty"`
 }
 
 func (c *Client) ScrapeURL(ctx context.Context, urlstr string) (*URLObject, error) {
 	var obj URLObject
 	err := c.Post(ctx, "/", url.Values{
-		"id":     []string{urlstr},
-		"scrape": []string{"true"},
+		"id":          []string{urlstr},
+		"scrape":      []string{"true"},
+		"date_format": []string{"U"},
 	}, nil, &obj)
 	if err != nil {
 		return nil, err
