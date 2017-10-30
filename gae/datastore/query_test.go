@@ -9,12 +9,14 @@ import (
 	"github.com/speedland/go/x/xtesting/assert"
 )
 
+const queryLoggerKey = "github.com/speedland/go/gae/datastore.Query"
+
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Eq("ID", lazy.New("example-1"))
+	q := NewQuery("Example", queryLoggerKey).Eq("ID", lazy.New("example-1"))
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
@@ -25,7 +27,7 @@ func TestQuery_Order(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Desc("ID")
+	q := NewQuery("Example", queryLoggerKey).Desc("ID")
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(5, len(result))
@@ -39,7 +41,7 @@ func TestQuery_Limit(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Desc("ID").Limit(lazy.New(1))
+	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1))
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
