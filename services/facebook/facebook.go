@@ -3,8 +3,15 @@ package facebook
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"reflect"
+	"strconv"
+
+	"github.com/speedland/go/x/xerrors"
+	"github.com/speedland/go/x/xstrings"
 
 	"github.com/speedland/go/x/xtime"
 
@@ -15,6 +22,11 @@ import (
 	"context"
 
 	"github.com/speedland/go/x/xlog"
+)
+
+const (
+	domainGraphAPI      = "graph.facebook.com"
+	domainGraphVideoAPI = "graph-video.facebook.com"
 )
 
 // LoggerKey is a key for this package
@@ -103,7 +115,16 @@ const (
 
 // Get to call GET request on the given path
 func (c *Client) Get(ctx context.Context, path string, query url.Values, v interface{}) error {
-	url := c.prepareURL(path, query, c.accessToken)
+	return c.get(ctx, domainGraphAPI, path, query, v)
+}
+
+// GetVideo to call GET request on the given path for video endpoints
+func (c *Client) GetVideo(ctx context.Context, path string, query url.Values, v interface{}) error {
+	return c.get(ctx, domainGraphVideoAPI, path, query, v)
+}
+
+func (c *Client) get(ctx context.Context, domain string, path string, query url.Values, v interface{}) error {
+	url := c.prepareURL(domain, path, query, c.accessToken)
 	_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("[GraphAPI:GET %s] ", url), LoggerKey)
 	resp, err := c.client.Get(url)
 	return processResponse(logger, v, url, nil, resp, err)
@@ -111,24 +132,52 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, v inter
 
 // Post to call POST request on the given path with json body specified by `content` argument.
 func (c *Client) Post(ctx context.Context, path string, query url.Values, content interface{}, v interface{}) error {
-	url := c.prepareURL(path, query, c.accessToken)
-	_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("[GraphAPI:POST %s] ", url), LoggerKey)
-	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(content)
-	if err != nil {
-		return err
-	}
-	resp, err := c.client.Post(url, "application/json; charset=utf-8", &body)
-	return processResponse(logger, v, url, content, resp, err)
+	return c.post(ctx, c.prepareURL(domainGraphAPI, path, query, c.accessToken), content, v)
 }
 
-func (c *Client) prepareURL(path string, query url.Values, accessToken string) string {
-	const baseEndpoint = "https://graph.facebook.com/"
+// MultipartParams is a struct to upload multipart/form data to the endpoint
+type MultipartParams struct {
+	ContentType string
+	Body        io.Reader
+}
+
+// PostVideo to call POST request on the given path with json body specified by `content` argument.
+func (c *Client) PostVideo(ctx context.Context, path string, query url.Values, content interface{}, v interface{}) error {
+	return c.post(ctx, c.prepareURL(domainGraphVideoAPI, path, query, c.accessToken), content, v)
+}
+
+func (c *Client) post(ctx context.Context, urlstr string, content interface{}, v interface{}) error {
+	_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("[GraphAPI:POST %s] ", urlstr), LoggerKey)
+	var buff bytes.Buffer
+	var resp *http.Response
+	var err error
+	switch t := content.(type) {
+	// TODO: case url.Values: for www-form-urlencoding
+	case *MultipartParams:
+		var req *http.Request
+		params := content.(*MultipartParams)
+		req, err = http.NewRequest("POST", urlstr, io.TeeReader(params.Body, &buff))
+		req.Header.Set("Content-Type", params.ContentType)
+		if err != nil {
+			return xerrors.Wrap(err, "could not create a *http.NewRequest")
+		}
+		resp, err = c.client.Do(req)
+	default:
+		var jsonbuff bytes.Buffer
+		if err = json.NewEncoder(&jsonbuff).Encode(content); err != nil {
+			return xerrors.Wrap(err, "could not encode %s to JSON", t)
+		}
+		resp, err = c.client.Post(urlstr, "application/json; charset=utf-8", io.TeeReader(&jsonbuff, &buff))
+	}
+	return processResponse(logger, v, urlstr, &buff, resp, err)
+}
+
+func (c *Client) prepareURL(domain string, path string, query url.Values, accessToken string) string {
 	if query == nil {
 		query = url.Values{}
 	}
 	query.Set("access_token", accessToken)
-	return fmt.Sprintf("%s%s%s?%s", baseEndpoint, c.version, path, query.Encode())
+	return fmt.Sprintf("https://%s/%s%s?%s", domain, c.version, path, query.Encode())
 }
 
 func processResponse(logger *xlog.Logger, v interface{}, url string, content interface{}, resp *http.Response, err error) error {
@@ -151,9 +200,14 @@ func processResponse(logger *xlog.Logger, v interface{}, url string, content int
 	}
 	if resp.StatusCode != 200 {
 		var message = fmt.Sprintf("response body: %s", string(buff))
-		if resp.StatusCode == 400 && content != nil {
-			reqBody, _ := json.Marshal(content)
-			message = fmt.Sprintf("%s, request body: %s", message, string(reqBody))
+		if resp.StatusCode == 400 || resp.StatusCode >= 500 && content != nil {
+			if buff, ok := content.(io.Reader); ok {
+				reqBody, _ := ioutil.ReadAll(buff)
+				message = fmt.Sprintf("%s, request body (form): %s, request header: %s", message, string(reqBody), resp.Request.Header)
+			} else {
+				reqBody, _ := json.Marshal(content)
+				message = fmt.Sprintf("%s, request body (json): %s", message, string(reqBody))
+			}
 		}
 		return logAndError(
 			logger,
@@ -178,4 +232,59 @@ func logAndError(logger *xlog.Logger, log string, e error) error {
 		logger.Errorf(e.Error())
 	}
 	return e
+}
+
+func buildPostBodyFromStruct(v interface{}) (io.Reader, error) {
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+	defer w.Close()
+	val := reflect.ValueOf(v).Elem()
+	typ := val.Type()
+	numFields := val.NumField()
+	for i := 0; i < numFields; i++ {
+		var field io.Writer
+		var err error
+		var omitEmtpy bool
+		fv := val.Field(i)
+		tag := typ.Field(i).Tag.Get("param")
+		if tag != "" {
+			parts := xstrings.SplitAndTrim(tag, ",")
+			field, err = w.CreateFormField(parts[0])
+			if len(parts) > 1 {
+				omitEmtpy = parts[1] == "omitempty"
+			}
+		} else {
+			field, err = w.CreateFormField(xstrings.ToSnakeCase(typ.Name()))
+		}
+		if err != nil {
+			return nil, xerrors.Wrap(err, "could not build multipart body for %s", typ.Name())
+		}
+		iv := fv.Interface()
+		if omitEmtpy && (fv.IsNil() || !fv.IsValid()) {
+			continue
+		}
+		switch iv.(type) {
+		case int, int8, int16, int32, int64:
+			if omitEmtpy && fv.Int() == 0 {
+				continue
+			}
+			field.Write([]byte(strconv.FormatInt(fv.Int(), 10)))
+		case uint, uint8, uint16, uint32, uint64:
+			if omitEmtpy && fv.Uint() == 0 {
+				continue
+			}
+			field.Write([]byte(strconv.FormatUint(fv.Uint(), 10)))
+		case []byte:
+			field.Write(fv.Bytes())
+		case string:
+			field.Write([]byte(fv.String()))
+		default:
+			buff, err := json.Marshal(iv)
+			if err != nil {
+				return nil, xerrors.Wrap(err, "could not convert %s to url.Values", typ.Name())
+			}
+			field.Write(buff)
+		}
+	}
+	return &body, nil
 }

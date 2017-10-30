@@ -3,7 +3,6 @@ package facebook
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/speedland/go/x/xtime"
@@ -13,19 +12,58 @@ import (
 
 func Test_PublishPostMessage(t *testing.T) {
 	a := assert.New(t)
-	c := newTestClient(t)
+	c, pageID := newTestClientWithPage(t)
 	if c == nil {
 		return
 	}
-	pageID := os.Getenv("TEST_FACEBOOK_PAGE")
-	if pageID == "" {
-		t.Skipf("needs TEST_FACEBOOK_PAGE envvar for this test.")
-		return
-	}
-	id, err := c.PublishPost(context.Background(), pageID, &PagePostParams{
+	res, err := c.PublishPost(context.Background(), pageID, &PagePostParams{
 		Message: fmt.Sprintf("This is a test at %s", xtime.Now()),
 	})
 	a.Nil(err)
-	a.OK(id != "")
-	t.Logf("PostURL: https://www.facebook.com/permalink.php?story_fbid=%s&id=%s", id, pageID)
+	a.EqStr(pageID, res.PageID)
+	a.OK(res.PageID != "")
+}
+
+func Test_PublishPostLink(t *testing.T) {
+	a := assert.New(t)
+	c, pageID := newTestClientWithPage(t)
+	if c == nil {
+		return
+	}
+	res, err := c.PublishPost(context.Background(), pageID, &PagePostParams{
+		Message: fmt.Sprintf("This is a test at %s", xtime.Now()),
+		Link:    "http://www.example.com/",
+	})
+	a.Nil(err)
+	a.EqStr(pageID, res.PageID)
+	a.OK(res.PageID != "")
+}
+
+func Test_PublishPostLinkCarousel(t *testing.T) {
+	a := assert.New(t)
+	c, pageID := newTestClientWithPage(t)
+	if c == nil {
+		return
+	}
+	res, err := c.PublishPost(context.Background(), pageID, &PagePostParams{
+		Message: fmt.Sprintf("This is a test at %s", xtime.Now()),
+		Link:    "http://www.example.com/",
+		ChildAttachments: []*Attachment{
+			&Attachment{
+				Name:        "Same Link",
+				Description: "same link description",
+				Link:        "http://www.example.com/",
+				Picture:     "https://scontent.xx.fbcdn.net/hads-xtf1/t45.1600-4/11410027_6032434826375_425068598_n.png",
+			},
+			&Attachment{
+				Name:        "Google",
+				Description: "linked to google",
+				Link:        "http://www.google.com/",
+				Picture:     "https://scontent.xx.fbcdn.net/hads-xtp1/t45.1600-4/11410105_6031519058975_1161644941_n.png",
+			},
+		},
+	})
+	a.Nil(err)
+	a.EqStr(pageID, res.PageID)
+	a.OK(res.PageID != "")
 }
