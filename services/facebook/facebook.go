@@ -234,57 +234,72 @@ func logAndError(logger *xlog.Logger, log string, e error) error {
 	return e
 }
 
-func buildPostBodyFromStruct(v interface{}) (io.Reader, error) {
-	var body bytes.Buffer
-	w := multipart.NewWriter(&body)
-	defer w.Close()
+func writeStructIntoMultipart(dst *multipart.Writer, v interface{}) error {
 	val := reflect.ValueOf(v).Elem()
 	typ := val.Type()
 	numFields := val.NumField()
 	for i := 0; i < numFields; i++ {
-		var field io.Writer
-		var err error
+		var fieldName, fieldValue string
 		var omitEmtpy bool
 		fv := val.Field(i)
-		tag := typ.Field(i).Tag.Get("param")
+		tag := typ.Field(i).Tag.Get("json")
 		if tag != "" {
 			parts := xstrings.SplitAndTrim(tag, ",")
-			field, err = w.CreateFormField(parts[0])
+			fieldName = parts[0]
 			if len(parts) > 1 {
 				omitEmtpy = parts[1] == "omitempty"
 			}
-		} else {
-			field, err = w.CreateFormField(xstrings.ToSnakeCase(typ.Name()))
 		}
-		if err != nil {
-			return nil, xerrors.Wrap(err, "could not build multipart body for %s", typ.Name())
-		}
-		iv := fv.Interface()
-		if omitEmtpy && (fv.IsNil() || !fv.IsValid()) {
+		if !fv.IsValid() || (omitEmtpy && isEmptyValue(fv)) {
 			continue
 		}
+		if fieldName == "" {
+			fieldName = xstrings.ToSnakeCase(typ.Name())
+		}
+		iv := fv.Interface()
 		switch iv.(type) {
 		case int, int8, int16, int32, int64:
 			if omitEmtpy && fv.Int() == 0 {
 				continue
 			}
-			field.Write([]byte(strconv.FormatInt(fv.Int(), 10)))
+			fieldValue = strconv.FormatInt(fv.Int(), 10)
 		case uint, uint8, uint16, uint32, uint64:
 			if omitEmtpy && fv.Uint() == 0 {
 				continue
 			}
-			field.Write([]byte(strconv.FormatUint(fv.Uint(), 10)))
+			fieldValue = strconv.FormatUint(fv.Uint(), 10)
 		case []byte:
-			field.Write(fv.Bytes())
+			fieldValue = fv.String()
 		case string:
-			field.Write([]byte(fv.String()))
+			fieldValue = fv.String()
 		default:
 			buff, err := json.Marshal(iv)
 			if err != nil {
-				return nil, xerrors.Wrap(err, "could not convert %s to url.Values", typ.Name())
+				return xerrors.Wrap(err, "could not convert %s to url.Values", typ.Name())
 			}
-			field.Write(buff)
+			fieldValue = string(buff)
+		}
+		if err := dst.WriteField(fieldName, fieldValue); err != nil {
+			return xerrors.Wrap(err, "could not write %q field (value=%s)", fieldName, fieldValue)
 		}
 	}
-	return &body, nil
+	return nil
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
 }
