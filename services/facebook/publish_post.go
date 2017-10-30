@@ -3,6 +3,7 @@ package facebook
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 type PagePostParams struct {
@@ -32,11 +33,23 @@ type Attachment struct {
 	VideoID     string `json:"video_id,omitempty"`
 }
 
-func (c *Client) PublishPost(ctx context.Context, id string, params *PagePostParams) (string, error) {
+type PagePostResponse struct {
+	PageID string `json:"page_id"`
+	PostID string `json:"post_id"`
+	Href   string `json:"href"`
+}
+
+// PublishPost publishes a page post on the page specified by page id.
+func (c *Client) PublishPost(ctx context.Context, id string, params *PagePostParams) (*PagePostResponse, error) {
 	var r map[string]string
 	err := c.Post(ctx, fmt.Sprintf("/%s/feed", id), nil, params, &r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return r["id"], nil
+	ids := strings.Split(r["id"], "_")
+	return &PagePostResponse{
+		PageID: ids[0],
+		PostID: ids[1],
+		Href:   fmt.Sprintf("https://www.facebook.com/%s", r["id"]),
+	}, nil
 }
