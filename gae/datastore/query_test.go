@@ -47,3 +47,14 @@ func TestQuery_Limit(t *testing.T) {
 	a.EqInt(1, len(result))
 	a.EqStr("example-5", result[0].ID)
 }
+
+func TestQuery_KeysOnly(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
+
+	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1)).KeysOnly()
+	keys, err := q.GetAll(gaetest.NewContext(), nil)
+	a.Nil(err)
+	a.EqInt(1, len(keys))
+	a.EqStr("/Example,example-5", keys[0].String())
+}

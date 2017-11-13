@@ -16,6 +16,7 @@ type Query struct {
 	kind        string
 	ancestor    lazy.Value
 	projects    []string
+	keysOnly    bool
 	orders      []*order
 	filters     []*filter
 	startCursor lazy.Value
@@ -36,6 +37,12 @@ func NewQuery(kind string, loggerKey string) *Query {
 // Ancestor sets the ancestor filter
 func (q *Query) Ancestor(a lazy.Value) *Query {
 	q.ancestor = a
+	return q
+}
+
+// KeysOnly sets the query to fetch only keys.
+func (q *Query) KeysOnly() *Query {
+	q.keysOnly = true
 	return q
 }
 
@@ -292,6 +299,12 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 			}
 		}
 	}
+
+	if q.keysOnly {
+		query = query.KeysOnly()
+		buff = append(buff, "KeysOnly: true")
+	}
+
 	logger.Debug(func(p *xlog.Printer) {
 		p.Printf("Query: Kind=%s\n", q.kind)
 		for _, line := range buff {
