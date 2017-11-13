@@ -580,6 +580,7 @@ func (k *{{.Type}}Kind) normMultiKeys(ctx context.Context, keys interface{}) ([]
 // {{.Type}}Query helps to build and execute a query
 type {{.Type}}Query struct {
 	q *helper.Query
+	viaKeys *{{.Type}}Kind
 }
 
 func New{{.Type}}Query() *{{.Type}}Query {
@@ -660,10 +661,31 @@ func (q *{{.Type}}Query) End(value lazy.Value) *{{.Type}}Query {
 	return q
 }
 
+// ViaKeys optimize to execute keys-only query then call k.GetMulti() to fetch values. 
+// This would reduce the datastore query and maximize the memcache usage if the query called many times in a short time window.
+func (q *{{.Type}}Query) ViaKeys(k *{{.Type}}Kind) *{{.Type}}Query {
+	q.viaKeys = k
+	if k == nil {
+		q.q = q.q.KeysOnly(false)		
+	}else{
+		q.q = q.q.KeysOnly(true)		
+	}
+	return q
+}
+
+
 // GetAll returns all key and value of the query.
 func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}, error) {
-    var v []*{{.Type}}
-    keys, err := q.q.GetAll(ctx, &v)
+	if q.viaKeys !=  nil {
+		keys, err := q.q.GetAll(ctx, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		_, ents, err := q.viaKeys.GetMulti(ctx, keys)		
+		return keys, ents, err
+	}
+	var v []*{{.Type}}
+    keys, err := q.q.KeysOnly(false).GetAll(ctx, &v)
     if err != nil {
         return nil, nil, err
     }
@@ -681,18 +703,13 @@ func (q *{{.Type}}Query) MustGetAll(ctx context.Context) ([]*datastore.Key, []*{
 
 // GetAllValues is like GetAll but returns only values
 func (q *{{.Type}}Query) GetAllValues(ctx context.Context) ([]*{{.Type}}, error) {
-    var v []*{{.Type}}
-    _, err := q.q.GetAll(ctx, &v)
-    if err != nil {
-        return nil, err
-    }
+	_, v, err := q.GetAll(ctx)
     return v, err
 }
 
 // MustGetAllValues is like GetAllValues but panic if an error occurrs
 func (q *{{.Type}}Query) MustGetAllValues(ctx context.Context) []*{{.Type}} {
-    var v []*{{.Type}}
-    _, err := q.q.GetAll(ctx, &v)
+	_, v, err := q.GetAll(ctx)
     if err != nil {
         panic(err)
     }
@@ -736,23 +753,39 @@ func (q *{{.Type}}Query) Run(ctx context.Context) (*{{.Type}}Pagination, error) 
 	}
 	pagination.Start = start.String()
     for {
-        var ent {{.Type}}
-        key, err := iter.Next(&ent)
+		var key *datastore.Key
+		var err error
+		var ent {{.Type}}
+		if q.viaKeys == nil {
+			key, err = iter.Next(&ent)			
+		}else{
+			key, err = iter.Next(nil)
+		}
         if err == datastore.Done {
             end, err := iter.Cursor()
             if err != nil {
                 return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
             }
             pagination.Keys = keys
-            pagination.Data = data
             pagination.End = end.String()
-            return pagination, nil
+			if q.viaKeys !=  nil {
+				_, ents, err := q.viaKeys.GetMulti(ctx, keys)		
+				if err != nil {
+					return nil, err
+				}
+				pagination.Data = ents
+			}else{
+				pagination.Data = data				
+			}
+			return pagination, nil
         }
         if err != nil {
             return nil, err
         }
-        keys = append(keys, key)
-        data = append(data, &ent)
+		keys = append(keys, key)
+		if q.viaKeys == nil {
+			data = append(data, &ent)			
+		}
     }
 }
 
