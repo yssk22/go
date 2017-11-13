@@ -52,9 +52,13 @@ func TestQuery_KeysOnly(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
-	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1)).KeysOnly()
+	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1)).KeysOnly(true)
 	keys, err := q.GetAll(gaetest.NewContext(), nil)
 	a.Nil(err)
 	a.EqInt(1, len(keys))
 	a.EqStr("/Example,example-5", keys[0].String())
+
+	q = q.KeysOnly(false)
+	keys, err = q.GetAll(gaetest.NewContext(), nil)
+	a.EqStr("datastore: invalid entity type", err.Error())
 }
