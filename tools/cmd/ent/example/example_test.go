@@ -254,10 +254,28 @@ func TestExampleQuery_GetAll(t *testing.T) {
 
 	q := NewExampleQuery()
 	q.Eq("ID", lazy.New("example-2"))
-	keys, value, err := q.GetAll(gaetest.NewContext())
+	keys, values, err := q.GetAll(gaetest.NewContext())
 	a.Nil(err)
 	a.EqInt(1, len(keys))
-	a.EqStr("example-2", value[0].ID)
+	a.EqStr("example-2", values[0].ID)
+}
+
+func TestExampleQuery_GetAll_ViaKeys(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_GetAll.json", nil))
+
+	q := NewExampleQuery().ViaKeys(DefaultExampleKind)
+	q.Eq("ID", lazy.New("example-2"))
+	keys, values, err := q.GetAll(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(1, len(keys))
+	a.EqStr("example-2", values[0].ID)
+
+	var e1 Example
+	err = memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(keys[0]), &e1)
+	a.Nil(err)
+	a.EqStr(values[0].Desc, e1.Desc)
 }
 
 func TestExampleQuery_Run(t *testing.T) {
@@ -290,6 +308,49 @@ func TestExampleQuery_Run(t *testing.T) {
 	a.EqStr("example-4", p.Data[1].ID)
 
 	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(p.End))
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(0, len(p.Data))
+}
+
+func TestExampleQuery_Run_ViaKeys(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.ResetMemcache(gaetest.NewContext()))
+	a.Nil(gaetest.ResetFixtureFromFile(gaetest.NewContext(), "./fixture/TestExampleQuery_Run.json", nil))
+
+	var e Example
+	q := NewExampleQuery().Asc("ID").Limit(lazy.New(2)).ViaKeys(DefaultExampleKind)
+	p, err := q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-1", p.Data[0].ID)
+	a.EqStr("example-2", p.Data[1].ID)
+	a.EqStr("", p.Start)
+	// check cache
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[0]), &e))
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[1]), &e))
+	next := p.End
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(next)).ViaKeys(DefaultExampleKind)
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr("example-4", p.Data[1].ID)
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[0]), &e))
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[1]), &e))
+	a.EqStr(next, p.Start)
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(p.Start)).ViaKeys(DefaultExampleKind)
+	p, err = q.Run(gaetest.NewContext())
+	a.Nil(err)
+	a.EqInt(2, len(p.Data))
+	a.EqStr("example-3", p.Data[0].ID)
+	a.EqStr("example-4", p.Data[1].ID)
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[0]), &e))
+	a.Nil(memcache.Get(gaetest.NewContext(), ent.GetMemcacheKey(p.Keys[1]), &e))
+
+	q = NewExampleQuery().Asc("ID").Limit(lazy.New(2)).Start(lazy.New(p.End)).ViaKeys(DefaultExampleKind)
 	p, err = q.Run(gaetest.NewContext())
 	a.Nil(err)
 	a.EqInt(0, len(p.Data))
