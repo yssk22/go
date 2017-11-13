@@ -41,8 +41,8 @@ func (q *Query) Ancestor(a lazy.Value) *Query {
 }
 
 // KeysOnly sets the query to fetch only keys.
-func (q *Query) KeysOnly() *Query {
-	q.keysOnly = true
+func (q *Query) KeysOnly(t bool) *Query {
+	q.keysOnly = t
 	return q
 }
 
