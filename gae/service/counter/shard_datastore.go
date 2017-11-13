@@ -480,7 +480,8 @@ func (k *ShardKind) normMultiKeys(ctx context.Context, keys interface{}) ([]*dat
 
 // ShardQuery helps to build and execute a query
 type ShardQuery struct {
-	q *helper.Query
+	q       *helper.Query
+	viaKeys *ShardKind
 }
 
 func NewShardQuery() *ShardQuery {
@@ -561,10 +562,30 @@ func (q *ShardQuery) End(value lazy.Value) *ShardQuery {
 	return q
 }
 
+// ViaKeys optimize to execute keys-only query then call k.GetMulti() to fetch values.
+// This would reduce the datastore query and maximize the memcache usage if the query called many times in a short time window.
+func (q *ShardQuery) ViaKeys(k *ShardKind) *ShardQuery {
+	q.viaKeys = k
+	if k == nil {
+		q.q = q.q.KeysOnly(false)
+	} else {
+		q.q = q.q.KeysOnly(true)
+	}
+	return q
+}
+
 // GetAll returns all key and value of the query.
 func (q *ShardQuery) GetAll(ctx context.Context) ([]*datastore.Key, []*Shard, error) {
+	if q.viaKeys != nil {
+		keys, err := q.q.GetAll(ctx, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		_, ents, err := q.viaKeys.GetMulti(ctx, keys)
+		return keys, ents, err
+	}
 	var v []*Shard
-	keys, err := q.q.GetAll(ctx, &v)
+	keys, err := q.q.KeysOnly(false).GetAll(ctx, &v)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -582,18 +603,13 @@ func (q *ShardQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []*Shard
 
 // GetAllValues is like GetAll but returns only values
 func (q *ShardQuery) GetAllValues(ctx context.Context) ([]*Shard, error) {
-	var v []*Shard
-	_, err := q.q.GetAll(ctx, &v)
-	if err != nil {
-		return nil, err
-	}
+	_, v, err := q.GetAll(ctx)
 	return v, err
 }
 
 // MustGetAllValues is like GetAllValues but panic if an error occurrs
 func (q *ShardQuery) MustGetAllValues(ctx context.Context) []*Shard {
-	var v []*Shard
-	_, err := q.q.GetAll(ctx, &v)
+	_, v, err := q.GetAll(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -637,23 +653,39 @@ func (q *ShardQuery) Run(ctx context.Context) (*ShardPagination, error) {
 	}
 	pagination.Start = start.String()
 	for {
+		var key *datastore.Key
+		var err error
 		var ent Shard
-		key, err := iter.Next(&ent)
+		if q.viaKeys == nil {
+			key, err = iter.Next(&ent)
+		} else {
+			key, err = iter.Next(nil)
+		}
 		if err == datastore.Done {
 			end, err := iter.Cursor()
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
 			}
 			pagination.Keys = keys
-			pagination.Data = data
 			pagination.End = end.String()
+			if q.viaKeys != nil {
+				_, ents, err := q.viaKeys.GetMulti(ctx, keys)
+				if err != nil {
+					return nil, err
+				}
+				pagination.Data = ents
+			} else {
+				pagination.Data = data
+			}
 			return pagination, nil
 		}
 		if err != nil {
 			return nil, err
 		}
 		keys = append(keys, key)
-		data = append(data, &ent)
+		if q.viaKeys == nil {
+			data = append(data, &ent)
+		}
 	}
 }
 
