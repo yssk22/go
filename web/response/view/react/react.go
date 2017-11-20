@@ -33,6 +33,7 @@ type Page struct {
 	body           []byte
 	stylesheets    []string
 	javascripts    []string
+	favicon        string
 	config         *PageConfig
 	generator      PageVarsGenerator
 }
@@ -112,6 +113,14 @@ func Config(c *PageConfig) PageOption {
 	}
 }
 
+// Faviconreturns a PageOption to set the favicon path
+func Favicon(favicon string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.favicon = favicon
+		return p, nil
+	}
+}
+
 // GeneratorFunc returns a PageOption to set a *PageVar generator function
 func GeneratorFunc(f func(req *web.Request) (*PageVars, error)) PageOption {
 	return func(p *Page) (*Page, error) {
@@ -181,6 +190,9 @@ func (p *Page) genVar(req *web.Request) (*PageVars, error) {
 	}
 	if p.title != "" {
 		data.Title = p.title
+	}
+	if p.favicon != "" {
+		data.Favicon = p.favicon
 	}
 	if p.body != nil {
 		data.Body = template.HTML(string(p.body))
