@@ -54,6 +54,7 @@ type PageVars struct {
 	Status         response.HTTPStatus
 	Title          string
 	CanonicalURL   string
+	Favicon        string
 	Body           template.HTML
 	MetaNames      map[string]string
 	MetaProperties map[string]string
@@ -81,6 +82,7 @@ func (pv *PageVars) Merge(pv2 *PageVars) {
 		pv.Status = pv2.Status
 	}
 	pv.CanonicalURL = mergeString(pv.CanonicalURL, pv2.CanonicalURL)
+	pv.Favicon = mergeString(pv.Favicon, pv2.Favicon)
 	pv.Body = template.HTML(mergeString(string(pv.Body), string(pv2.Body)))
 	pv.Config = mergeObject(pv.Config, pv2.Config).(*PageConfig)
 	pv.MetaNames = mergeStringMap(pv.MetaNames, pv2.MetaNames)
@@ -99,6 +101,7 @@ var defaultPageTemplate = template.Must(template.New("react").Funcs(reactPageTem
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {{with .CanonicalURL}}<link rel="canonical" href="{{.}}">{{end}}
+  {{with .Favicon}}<link rel="icon" href="{{.}}">{{end}}
   <title>{{.Title}}</title>{{range $key, $val := .MetaNames }}
   <meta name="{{$key}}" content="{{$val}}">
   {{- end -}}{{range $key, $val := .MetaProperties }}
