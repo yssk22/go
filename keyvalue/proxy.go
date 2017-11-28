@@ -1,5 +1,7 @@
 package keyvalue
 
+import "time"
+
 // GetProxy provies the proxy functions for Getter to use Get* package functions.
 // When you implements Getter interface, you can embed GetProxy to proxy itself to provide
 // Get* functions on that struct.
@@ -62,4 +64,11 @@ func (p *GetProxy) GetFloatOr(key string, or float64) float64 {
 		return or
 	}
 	return GetFloatOr(p.g, key, or)
+}
+
+func (p *GetProxy) GetDateOr(key string, or time.Time) time.Time {
+	if p == nil {
+		return or
+	}
+	return GetDateOr(p.g, key, or)
 }

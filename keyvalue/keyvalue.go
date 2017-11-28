@@ -3,6 +3,9 @@ package keyvalue
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/speedland/go/x/xtime"
 
 	"github.com/speedland/go/number"
 )
@@ -119,6 +122,26 @@ func GetFloatOr(g Getter, key interface{}, or float64) float64 {
 		return float64(v.(int))
 	case string:
 		return number.ParseFloat64Or(v.(string), or)
+	default:
+		return or
+	}
+}
+
+func GetDateOr(g Getter, key interface{}, or time.Time) time.Time {
+	if g == nil {
+		return or
+	}
+	v, e := g.Get(key)
+	if e != nil {
+		return or
+	}
+	switch v.(type) {
+	case string:
+		t, e := xtime.ParseDate(v.(string), or.Location(), or.Year())
+		if e == nil {
+			return t
+		}
+		return or
 	default:
 		return or
 	}
