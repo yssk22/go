@@ -64,3 +64,30 @@ func TestParallel_withMaxMaxConcurrency(t *testing.T) {
 		assert.EqInt(i+1, a[i])
 	}
 }
+
+func ExampleParallel_Error() {
+	var a = []int{0, 1, 2, 3, 4}
+	err := Parallel(a, DefaultParallelOption, func(i int, v int) error {
+		if i%2 == 0 {
+			return fmt.Errorf("error at %d", i)
+		}
+		return nil
+	})
+	fmt.Println(err)
+	// Output: error at 0 (and 3 other errors)
+}
+
+func ExampleParallel_Panic() {
+	defer func() {
+		x := recover()
+		fmt.Println(x)
+	}()
+	var a = []int{0, 1, 2, 3, 4}
+	Parallel(a, DefaultParallelOption, func(i int, v int) error {
+		if i%2 == 0 {
+			panic(fmt.Errorf("panic at %d", i))
+		}
+		return nil
+	})
+	// Output: panic at 0 (and 3 other errors)
+}
