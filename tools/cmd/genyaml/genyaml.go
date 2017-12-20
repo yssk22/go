@@ -76,6 +76,12 @@ func genDispatch(appName, packageSuffix, deploymentDir, outputDir string) {
 	log.Println("\t", dispatchFilePath)
 
 	// configs for default
+	bindings.Modules = append(bindings.Modules, &Module{
+		Name:         "default",
+		URL:          "",
+		PackageAlias: "def",
+		PackagePath:  filepath.Join(packageSuffix, "default"),
+	})
 	generateConfigs(appName, outputDir, bindings.Modules...)
 }
 

@@ -10,10 +10,11 @@ type TemplateVar struct {
 }
 
 type Module struct {
-	Name        string
-	URL         string
-	Package     string
-	PackagePath string
+	Name         string
+	URL          string
+	Package      string
+	PackageAlias string
+	PackagePath  string
 }
 
 var goFileTemplate = template.Must(template.New("genyaml").Parse(`package main
@@ -22,7 +23,11 @@ import (
 	"fmt"
 	"os"
 	{{range .Modules -}}
+	{{if .PackageAlias}}
+	{{.PackageAlias}} "{{.PackagePath}}"
+	{{else}}
 	"{{.PackagePath}}"
+	{{end}}
 	{{end}}
 )
 
@@ -41,7 +46,11 @@ func main(){
 	fmt.Fprintf(fqueue, "queue:\n")
 	{{range .Modules -}}
 	func(){
+		{{if .PackageAlias}}
+		s := {{.PackageAlias}}.NewService()
+		{{else}}
 		s := {{.Package}}.NewService()
+		{{end}}
 		s.GenCronYAML(fcron)
 		s.GenQueueYAML(fqueue)
 	}()
