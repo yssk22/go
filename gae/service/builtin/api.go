@@ -17,14 +17,8 @@ import (
 )
 
 func setupConfigAPIs(s *service.Service) {
-	if s.APIConfig == nil {
-		return
-	}
-	if s.APIConfig.ConfigAPIBasePath == "" {
-		return
-	}
+	const basePath = "/admin/api/configs/"
 	c := s.Config
-	basePath := s.APIConfig.ConfigAPIBasePath
 	s.Get(basePath, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return response.NewJSON(c.All(req.Context()))
 	}))
@@ -49,25 +43,15 @@ func setupConfigAPIs(s *service.Service) {
 }
 
 func setupAsyncTaskListAPIs(s *service.Service) {
-	if s.APIConfig == nil {
-		return
-	}
-	if s.APIConfig.AsyncTaskListAPIPath == "" {
-		return
-	}
-	s.Get(s.APIConfig.AsyncTaskListAPIPath, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	const basePath = "/admin/api/tasks/"
+	s.Get(basePath, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return response.NewJSON(s.GetTasks())
 	}))
 }
 
 func setupAuthAPIs(s *service.Service) {
-	if s.APIConfig == nil {
-		return
-	}
-	if s.APIConfig.AuthAPIBasePath == "" {
-		return
-	}
-	s.Get(path.Join(s.APIConfig.AuthAPIBasePath, "me.json"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	const basePath = "/auth/"
+	s.Get(path.Join(basePath, "me.json"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		ctx, err := appengine.Namespace(req.Context(), s.APIConfig.AuthNamespace)
 		xerrors.MustNil(err)
 		a, err := auth.GetCurrent(ctx)
@@ -77,7 +61,7 @@ func setupAuthAPIs(s *service.Service) {
 		return response.NewJSON(a)
 	}))
 
-	s.Post(path.Join(s.APIConfig.AuthAPIBasePath, "login/facebook/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	s.Post(path.Join(basePath, "login/facebook/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		token := req.Form.GetStringOr("access_token", "")
 		ctx, err := appengine.Namespace(req.Context(), s.APIConfig.AuthNamespace)
 		xerrors.MustNil(err)
@@ -93,7 +77,7 @@ func setupAuthAPIs(s *service.Service) {
 		return response.NewJSON(a)
 	}))
 
-	s.Get(path.Join(s.APIConfig.AuthAPIBasePath, "logout/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	s.Get(path.Join(basePath, "logout/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		if !appengine.IsDevAppServer() {
 			// available only in DevAppServer
 			return nil
@@ -102,24 +86,23 @@ func setupAuthAPIs(s *service.Service) {
 		return response.NewJSON("OK")
 	}))
 
-	s.Post(path.Join(s.APIConfig.AuthAPIBasePath, "logout/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	s.Post(path.Join(basePath, "logout/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		auth.DeleteCurrent(req.Context())
 		return response.NewJSON("OK")
 	}))
 }
 
 func setupWebhooks(s *service.Service) {
-	if s.APIConfig == nil {
+	webhook := s.APIConfig.MessengerWebHook
+	if webhook == nil {
 		return
 	}
-	if s.APIConfig.WebhookBasePath == "" {
-		return
-	}
-	s.Get(path.Join(s.APIConfig.WebhookBasePath, "messenger/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	s.Get(path.Join("__webhook/messenger/"), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		token := s.Config.GetMessengerVerificationToken(req.Context())
 		if token == "" {
 			panic(fmt.Errorf("no messenger verification token is configured"))
 		}
 		return messenger.NewVericationHandler(token).Process(req, next)
 	}))
+	s.Post(path.Join("__webhook/messenger/"), messenger.NewWebhookHandler(webhook))
 }
