@@ -39,20 +39,19 @@ var ContextKey = xcontext.NewKey("service")
 
 // Service is a set of endpoints
 type Service struct {
-	Init       func(*web.Request)
-	Every      func(*web.Request)
-	OnError    func(*web.Request, error) *response.Response
-	Config     *config.Config
-	APIConfig  *BuiltInAPIConfig
-	PageConfig *BuiltInPageConfig
-	once       sync.Once // for Init control
-	key        string    // service key
-	urlPrefix  string    // url base path
-	namespace  string    // datastore/memcache namespace for services
-	crons      []*Cron
-	queues     []*xtaskqueue.PushQueue
-	tasks      []*Task
-	router     *web.Router // service router
+	Init      func(*web.Request)
+	Every     func(*web.Request)
+	OnError   func(*web.Request, error) *response.Response
+	Config    *config.Config // Configuration that admin can update.
+	APIConfig *BuiltInAPIConfig
+	once      sync.Once // for Init control
+	key       string    // service key
+	urlPrefix string    // url base path
+	namespace string    // datastore/memcache namespace for services
+	crons     []*Cron
+	queues    []*xtaskqueue.PushQueue
+	tasks     []*Task
+	router    *web.Router // service router
 }
 
 // FromContext returns a service object associated with the context
@@ -105,15 +104,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		router:    web.NewRouter(option),
 		Config:    config.New(),
 		APIConfig: &BuiltInAPIConfig{
-			ConfigAPIBasePath:    "/admin/api/configs/",
-			AsyncTaskListAPIPath: "/admin/api/asynctasks/",
-			AuthAPIBasePath:      "/auth/api/",
-			AuthNamespace:        "",
-			WebhookBasePath:      "/webhooks/",
-		},
-		PageConfig: &BuiltInPageConfig{
-			AdminAsyncTaskPath: "/admin/asynctasks/",
-			AdminConfigPath:    "/admin/configs/",
+			AuthNamespace: "",
 		},
 	}
 	s.router.Use(namespaceMiddleware(s))
