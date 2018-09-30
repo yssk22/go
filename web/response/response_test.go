@@ -14,7 +14,7 @@ import (
 
 func TestSetCookie(t *testing.T) {
 	a := assert.New(t)
-	hmac := xhmac.NewBase64([]byte("speedland"), nil)
+	hmac := xhmac.NewBase64([]byte("github.com/yssk22"), nil)
 	text := NewText("Test Test")
 	c := &http.Cookie{
 		Name:  "foo",

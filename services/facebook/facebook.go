@@ -30,7 +30,7 @@ const (
 )
 
 // LoggerKey is a key for this package
-const LoggerKey = "speedland.net.services.facebook"
+const LoggerKey = "github.com/yssk22.services.facebook"
 
 // Client is a API client for facebook graph API.
 type Client struct {
