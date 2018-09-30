@@ -1,6 +1,6 @@
 package web
 
-import "github.com/speedland/go/web/response"
+import "github.com/yssk22/go/web/response"
 
 // NextHandler is an alias to call the next handler in pipeline
 type NextHandler func(*Request) *response.Response

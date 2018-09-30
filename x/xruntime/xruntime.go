@@ -38,6 +38,9 @@ func CaptureFrame() *Frame {
 }
 
 func (f *Frame) String() string {
+	if f.PackageName == "" {
+		return fmt.Sprintf("%s (at %s#%d)", f.FunctionName, f.ShortFilePath, f.LineNumber)
+	}
 	return fmt.Sprintf("%s.%s (at %s#%d)", f.PackageName, f.FunctionName, f.ShortFilePath, f.LineNumber)
 }
 

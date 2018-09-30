@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/x/xlog"
-	"golang.org/x/net/context"
+	"context"
+
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/x/xlog"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -15,24 +16,33 @@ type Query struct {
 	kind        string
 	ancestor    lazy.Value
 	projects    []string
+	keysOnly    bool
 	orders      []*order
 	filters     []*filter
 	startCursor lazy.Value
 	endCursor   lazy.Value
 	limit       lazy.Value
 	offset      lazy.Value
+	loggerKey   string
 }
 
 // NewQuery returns a new *Query for `kind`
-func NewQuery(kind string) *Query {
+func NewQuery(kind string, loggerKey string) *Query {
 	return &Query{
-		kind: kind,
+		kind:      kind,
+		loggerKey: loggerKey,
 	}
 }
 
 // Ancestor sets the ancestor filter
 func (q *Query) Ancestor(a lazy.Value) *Query {
 	q.ancestor = a
+	return q
+}
+
+// KeysOnly sets the query to fetch only keys.
+func (q *Query) KeysOnly(t bool) *Query {
+	q.keysOnly = t
 	return q
 }
 
@@ -114,6 +124,24 @@ func (q *Query) Desc(name string) *Query {
 	return q
 }
 
+// Limit sets the limit
+func (q *Query) Limit(value lazy.Value) *Query {
+	q.limit = value
+	return q
+}
+
+// Start sets the start cursor
+func (q *Query) Start(value lazy.Value) *Query {
+	q.startCursor = value
+	return q
+}
+
+// End sets the end cursor
+func (q *Query) End(value lazy.Value) *Query {
+	q.endCursor = value
+	return q
+}
+
 type order struct {
 	Name string
 	Type orderType
@@ -167,7 +195,7 @@ func (q *Query) GetAll(ctx context.Context, dst interface{}) ([]*datastore.Key, 
 }
 
 // Run runs a query and returns *datastore.Iterator
-func (q *Query) Run(ctx context.Context, dst interface{}) (*datastore.Iterator, error) {
+func (q *Query) Run(ctx context.Context) (*datastore.Iterator, error) {
 	query, err := q.prepare(ctx)
 	if err != nil {
 		return nil, err
@@ -185,8 +213,8 @@ func (q *Query) Count(ctx context.Context) (int, error) {
 }
 
 func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", q.loggerKey)
 	var buff []string
-	logger := xlog.WithContext(ctx).WithKey(LoggerKey)
 	query := datastore.NewQuery(q.kind)
 
 	if q.projects != nil {
@@ -232,7 +260,7 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 			)
 			s = append(s, order)
 		}
-		buff = append(buff, "Order: %v", strings.Join(s, " "))
+		buff = append(buff, fmt.Sprintf("Order: %v", strings.Join(s, " ")))
 	}
 
 	if q.limit != nil {
@@ -251,9 +279,11 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 		if err != nil {
 			return nil, fmt.Errorf("start cursor error: %v", err)
 		}
-		if vv, err := datastore.DecodeCursor(fmt.Sprintf("%s", v)); err == nil {
-			query = query.Start(vv)
-			buff = append(buff, fmt.Sprintf("Start: %s", vv))
+		if str := fmt.Sprintf("%s", v); str != "" {
+			if vv, err := datastore.DecodeCursor(str); err == nil {
+				query = query.Start(vv)
+				buff = append(buff, fmt.Sprintf("Start: %s", vv))
+			}
 		}
 	}
 
@@ -262,11 +292,19 @@ func (q *Query) prepare(ctx context.Context) (*datastore.Query, error) {
 		if err != nil {
 			return nil, fmt.Errorf("end cursor error: %v", err)
 		}
-		if vv, err := datastore.DecodeCursor(fmt.Sprintf("%s", v)); err == nil {
-			query = query.End(vv)
-			buff = append(buff, fmt.Sprintf("End: %s", vv))
+		if str := fmt.Sprintf("%s", v); str != "" {
+			if vv, err := datastore.DecodeCursor(str); err == nil {
+				query = query.End(vv)
+				buff = append(buff, fmt.Sprintf("End: %s", vv))
+			}
 		}
 	}
+
+	if q.keysOnly {
+		query = query.KeysOnly()
+		buff = append(buff, "KeysOnly: true")
+	}
+
 	logger.Debug(func(p *xlog.Printer) {
 		p.Printf("Query: Kind=%s\n", q.kind)
 		for _, line := range buff {

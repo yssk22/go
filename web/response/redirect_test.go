@@ -4,8 +4,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
-	"golang.org/x/net/context"
+	"github.com/yssk22/go/x/xtesting/assert"
+	"context"
 )
 
 func TestRedirect(t *testing.T) {

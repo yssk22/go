@@ -4,19 +4,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/x/xnet/xhttp"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/x/xcontext"
+	"github.com/yssk22/go/x/xnet/xhttp"
 
-	"golang.org/x/net/context"
+	"context"
 )
+
+const defaultMaxMemory = 32 << 20 // 32 MB
 
 // Request is a wrapper for net/http.Request
 // The original `*net/http.Request` functions and fields are embedded in struct and provides
 // some utility functions (especially to support context.Context)
 type Request struct {
 	*http.Request
-	ctx context.Context
 
 	// common request scoped values
 	ID      uuid.UUID
@@ -26,6 +28,17 @@ type Request struct {
 	Cookies *keyvalue.GetProxy
 
 	Option *Option
+}
+
+var requestContextKey = xcontext.NewKey("request")
+
+// FromContext returns a *Request associated with the context.
+func FromContext(ctx context.Context) *Request {
+	req, ok := ctx.Value(requestContextKey).(*Request)
+	if ok {
+		return req
+	}
+	return nil
 }
 
 // NewRequest returns a new *Request
@@ -41,15 +54,23 @@ func NewRequest(r *http.Request, option *Option) *Request {
 			cookies[c.Name] = c
 		}
 	}
-	return &Request{
+	if option.InitContext != nil {
+		ctx := option.InitContext(r)
+		r = r.WithContext(ctx)
+	}
+	var req *Request
+	req = &Request{
 		Request: r,
-		ctx:     initContext(r),
 		ID:      uuid.New(),
-		Query: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			return query.Get(key), nil
-		}).Proxy(),
+		Query:   keyvalue.NewQueryProxy(query),
 		Form: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
-			return r.FormValue(key), nil
+			if req.Request.Form == nil {
+				req.Request.ParseMultipartForm(defaultMaxMemory)
+			}
+			if vs := req.Request.PostForm[key]; len(vs) > 0 {
+				return vs[0], nil
+			}
+			return nil, keyvalue.KeyError(key)
 		}).Proxy(),
 		Cookies: keyvalue.GetterStringKeyFunc(func(key string) (interface{}, error) {
 			v, ok := cookies[key]
@@ -60,11 +81,7 @@ func NewRequest(r *http.Request, option *Option) *Request {
 		}).Proxy(),
 		Option: option,
 	}
-}
-
-// Context returns the context associated with request.
-func (r *Request) Context() context.Context {
-	return r.ctx
+	return req.WithValue(requestContextKey, req)
 }
 
 // WithContext returns a shallow copy of r with its context changed to ctx. The provided ctx must be non-nil.
@@ -72,16 +89,14 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 	if ctx == nil {
 		panic("ctx must not be nil")
 	}
-	rr := new(Request)
-	*rr = *r
-	rr.ctx = ctx
-	return rr
+	r.Request = r.Request.WithContext(ctx)
+	return r
 }
 
 // WithValue sets the request-scoped value with the in-flight http request and return a shallow copied request.
 // This is shorthand for `req.WithContext(context.WithValue(req.Context(), key, value))`
 func (r *Request) WithValue(key interface{}, value interface{}) *Request {
-	return r.WithContext(context.WithValue(r.ctx, key, value))
+	return r.WithContext(context.WithValue(r.Context(), key, value))
 }
 
 // Get implements keyvalue.Getter to enable keyvalue.GetProxy for context values.

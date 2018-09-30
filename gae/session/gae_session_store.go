@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web/middleware/session"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web/middleware/session"
 )
 
 const LoggerKey = session.SessionLoggerKey

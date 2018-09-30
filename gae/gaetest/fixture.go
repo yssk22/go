@@ -10,10 +10,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xtime"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
@@ -23,9 +24,32 @@ var _floatRe = regexp.MustCompile("\\.0+$")
 
 const FixtureLoggerKey = "web.gae.gaetest.fixture"
 
+// CleanupStorage cleans up all storage services (memcache and datastore)
+func CleanupStorage(ctx context.Context, namespaces ...string) error {
+	if err := ResetMemcache(ctx, namespaces...); err != nil {
+		return err
+	}
+	if err := CleanupDatastore(ctx, namespaces...); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ResetMemcache resets all memcache entries
-func ResetMemcache(ctx context.Context) error {
-	return memcache.Flush(ctx)
+func ResetMemcache(ctx context.Context, namespaces ...string) error {
+	if len(namespaces) == 0 {
+		return memcache.Flush(ctx)
+	}
+	for _, ns := range namespaces {
+		var _ctx = ctx
+		if ns != "" {
+			_ctx, _ = appengine.Namespace(_ctx, ns)
+		}
+		if err := memcache.Flush(_ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ResetFixtureFromFile is to reset all data in datastore and reload the fixtures from the file.
@@ -39,30 +63,48 @@ func ResetFixtureFromFile(ctx context.Context, path string, bindings interface{}
 
 // CleanupDatastore is to remove all data in datastore
 func CleanupDatastore(ctx context.Context, namespaces ...string) error {
-	var dummy []interface{}
-	namespaceList := append(namespaces, "")
-	for _, ns := range namespaceList {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", FixtureLoggerKey)
+	if len(namespaces) == 0 {
+		numDeleted, err := cleanupDatastore(ctx)
+		if err != nil {
+			return err
+		}
+		logger.Infof("Clean up %d ents", numDeleted)
+		return nil
+	}
+	for _, ns := range namespaces {
 		var _ctx = ctx
 		if ns != "" {
 			_ctx, _ = appengine.Namespace(_ctx, ns)
 		}
-		count := 1
-		for {
-			var keys []*datastore.Key
-			var err error
-			if keys, err = datastore.NewQuery("").KeysOnly().GetAll(_ctx, dummy); err != nil {
-				return err
-			}
-			if err := datastore.DeleteMulti(_ctx, keys); err != nil {
-				return err
-			}
-			count, _ = datastore.NewQuery("").KeysOnly().Count(_ctx)
-			if count == 0 {
-				return nil
-			}
+		numDeleted, err := cleanupDatastore(_ctx)
+		if err != nil {
+			return err
 		}
+		logger.Infof("Clean up %d ents in %q", numDeleted, ns)
 	}
 	return nil
+}
+
+func cleanupDatastore(ctx context.Context) (int, error) {
+	var dummy []interface{}
+	numDeleted := 0
+	count := 1
+	for {
+		var keys []*datastore.Key
+		var err error
+		if keys, err = datastore.NewQuery("").KeysOnly().GetAll(ctx, dummy); err != nil {
+			return 0, err
+		}
+		if err := datastore.DeleteMulti(ctx, keys); err != nil {
+			return 0, err
+		}
+		numDeleted += len(keys)
+		count, _ = datastore.NewQuery("").KeysOnly().Count(ctx)
+		if count == 0 {
+			return numDeleted, nil
+		}
+	}
 }
 
 // FixtureFromMap is to load fixtures from []map[string]interface{}
@@ -219,7 +261,7 @@ func convertJsonValueToProperties(k string, v interface{}) []datastore.Property 
 }
 
 func loadJsonToDatastore(ctx context.Context, pkey *datastore.Key, data map[string]interface{}) error {
-	var logger = xlog.WithContext(ctx).WithKey(FixtureLoggerKey)
+	ctx, logger := xlog.WithContextAndKey(ctx, "", FixtureLoggerKey)
 	var kind string
 	var ns string
 	var keyval interface{}

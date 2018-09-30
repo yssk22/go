@@ -3,7 +3,7 @@ package gaetest
 import (
 	"golang.org/x/net/context"
 
-	xtaskqueue "github.com/speedland/go/gae/taskqueue"
+	xtaskqueue "github.com/yssk22/go/gae/taskqueue"
 	"google.golang.org/appengine/taskqueue"
 )
 

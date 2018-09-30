@@ -1,7 +1,7 @@
 // Package config provies configuraiton access functions
 package config
 
-import "github.com/speedland/go/keyvalue"
+import "github.com/yssk22/go/keyvalue"
 
 var defaultList = keyvalue.NewList()
 

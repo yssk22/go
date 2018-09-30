@@ -3,8 +3,11 @@ package keyvalue
 import (
 	"fmt"
 	"testing"
+	"time"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtime"
+
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestGetStringOr(t *testing.T) {
@@ -50,4 +53,15 @@ func ExampleGetIntOr() {
 	// 1
 	// 1
 	// 2
+}
+
+func ExampleGetDateOr() {
+	m := Map{
+		"Date": "2017/01/01",
+	}
+	fmt.Println(GetDateOr(m, "Date", time.Date(2017, time.Month(12), 31, 0, 0, 0, 0, xtime.JST)))
+	fmt.Println(GetDateOr(m, "Invalid", time.Date(2017, time.Month(12), 31, 0, 0, 0, 0, xtime.JST)))
+	// Output:
+	// 2017-01-01 00:00:00 +0900 JST
+	// 2017-12-31 00:00:00 +0900 JST
 }

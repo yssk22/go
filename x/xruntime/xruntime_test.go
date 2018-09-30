@@ -6,7 +6,7 @@ func ExampleCaptureStack() {
 	frames := CaptureStack(50)
 	fmt.Println(frames[0])
 	// Output:
-	// github.com/speedland/go/x/xruntime.ExampleCaptureStack (at github.com/speedland/go/x/xruntime/xruntime_test.go#6)
+	// github.com/yssk22/go/x/xruntime.ExampleCaptureStack (at github.com/yssk22/go/x/xruntime/xruntime_test.go#6)
 }
 
 func ExampleCaptureFrame() {
@@ -16,9 +16,9 @@ func ExampleCaptureFrame() {
 	fmt.Printf("ShortFilePath: %s\n", f.ShortFilePath)
 	fmt.Printf("LineNumber: %d\n", f.LineNumber)
 	// Output:
-	// PackageName: github.com/speedland/go/x/xruntime
+	// PackageName: github.com/yssk22/go/x/xruntime
 	// FunctionName: ExampleCaptureFrame
-	// ShortFilePath: github.com/speedland/go/x/xruntime/xruntime_test.go
+	// ShortFilePath: github.com/yssk22/go/x/xruntime/xruntime_test.go
 	// LineNumber: 13
 }
 
@@ -35,8 +35,8 @@ func ExampleCaptureFrame_forStructFunc() {
 	fmt.Printf("ShortFilePath: %s\n", f.ShortFilePath)
 	fmt.Printf("LineNumber: %d\n", f.LineNumber)
 	// Output:
-	// PackageName: github.com/speedland/go/x/xruntime
+	// PackageName: github.com/yssk22/go/x/xruntime
 	// FunctionName: (*T).F
-	// ShortFilePath: github.com/speedland/go/x/xruntime/xruntime_test.go
+	// ShortFilePath: github.com/yssk22/go/x/xruntime/xruntime_test.go
 	// LineNumber: 28
 }

@@ -1,0 +1,56 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: speedland/circle-ci-gae:latest
+    working_directory: /go/src/github.com/yssk22/go
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      BIN_RESULTS: /tmp/artifacts
+
+    steps:
+      - checkout
+      - run:
+          name: Test
+          command: |
+            echo $GOPATH
+      - run:
+          name: Install Dependencies
+          command: |
+            go get -t ./...
+      - run:
+          name: Prepare Output Store
+          command: |
+            mkdir -p ${TEST_RESULTS} ${BIN_RESULTS}
+      - run:
+          name: Unit Tests
+          command: |
+            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+            go test ./... | tee ${TEST_RESULTS}/go-test.out
+      - store_test_results:
+          path: /tmp/test-results
+      - run:
+          name: Update master branch
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "develop" ]; then
+              git config --global user.name "yssk22"
+              git config --global user.email "yssk22@gmail.com"
+              git branch -D master
+              git fetch origin master
+              git checkout master
+              git merge origin/master
+              git merge develop --no-ff -m "Merge 'develop' (CI auto merge)"
+              git push origin master
+            else
+              echo "Not a develop branch"
+            fi
+      - run:
+          name: Build Binary
+          command: |
+            for d in $(ls tools/cmd/)
+            do
+              GOOS=linux GOARCH=amd64 go build -o ${BIN_RESULTS}/${d} ./tools/cmd/${d}
+            done
+      - store_artifacts:
+          path: /tmp/artifacts

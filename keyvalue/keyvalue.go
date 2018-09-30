@@ -3,8 +3,11 @@ package keyvalue
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/speedland/go/number"
+	"github.com/yssk22/go/x/xtime"
+
+	"github.com/yssk22/go/number"
 )
 
 // Getter is an interface to get a value by a key
@@ -30,8 +33,17 @@ func (e KeyError) Error() string {
 	return fmt.Sprintf("key %q is not found", string(e))
 }
 
+// IsKeyError returns the error is KeyError or not
+func IsKeyError(err error) bool {
+	_, ok := err.(KeyError)
+	return ok
+}
+
 // GetOr gets a value from Getter or return the defalut `or` value if not found.
 func GetOr(g Getter, key interface{}, or interface{}) interface{} {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -41,6 +53,9 @@ func GetOr(g Getter, key interface{}, or interface{}) interface{} {
 
 // GetStringOr is string version of GetOr.
 func GetStringOr(g Getter, key interface{}, or string) string {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -60,6 +75,9 @@ func GetStringOr(g Getter, key interface{}, or string) string {
 
 // GetIntOr is int version of GetOr.
 func GetIntOr(g Getter, key interface{}, or int) int {
+	if g == nil {
+		return or
+	}
 	v, e := g.Get(key)
 	if e != nil {
 		return or
@@ -77,6 +95,53 @@ func GetIntOr(g Getter, key interface{}, or int) int {
 		return v.(int)
 	case string:
 		return number.ParseIntOr(v.(string), or)
+	default:
+		return or
+	}
+}
+
+// GetFloatOr is float64 version of GetOr.
+func GetFloatOr(g Getter, key interface{}, or float64) float64 {
+	if g == nil {
+		return or
+	}
+	v, e := g.Get(key)
+	if e != nil {
+		return or
+	}
+	switch v.(type) {
+	case int8:
+		return float64(v.(int8))
+	case int16:
+		return float64(v.(int16))
+	case int32:
+		return float64(v.(int32))
+	case int64:
+		return float64(v.(int64))
+	case int:
+		return float64(v.(int))
+	case string:
+		return number.ParseFloat64Or(v.(string), or)
+	default:
+		return or
+	}
+}
+
+func GetDateOr(g Getter, key interface{}, or time.Time) time.Time {
+	if g == nil {
+		return or
+	}
+	v, e := g.Get(key)
+	if e != nil {
+		return or
+	}
+	switch v.(type) {
+	case string:
+		t, e := xtime.ParseDate(v.(string), or.Location(), or.Year())
+		if e == nil {
+			return t
+		}
+		return or
 	default:
 		return or
 	}

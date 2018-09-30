@@ -28,55 +28,40 @@
 //
 // * Context
 //
-// Logger can be aware of context.Context (even we support "golang.org/x/net/context")
+// Logger can be aware of context.Context (even we support "context")
 // You can associate any context by *Logger.WithContext() and write it by `{{context key .}}`
 //
 package xlog
 
 import (
+	"fmt"
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
-// var defaultSink Sink = NewIOSink(os.Stderr)
-
-// // SetOutput sets the sink for the global logger
-// func SetOutput(s Sink) {
-// 	defaultSink = s
-// }
-
-// var defaultFilter = MinLevelFilter(LevelInfo)
-
-// // SetFilter sets the filter for the global logger
-// func SetFilter(f Filter) {
-// 	defaultFilter = f
-// }
-
 var defaultOption = &Option{
-	MinStackCaptureOn: LevelNone,
-	StackCaptureDepth: 0,
+	MinStackCaptureOn: LevelError,
+	StackCaptureDepth: 30,
 }
 
 var defaultKeyFilters = map[interface{}]Level{}
 
 var defaultIOFormatter = NewTextFormatter(
-	`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
+	`{{formattimestamp .}} [{{.Level}}] {{.Data}}{{formatstack .}}`,
 )
 
-var defaultSink Sink = NewIOSinkWithFormatter(
-	os.Stderr, defaultIOFormatter,
-)
-
-var defaultLogger = New(
-	KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
-		defaultSink,
+var defaultFilter = KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
+	NewIOSinkWithFormatter(
+		os.Stderr, defaultIOFormatter,
 	),
 )
 
+var defaultLogger = New(defaultFilter)
+
 // SetSink sets the default logger sink.
 func SetSink(s Sink) {
-	defaultSink = s
+	defaultFilter.next = s
 }
 
 // SetKeyFilter sets the specific filter level for `key`.
@@ -94,7 +79,28 @@ func WithKey(name string) *Logger {
 	return defaultLogger.WithKey(name)
 }
 
+var loggerContextKey = struct{}{}
+
 // WithContext returns a shallow copy of global Logger with its context changed to ctx.
-func WithContext(ctx context.Context) *Logger {
-	return defaultLogger.WithContext(ctx)
+func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) {
+	var instance *Logger
+	if ctxLogger, ok := ctx.Value(loggerContextKey).(*Logger); ok {
+		instance = new(Logger)
+		*instance = *ctxLogger
+		if prefix != "" {
+			instance.prefix = fmt.Sprintf("%s%s", instance.prefix, prefix)
+		}
+	} else {
+		instance = defaultLogger.WithContext(ctx)
+		instance.prefix = prefix
+	}
+	newCtx := context.WithValue(ctx, loggerContextKey, instance)
+	instance.ctx = newCtx
+	return newCtx, instance
+}
+
+// WithContextAndKey returns a shallow copy of global Logger with its context changed to ctx and bound with `key`
+func WithContextAndKey(ctx context.Context, prefix string, key interface{}) (context.Context, *Logger) {
+	ctx, logger := WithContext(ctx, prefix)
+	return ctx, logger.WithKey(key)
 }

@@ -16,7 +16,8 @@ var DefaultParallelOption = &ParallelOption{
 	MaxConcurrency: 0,
 }
 
-// ParallelSlice is like ParallelSlice but spawn goroutines up to `n` concurrency
+// Parallel is spawn `fun` in parallel.
+// `fun` must be type of `func(int, *T) error`, where list is []T or []*T).
 func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	if option == nil {
 		option = DefaultParallelOption
@@ -24,6 +25,8 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	a1 := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
 	fType := f.Type()
+	shouldUsePtr := a1.Type().Elem().Kind() == reflect.Struct
+
 	assertSlice(a1)
 	assertSliceFun(fType)
 	if fType.NumOut() != 1 || !fType.Out(0).Implements(errorType) {
@@ -31,18 +34,24 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 
 	l := a1.Len()
+	if l == 0 {
+		return nil
+	}
 	n := option.MaxConcurrency
-	if n <= 0 || l < n {
+	if l < n {
 		n = l
+	}
+	if n <= 0 {
+		n = 1
 	}
 
 	errors := SliceError(make([]error, l))
+	panics := SliceError(make([]error, l))
 	eachSize := l / n
 	a := reflect.ValueOf(SplitByLength(list, eachSize))
 
 	var wg sync.WaitGroup
 
-	shouldUsePtr := a.Type().Elem().Kind() == reflect.Struct
 	for i := 0; i < a.Len(); i++ {
 		wg.Add(1)
 		v := a.Index(i) // still slice as we used SplitByEach
@@ -53,7 +62,7 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 				func() {
 					defer func() {
 						if x := recover(); x != nil {
-							errors[idx] = fmt.Errorf("%v", x)
+							panics[idx] = fmt.Errorf("%v", x)
 						}
 					}()
 					v1 := v.Index(j)
@@ -70,6 +79,14 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 	wg.Wait()
 	any := false
+	for i := 0; i < l; i++ {
+		if panics[i] != nil {
+			any = true
+		}
+	}
+	if any {
+		panic(panics)
+	}
 	for i := 0; i < l; i++ {
 		if errors[i] != nil {
 			any = true

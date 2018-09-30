@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-// Assert is a wrapper for github.com/speedland/go/x/xtesting/assert.Assert and provides
+// Assert is a wrapper for github.com/yssk22/go/x/xtesting/assert.Assert and provides
 // http specific assertions
 type Assert struct {
 	*assert.Assert

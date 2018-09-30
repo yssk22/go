@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/speedland/go/x/xtime"
-	"golang.org/x/net/context"
+	"github.com/yssk22/go/x/xtime"
+	"context"
 )
 
 type T struct {

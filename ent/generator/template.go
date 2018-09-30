@@ -14,8 +14,34 @@ import(
     {{end }}
 )
 
+{{if .IsSearchable -}}
+const {{.Type}}SearchIndexName = "ent.{{.Type}}"
+
+// {{.Type}}SearchDoc is a object for search indexes.
+type {{.Type}}SearchDoc struct {
+	{{.IDField}} string // TODO: Support non-string key as ID
+	{{range .Fields -}}{{if .IsSearch -}}
+	{{.FieldName}} {{.SearchFieldTypeName}}
+    {{end -}}{{end -}}
+}
+
+// ToSearchDoc returns a new *{{.Type}}SearchDoc
+func ({{$v}} *{{.Type}}) ToSearchDoc() *{{.Type}}SearchDoc {
+	s := &{{.Type}}SearchDoc{}
+	s.{{.IDField}} = {{$v}}.{{.IDField}}
+	{{range .Fields -}}{{if .IsSearch -}}
+	{{ if .SearchFieldConverter -}}
+	s.{{.FieldName}} = {{.SearchFieldConverter}}({{$v}}.{{.FieldName}})
+	{{ else -}}
+	s.{{.FieldName}} = {{$v}}.{{.FieldName}}
+	{{end -}}{{end -}}{{end -}}
+	return s
+}
+
+{{end -}}
+
 func ({{$v}} *{{.Type}}) NewKey(ctx context.Context) *datastore.Key {
-    return helper.NewKey(ctx, "{{.Type}}", {{$v}}.{{.IDField}})
+    return helper.NewKey(ctx, "{{.Kind}}", {{$v}}.{{.IDField}})
 }
 
 // UpdateByForm updates the fields by form values. All values should be validated
@@ -39,17 +65,40 @@ func New{{.Type}}() *{{.Type}} {
 }
 
 type {{.Type}}Kind struct {
-    BeforeSave func(ent *{{.Type}}) error
-    AfterSave  func(ent *{{.Type}}) error
     useDefaultIfNil bool
     noCache bool
-    noTimestampUpdate bool
+	noSearchIndexing bool
+	ignoreSearchIndexingError bool
+	noTimestampUpdate bool
+	enforceNamespace bool
+	namespace string
+}
+
+type {{.Type}}KindReplacer interface {
+	Replace(*{{.Type}}, *{{.Type}}) *{{.Type}}
+}
+
+type {{.Type}}KindReplacerFunc func(*{{.Type}}, *{{.Type}}) *{{.Type}}
+
+func (f {{.Type}}KindReplacerFunc) Replace(ent1 *{{.Type}}, ent2 *{{.Type}}) *{{.Type}} {
+	return f(ent1, ent2)
 }
 
 // Default{{.Type}}Kind is a default value of *{{.Type}}Kind
 var Default{{.Type}}Kind = &{{.Type}}Kind{}
 
-const {{.Type}}KindLoggerKey = "ent.{{snakecase .Type}}"
+// {{.Type}}KindLoggerKey is a logger key name for the ent
+const {{.Type}}KindLoggerKey = "ent.{{snakecase .Kind}}"
+
+// {{.Type}}QueryLoggerKey is a logger key name for the ent
+const {{.Type}}QueryLoggerKey = "ent.query.{{snakecase .Kind}}"
+
+// EnforceNamespace enforces namespace for Get/Put/Delete or not.
+func (k *{{.Type}}Kind) EnforceNamespace(ns string, b bool) *{{.Type}}Kind {
+	k.enforceNamespace = b
+	k.namespace = ns
+    return k
+}
 
 func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
     k.useDefaultIfNil = b
@@ -58,7 +107,7 @@ func (k *{{.Type}}Kind) UseDefaultIfNil(b bool) *{{.Type}}Kind {
 
 // Get gets the kind entity from datastore
 func (k *{{.Type}}Kind) Get(ctx context.Context, key interface{}) (*datastore.Key, *{{.Type}}, error) {
-    keys, ents, err := k.GetMulti(ctx, key)
+    keys, ents, err := k.GetMulti(ctx, []interface{}{key})
     if err != nil {
         return nil, nil, err
     }
@@ -74,19 +123,26 @@ func (k *{{.Type}}Kind) MustGet(ctx context.Context, key interface{}) *{{.Type}}
     return v
 }
 
-// GetMulti do Get with multiple keys
-func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
-    var size = len(keys)
+// GetMulti do Get with multiple keys. keys must be []string, []*datastore.Key, or []interface{}
+func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*{{.Type}}, error) {
+	ctx, logger := xlog.WithContextAndKey(ctx, "", {{.Type}}KindLoggerKey)
+	var err error
+	var dsKeys []*datastore.Key
     var memKeys []string
-    var dsKeys  []*datastore.Key
-    var ents []*{{.Type}}
+	var ents []*{{.Type}}
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
+    if err != nil {
+        return nil, nil, xerrors.Wrap(err, "cannot normalize keys")
+    }
+    size := len(dsKeys)
     if size == 0 {
         return nil, nil, nil
-    }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-    dsKeys = make([]*datastore.Key, size, size)
-    for i := range keys {
-        dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", keys[i])
     }
     ents = make([]*{{.Type}}, size, size)
     // Memcache access
@@ -96,13 +152,13 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
         for i := range dsKeys {
             memKeys[i] = ent.GetMemcacheKey(dsKeys[i])
         }
-        err := memcache.GetMulti(ctx, memKeys, ents)
+        err = memcache.GetMulti(ctx, memKeys, ents)
         if err == nil {
             // Hit caches on all keys!!
             return dsKeys, ents, nil
         }
         logger.Debug(func(p *xlog.Printer){
-            p.Println("{{.Type}}#GetMulti [Memcache]", )
+            p.Println("{{.Kind}}#GetMulti [Memcache]", )
             for i:=0; i < size; i++ {
                 s := fmt.Sprintf("%v", ents[i])
                 if len(s) > 20 {
@@ -130,17 +186,17 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 
     // Datastore access
     cacheMissingEnts := make([]*{{.Type}}, cacheMissingSize, cacheMissingSize)
-    err := helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
+    err = helper.GetMulti(ctx, cacheMissingKeys, cacheMissingEnts)
     if helper.IsDatastoreError(err) {
         // we return nil even some ents hits the cache.
-        return nil, nil, err
+        return nil, nil, xerrors.Wrap(err, "datastore error")
     }
 
     if k.useDefaultIfNil {
         for i:=0; i < cacheMissingSize; i++ {
             if cacheMissingEnts[i] == nil {
                 cacheMissingEnts[i] = New{{.Type}}()
-                cacheMissingEnts[i].{{.IDField}} = dsKeys[i].StringID() // TODO: Support non-string key as ID
+                cacheMissingEnts[i].{{.IDField}} = cacheMissingKeys[i].StringID() // TODO: Support non-string key as ID
             }
         }
     }
@@ -163,14 +219,14 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
         }
         if len(cacheEnts) > 0 {
             if err := memcache.SetMulti(ctx, cacheKeys, cacheEnts); err != nil {
-                logger.Warnf("Failed to create {{.Type}}) caches: %v", err)
+                logger.Warnf("Failed to create {{.Kind}}) caches: %v", err)
             }
         }
     }
 
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#GetMulti [Datastore] (UseDefault: %t, NoCache: %t)\n",
+            "{{.Kind}}#GetMulti [Datastore] (UseDefault: %t, NoCache: %t)\n",
             k.useDefaultIfNil, k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -190,8 +246,8 @@ func (k *{{.Type}}Kind) GetMulti(ctx context.Context, keys ...interface{}) ([]*d
 }
 
 // MustGetMulti is like GetMulti but returns only values and panic if error happens.
-func (k *{{.Type}}Kind) MustGetMulti(ctx context.Context, keys ...interface{}) []*{{.Type}} {
-    _, v, err := k.GetMulti(ctx, keys...)
+func (k *{{.Type}}Kind) MustGetMulti(ctx context.Context, keys interface{}) []*{{.Type}} {
+    _, v, err := k.GetMulti(ctx, keys)
     if err != nil {
         panic(err)
     }
@@ -220,22 +276,46 @@ func (k *{{.Type}}Kind) MustPut(ctx context.Context, ent *{{.Type}}) *datastore.
 
 // PutMulti do Put with multiple keys
 func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*datastore.Key, error) {
+    ctx, logger := xlog.WithContextAndKey(ctx, "", {{.Type}}KindLoggerKey)
+	var err error
     var size = len(ents)
-    var dsKeys  []*datastore.Key
+    var dsKeys []*datastore.Key
+	{{if .IsSearchable -}}
+	var searchDocs []interface{} // to adopt search.Index#PutMulti()
+	var searchKeys []string
+	{{end -}}
     if size == 0 {
         return nil, nil
     }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
     dsKeys = make([]*datastore.Key, size, size)
     for i := range ents {
-        if k.BeforeSave != nil {
-            if err := k.BeforeSave(ents[i]); err != nil {
-                return nil, err
-            }
-        }
+		if e, ok := interface{}(ents[i]).(ent.BeforeSave); ok {
+			if err := e.BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
         dsKeys[i] = ents[i].NewKey(ctx)
     }
+
+	{{if .IsSearchable -}}
+	if !k.noSearchIndexing {
+		searchKeys = make([]string, size, size)
+		searchDocs = make([]interface{}, size, size)
+		for i := range ents {
+			searchKeys[i] = dsKeys[i].Encode()
+			searchDocs[i] = ents[i].ToSearchDoc()
+		}
+	}
+	{{end -}}
 
     if !k.noTimestampUpdate {
         for i := range ents {
@@ -243,9 +323,9 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
         }
     }
 
-    _, err := helper.PutMulti(ctx, dsKeys, ents)
+    _, err = helper.PutMulti(ctx, dsKeys, ents)
     if helper.IsDatastoreError(err) {
-        return nil, err
+        return nil, xerrors.Wrap(err, "datastore error")
     }
 
     if !k.noCache {
@@ -259,9 +339,35 @@ func (k *{{.Type}}Kind) PutMulti(ctx context.Context, ents []*{{.Type}}) ([]*dat
         }
     }
 
+	{{if .IsSearchable -}}
+	if !k.noSearchIndexing {
+		// TODO: should limit 200 docs per a call
+		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
+		index, err := search.Open({{.Type}}SearchIndexName)
+		if err != nil {
+			err = xerrors.Wrap(err, "search.Open(%q) returns errors", {{.Type}}SearchIndexName)
+			if !k.ignoreSearchIndexingError {
+				return nil, err
+			}else{
+	            logger.Warnf(err.Error())
+			}
+		} else {
+			_, err = index.PutMulti(ctx, searchKeys, searchDocs)
+			if err != nil {
+				err = xerrors.Wrap(err, "index.PutMulti returns errors")
+				if !k.ignoreSearchIndexingError {
+					return nil, err
+				}else{
+		            logger.Warnf(err.Error())
+				}
+			}
+		}
+	}
+	{{end -}}
+
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#PutMulti [Datastore] (NoCache: %t)\n",
+            "{{.Kind}}#PutMulti [Datastore] (NoCache: %t)\n",
             k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -290,9 +396,57 @@ func (k *{{.Type}}Kind) MustPutMulti(ctx context.Context, ents []*{{.Type}}) ([]
     return keys
 }
 
+func (k *{{.Type}}Kind) Replace(ctx context.Context, ent *{{.Type}}, replacer {{.Type}}KindReplacer) (*datastore.Key, *{{.Type}}, error) {
+    keys, ents, err := k.ReplaceMulti(ctx, []*{{.Type}}{
+        ent,
+    }, replacer)
+    if err != nil {
+        return nil, ents[0], err
+	}
+    return keys[0], ents[0], err
+}
+
+func (k *{{.Type}}Kind) MustReplace(ctx context.Context, ent *{{.Type}}, replacer {{.Type}}KindReplacer) (*datastore.Key, *{{.Type}}) {
+    key, ent, err := k.Replace(ctx, ent, replacer)
+    if err != nil {
+        panic(err)
+    }
+    return key, ent
+}
+
+func (k *{{.Type}}Kind) ReplaceMulti(ctx context.Context, ents []*{{.Type}}, replacer {{.Type}}KindReplacer) ([]*datastore.Key, []*{{.Type}}, error) {
+	var size = len(ents)
+    var dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return dsKeys, ents, nil
+	}
+	for i := range ents {
+		dsKeys[i] = ents[i].NewKey(ctx)
+	}
+	_, existing, err := k.GetMulti(ctx, dsKeys)
+	if err != nil {
+		return nil, ents, err
+	}
+	for i, exist := range existing {
+		if exist != nil {
+			ents[i] = replacer.Replace(exist, ents[i])
+		}
+	}
+	_, err = k.PutMulti(ctx, ents)
+	return dsKeys, ents, err
+}
+
+func (k *{{.Type}}Kind) MustReplaceMulti(ctx context.Context, ents []*{{.Type}}, replacer {{.Type}}KindReplacer) ([]*datastore.Key, []*{{.Type}}) {
+    keys, ents, err := k.ReplaceMulti(ctx, ents, replacer)
+    if err != nil {
+        panic(err)
+    }
+    return keys, ents
+}
+
 // Delete deletes the entity from datastore
 func (k *{{.Type}}Kind) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
-    keys, err := k.DeleteMulti(ctx, key)
+    keys, err := k.DeleteMulti(ctx, []interface{}{key})
     if err != nil {
         return nil, err
     }
@@ -301,30 +455,50 @@ func (k *{{.Type}}Kind) Delete(ctx context.Context, key interface{}) (*datastore
 
 // MustDelete is like Delete but panic if an error occurs
 func (k *{{.Type}}Kind) MustDelete(ctx context.Context, key interface{}) (*datastore.Key) {
-    keys, err := k.DeleteMulti(ctx, key)
+    _key, err := k.Delete(ctx, key)
     if err != nil {
         panic(err)
     }
-    return keys[0]
+    return _key
 }
 
 // DeleteMulti do Delete with multiple keys
-func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key, error) {
-    var size = len(keys)
-    var dsKeys  []*datastore.Key
+func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+    ctx, logger := xlog.WithContextAndKey(ctx, "", {{.Type}}KindLoggerKey)
+	var err error
+	var dsKeys []*datastore.Key
+	if k.enforceNamespace {
+		ctx, err = appengine.Namespace(ctx, k.namespace)
+		if err != nil {
+			return nil, xerrors.Wrap(err, "cannot enforce namespace")
+		}
+	}
+	dsKeys, err = k.normMultiKeys(ctx, keys)
+    if err != nil {
+        return nil, err
+    }
+    size := len(dsKeys)
     if size == 0 {
         return nil, nil
     }
-    logger := xlog.WithContext(ctx).WithKey({{.Type}}KindLoggerKey)
-    dsKeys = make([]*datastore.Key, size, size)
-    for i := range keys {
-        dsKeys[i] = helper.NewKey(ctx, "{{.Type}}", keys[i])
-    }
+	if size >= ent.MaxEntsPerPutDelete {
+		return nil, ent.ErrTooManyEnts
+	}
+
+	{{if .IsSearchable -}}
+	var searchKeys []string
+	if !k.noSearchIndexing {
+		searchKeys = make([]string, size, size)
+		for i, k := range dsKeys {
+			searchKeys[i] = k.Encode()
+		}
+	}
+	{{end -}}
     // Datastore access
-    err := helper.DeleteMulti(ctx, dsKeys)
+    err = helper.DeleteMulti(ctx, dsKeys)
     if helper.IsDatastoreError(err) {
         // we return nil even some ents hits the cache.
-        return nil, err
+        return nil, xerrors.Wrap(err, "datastore error")
     }
 
     if !k.noCache {
@@ -332,15 +506,32 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
         for i := range memKeys {
             memKeys[i] =ent.GetMemcacheKey(dsKeys[i])
         }
-        err := memcache.DeleteMulti(ctx, memKeys)
+        err = memcache.DeleteMulti(ctx, memKeys)
         if memcache.IsMemcacheError(err) {
             logger.Warnf("Failed to invalidate memcache keys: %v", err)
         }
     }
 
+	{{if .IsSearchable -}}
+	if !k.noSearchIndexing {
+		// TODO: should limit 200 docs per a call
+		// see https://github.com/golang/appengine/blob/master/search/search.go#L136-L147
+		index, err := search.Open({{.Type}}SearchIndexName)
+		if err != nil {
+            logger.Warnf("Failed to delete search indexes (could not open index): %v ", err)
+		} else {
+			err = index.DeleteMulti(ctx, searchKeys)
+			if err != nil {
+	            logger.Warnf("Failed to delete search indexes (PutMulti error): %v ", err)
+			}
+		}
+	}
+	{{end -}}
+
+
     logger.Debug(func(p *xlog.Printer){
         p.Printf(
-            "{{.Type}}#DeleteMulti [Datastore] (NoCache: %t)\n",
+            "{{.Kind}}#DeleteMulti [Datastore] (NoCache: %t)\n",
             k.noCache,
         )
         for i:=0; i < size; i++ {
@@ -355,22 +546,46 @@ func (k *{{.Type}}Kind) DeleteMulti(ctx context.Context, keys ...interface{}) ([
 }
 
 // MustDeleteMulti is like DeleteMulti but panic if an error occurs
-func (k *{{.Type}}Kind) MustDeleteMulti(ctx context.Context, keys ...interface{}) ([]*datastore.Key) {
-    _keys, err := k.DeleteMulti(ctx, keys...)
+func (k *{{.Type}}Kind) MustDeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key) {
+    _keys, err := k.DeleteMulti(ctx, keys)
     if err != nil {
         panic(err)
     }
     return _keys
 }
 
+func (k *{{.Type}}Kind) normMultiKeys(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
+    var dsKeys []*datastore.Key
+    switch t := keys.(type) {
+        case []string:
+            tmp := keys.([]string)
+            dsKeys = make([]*datastore.Key, len(tmp))
+            for i, s := range tmp {
+                dsKeys[i] = helper.NewKey(ctx, "{{.Kind}}", s)
+            }
+        case []interface{}:
+            tmp := keys.([]interface{})
+            dsKeys = make([]*datastore.Key, len(tmp))
+            for i, s := range tmp {
+                dsKeys[i] = helper.NewKey(ctx, "{{.Kind}}", s)
+            }
+        case []*datastore.Key:
+            dsKeys = keys.([]*datastore.Key)
+        default:
+            return nil, fmt.Errorf("unsupported keys type: %s", t)
+    }
+    return dsKeys, nil
+}
+
 // {{.Type}}Query helps to build and execute a query
 type {{.Type}}Query struct {
-    q *helper.Query
+	q *helper.Query
+	viaKeys *{{.Type}}Kind
 }
 
 func New{{.Type}}Query() *{{.Type}}Query {
     return &{{.Type}}Query{
-        q: helper.NewQuery("{{.Type}}"),
+        q: helper.NewQuery("{{.Kind}}", {{.Type}}QueryLoggerKey),
     }
 }
 
@@ -428,10 +643,49 @@ func (q *{{.Type}}Query) Desc(name string) *{{.Type}}Query {
 	return q
 }
 
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) Limit(n lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Limit(n)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) Start(value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.Start(value)
+	return q
+}
+
+// Limit specifies the numbe of limit returend by this query.
+func (q *{{.Type}}Query) End(value lazy.Value) *{{.Type}}Query {
+	q.q = q.q.End(value)
+	return q
+}
+
+// ViaKeys optimize to execute keys-only query then call k.GetMulti() to fetch values. 
+// This would reduce the datastore query and maximize the memcache usage if the query called many times in a short time window.
+func (q *{{.Type}}Query) ViaKeys(k *{{.Type}}Kind) *{{.Type}}Query {
+	q.viaKeys = k
+	if k == nil {
+		q.q = q.q.KeysOnly(false)		
+	}else{
+		q.q = q.q.KeysOnly(true)		
+	}
+	return q
+}
+
+
 // GetAll returns all key and value of the query.
 func (q *{{.Type}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []*{{.Type}}, error) {
-    var v []*{{.Type}}
-    keys, err := q.q.GetAll(ctx, &v)
+	if q.viaKeys !=  nil {
+		keys, err := q.q.GetAll(ctx, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		_, ents, err := q.viaKeys.GetMulti(ctx, keys)		
+		return keys, ents, err
+	}
+	var v []*{{.Type}}
+    keys, err := q.q.KeysOnly(false).GetAll(ctx, &v)
     if err != nil {
         return nil, nil, err
     }
@@ -449,18 +703,13 @@ func (q *{{.Type}}Query) MustGetAll(ctx context.Context) ([]*datastore.Key, []*{
 
 // GetAllValues is like GetAll but returns only values
 func (q *{{.Type}}Query) GetAllValues(ctx context.Context) ([]*{{.Type}}, error) {
-    var v []*{{.Type}}
-    _, err := q.q.GetAll(ctx, &v)
-    if err != nil {
-        return nil, err
-    }
+	_, v, err := q.GetAll(ctx)
     return v, err
 }
 
 // MustGetAllValues is like GetAllValues but panic if an error occurrs
 func (q *{{.Type}}Query) MustGetAllValues(ctx context.Context) []*{{.Type}} {
-    var v []*{{.Type}}
-    _, err := q.q.GetAll(ctx, &v)
+	_, v, err := q.GetAll(ctx)
     if err != nil {
         panic(err)
     }
@@ -479,5 +728,159 @@ func (q *{{.Type}}Query) MustCount(ctx context.Context) int {
         panic(err)
     }
     return c
+}
+
+type {{.Type}}Pagination struct {` +
+	"Start string           `json:\"start\"`\n" +
+	"End   string           `json:\"end\"`\n" +
+	"Count int              `json:\"count,omitempty\"`\n" +
+	"Data  []*{{.Type}}     `json:\"data\"`\n" +
+	"Keys  []*datastore.Key `json:\"-\"`\n" + `
+}
+
+// Run returns the a result as *{{.Type}}Pagination object
+func (q *{{.Type}}Query) Run(ctx context.Context) (*{{.Type}}Pagination, error) {
+    iter, err := q.q.Run(ctx)
+    if err != nil {
+        return nil, err
+    }
+    pagination := &{{.Type}}Pagination{}
+    keys := []*datastore.Key{}
+    data := []*{{.Type}}{}
+	start, err := iter.Cursor()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get the start cursor: %v", err)
+	}
+	pagination.Start = start.String()
+    for {
+		var key *datastore.Key
+		var err error
+		var ent {{.Type}}
+		if q.viaKeys == nil {
+			key, err = iter.Next(&ent)			
+		}else{
+			key, err = iter.Next(nil)
+		}
+        if err == datastore.Done {
+            end, err := iter.Cursor()
+            if err != nil {
+                return nil, fmt.Errorf("couldn't get the end cursor: %v", err)
+            }
+            pagination.Keys = keys
+            pagination.End = end.String()
+			if q.viaKeys !=  nil {
+				_, ents, err := q.viaKeys.GetMulti(ctx, keys)		
+				if err != nil {
+					return nil, err
+				}
+				pagination.Data = ents
+			}else{
+				pagination.Data = data				
+			}
+			return pagination, nil
+        }
+        if err != nil {
+            return nil, err
+        }
+		keys = append(keys, key)
+		if q.viaKeys == nil {
+			data = append(data, &ent)			
+		}
+    }
+}
+
+// MustRun is like Run but panic if an error occurrs
+func (q *{{.Type}}Query) MustRun(ctx context.Context) *{{.Type}}Pagination {
+    p, err := q.Run(ctx)
+    if err != nil {
+        panic(err)
+    }
+    return p
+}
+
+{{if .IsSearchable -}}
+// SearchKeys returns the a result as *{{.Type}}Pagination object. It only containd valid []*datastore.Keys
+func (k *{{.Type}}Kind) SearchKeys(ctx context.Context, query string, opts *search.SearchOptions) (*{{.Type}}Pagination, error) {
+    ctx, logger := xlog.WithContextAndKey(ctx, "", {{.Type}}KindLoggerKey)
+	index, err := search.Open({{.Type}}SearchIndexName)
+	if err != nil {
+        return nil, err
+    }
+	// we don't need to grab document data since we can grab documents from datastore.
+	if opts == nil {
+		opts = &search.SearchOptions{}
+	}
+	opts.IDsOnly = true
+	iter := index.Search(ctx, query, opts)
+    pagination := &{{.Type}}Pagination{}
+    keys := []*datastore.Key{}
+	pagination.Start = string(iter.Cursor())
+	pagination.Count = iter.Count()
+    for {
+        var ent {{.Type}}SearchDoc
+        id, err := iter.Next(&ent)
+        if err == search.Done {
+            pagination.Keys = keys
+            pagination.End = string(iter.Cursor())
+            return pagination, nil
+        }
+        if err != nil {
+            return nil, err
+        }
+		key, err := datastore.DecodeKey(id)
+		if err != nil {
+			logger.Warnf("unexpected search doc id found: %s (%s), skipping...", id, err)
+		}else{
+	        keys = append(keys, key)
+		}
+    }
+}
+
+// SearchValues returns the a result as *{{.Type}}Pagination object with filling Data field.
+func (k *{{.Type}}Kind) SearchValues(ctx context.Context, query string, opts *search.SearchOptions) (*{{.Type}}Pagination, error) {
+    ctx, logger := xlog.WithContextAndKey(ctx, "" ,{{.Type}}KindLoggerKey)
+	p, err := k.SearchKeys(ctx, query, opts)
+	if err != nil {
+		return nil, err
+	}
+	keys, values, err := k.GetMulti(ctx, p.Keys)
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range values {
+		if v == nil {
+			logger.Warnf("search index found, but no ent found - (Kind:{{.Type}}, Key:%s)", keys[i].StringID())
+		}else{
+			p.Data = append(p.Data, v)
+		}
+	}
+	return p, nil
+}
+{{end -}}
+
+// DeleteMatched deletes the all ents that match with the query.
+// This func modify Limit/StartKey condition in the query so that you should restore it
+// if you want to reuse the query.
+func (k *{{.Type}}Kind) DeleteMatched(ctx context.Context, q *{{.Type}}Query) (int, error) {
+	var numDeletes int
+	var startKey string
+	q.Limit(lazy.New(ent.MaxEntsPerPutDelete-5))
+	// TODO: canceling the context
+	for {
+		if startKey != "" {
+			q.Start(lazy.New(startKey))
+		}
+		page := q.MustRun(ctx)
+		if len(page.Keys) == 0 {
+			return numDeletes, nil
+		}
+		_, err := k.DeleteMulti(ctx, page.Keys)
+		if err != nil {
+			return numDeletes, fmt.Errorf("couldn't delete matched ents: %v", err)
+		} else {
+			numDeletes += len(page.Keys)
+		}
+		startKey = page.End
+	}
 }
 `

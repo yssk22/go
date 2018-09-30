@@ -3,10 +3,10 @@ package oauth2
 import (
 	"fmt"
 
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"golang.org/x/net/context"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"context"
 	"golang.org/x/oauth2"
 )
 

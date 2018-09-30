@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/speedland/go/x/xreflect"
+	"github.com/yssk22/go/x/xreflect"
 )
 
 var requiredError = NewFieldError("must be required", nil)

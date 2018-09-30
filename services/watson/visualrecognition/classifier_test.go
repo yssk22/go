@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/speedland/go/x/xarchive/xzip"
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xarchive/xzip"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xtesting/assert"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestClient_CreateClassifier(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
 )
 
 // RequestFactory is an interface to create a new request.
@@ -77,14 +77,14 @@ func (r *Recorder) TestPut(path string, v interface{}) *httptest.ResponseRecorde
 }
 
 // TestDelete make a test DELETE request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestDelete(path string, v interface{}) *httptest.ResponseRecorder {
+func (r *Recorder) TestDelete(path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, r.NewRequest("DELETE", path, nil))
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return w
 }
 
-// PrepareRequest prepares http.Request with request body
+// NewRequest returns http.Request with request body given by `v`
 func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request {
 	var err error
 	var req *http.Request

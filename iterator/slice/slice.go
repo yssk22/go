@@ -100,3 +100,44 @@ func SplitByLength(list interface{}, eachSize int) interface{} {
 	}
 	return bucketList.Interface()
 }
+
+// ToInterface converts []*T to []interface{}
+func ToInterface(v interface{}) []interface{} {
+	a := reflect.ValueOf(v)
+	assertSlice(a)
+	vv := make([]interface{}, a.Len())
+	for i := range vv {
+		vv[i] = a.Index(i).Interface()
+	}
+	return vv
+}
+
+// ToAddr converts []T to []*T
+func ToAddr(v interface{}) interface{} {
+	a := reflect.ValueOf(v)
+	assertSlice(a)
+	list := reflect.MakeSlice(
+		reflect.SliceOf(reflect.PtrTo(a.Type().Elem())),
+		a.Len(),
+		a.Cap(),
+	)
+	for i := 0; i < a.Len(); i++ {
+		list.Index(i).Set(a.Index(i).Addr())
+	}
+	return list.Interface()
+}
+
+// ToElem converts []*T to []T
+func ToElem(v interface{}) interface{} {
+	a := reflect.ValueOf(v)
+	assertSlice(a)
+	list := reflect.MakeSlice(
+		reflect.SliceOf(a.Type().Elem().Elem()),
+		a.Len(),
+		a.Cap(),
+	)
+	for i := 0; i < a.Len(); i++ {
+		list.Index(i).Set(a.Index(i).Elem())
+	}
+	return list.Interface()
+}

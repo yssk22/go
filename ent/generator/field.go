@@ -5,20 +5,23 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 // Field is a type field
 type Field struct {
 	s *Struct
 	*ast.Field
-	Default        string // go code expression for the default value
-	Form           string // go code expression to parse form value (var name is v and returns (value, error))
-	Parser         string // optional field to parse the string value (pkg.Func format)
-	IsID           bool
-	IsTimestamp    bool
-	IsForm         bool
-	ResetIfMissing bool
+	Default              string // go code expression for the default value
+	Form                 string // go code expression to parse form value (var name is v and returns (value, error))
+	SearchFieldTypeName  string // go code expression for SearchDoc typename
+	SearchFieldConverter string // go code expression to convert a original ent field tothe serach doc field
+	Parser               string // optional field to parse the string value (pkg.Func format)
+	IsID                 bool
+	IsTimestamp          bool
+	IsForm               bool
+	IsSearch             bool
+	ResetIfMissing       bool
 }
 
 // FieldName returns a field name string
@@ -54,6 +57,28 @@ func (f *Field) TypeName() string {
 	return typeName
 }
 
+// GetSearchFieldType returns a type name string for search of the field.
+func (f *Field) GetSearchFieldTypeName() (string, string) {
+	typeName := f.TypeName()
+	typeDef, ok := searchTypes[typeName]
+	if !ok {
+		panic(fmt.Errorf("%s (on %s) is not supported for a search field", typeName, f.FieldName()))
+	}
+	typePkg, typeShortExpr := parseFullPackageExpr(typeDef.Type)
+	if typeShortExpr == "" {
+		panic(fmt.Errorf("[BUG] invalid type definition for %s (on %s)", typeName, f.FieldName()))
+	}
+	convPkg, convShortExpr := parseFullPackageExpr(typeDef.Converter)
+	// it's ok for convShortExpr to be "" since it means "no conversion needed".
+	if typePkg != "" {
+		f.s.AddDependency(typePkg)
+	}
+	if convPkg != "" {
+		f.s.AddDependency(convPkg)
+	}
+	return typeShortExpr, convShortExpr
+}
+
 // GetDefaultExpr returns the default value expression for the field.
 func (f *Field) GetDefaultExpr(v string) string {
 	typeName := f.TypeName()
@@ -77,7 +102,7 @@ func (f *Field) GetFormExpr() string {
 	parser := f.Parser
 	if parser == "" {
 		if parser = buildInParsers[typeName]; parser == "" {
-			panic(fmt.Errorf("missing parser tag for non-builtin types (%q on %s)", typeName, f.FieldName()))
+			panic(fmt.Errorf("missing parser tag for non-builtin types (%q on %s.%s)", typeName, f.s.Type, f.FieldName()))
 		}
 	}
 	var fun string
@@ -104,4 +129,22 @@ func hasTagValue(v string, values []string) bool {
 		}
 	}
 	return false
+}
+
+func parseFullPackageExpr(expr string) (string, string) {
+	var shortExpr string
+	var pkg string
+	lastDot := strings.LastIndex(expr, ".")
+	if lastDot == len(expr)-1 {
+		return "", ""
+	} else if lastDot == -1 {
+		shortExpr = expr
+	} else {
+		// pkg.Type style
+		pkg = expr[0:lastDot]
+		pkgParts := strings.Split(pkg, "/")
+		shortExpr = expr[lastDot+1:]
+		shortExpr = fmt.Sprintf("%s.%s", pkgParts[len(pkgParts)-1], shortExpr)
+	}
+	return pkg, shortExpr
 }

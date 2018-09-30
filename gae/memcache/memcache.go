@@ -6,7 +6,10 @@ import (
 	"reflect"
 	"time"
 
-	"golang.org/x/net/context"
+	"github.com/yssk22/go/web/response"
+
+	"context"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/memcache"
 )
@@ -109,7 +112,7 @@ func Get(ctx context.Context, key string, dst interface{}) error {
 	if e, ok := err.(appengine.MultiError); ok {
 		return e[0]
 	}
-	return nil
+	return err
 }
 
 // Delete deletes the key
@@ -145,4 +148,10 @@ func IsMemcacheError(e error) bool {
 		return false
 	}
 	return true
+}
+
+func init() {
+	RegisterCachableHeaderKeys(
+		response.ContentType,
+	)
 }

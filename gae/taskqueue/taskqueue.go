@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"golang.org/x/net/context"
+	"context"
+
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xlog"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
 )
+
+const LoggerKey = "gae.taskqueue"
 
 // QueueMode is a type alias for queue mode string
 type QueueMode string
@@ -53,10 +58,10 @@ func (queue *PushQueue) ToYAML() string {
 		queue.MaxDoubling != "" {
 		fmt.Fprintf(&buff, "  retry_parameters:\n")
 		if queue.RetryLimit != "" {
-			fmt.Fprintf(&buff, "    retry_limit: %s\n", queue.RetryLimit)
+			fmt.Fprintf(&buff, "    task_retry_limit: %s\n", queue.RetryLimit)
 		}
 		if queue.AgeLimit != "" {
-			fmt.Fprintf(&buff, "    age_limit: %s\n", queue.AgeLimit)
+			fmt.Fprintf(&buff, "    task_age_limit: %s\n", queue.AgeLimit)
 		}
 		if queue.MinBackoffSeconds != "" {
 			fmt.Fprintf(&buff, "    min_backoff_seconds: %s\n", queue.MinBackoffSeconds)
@@ -76,6 +81,9 @@ func (queue *PushQueue) PushTask(ctx context.Context, urlPath string, form url.V
 	// aetest environment does not support non-default queue
 	// https://code.google.com/p/googleappengine/issues/detail?id=10771
 	var queueName = queue.Name
+	if appengine.IsDevAppServer() {
+		queueName = "default"
+	}
 	if _, err := Add(ctx, taskqueue.NewPOSTTask(urlPath, form), queueName); err != nil {
 		return fmt.Errorf("failed to push queue: %s, url: %s, - %v", queueName, urlPath, err)
 	}
@@ -86,12 +94,16 @@ func (queue *PushQueue) PushTask(ctx context.Context, urlPath string, form url.V
 // This is useful for handlers throttled via PushTask.
 func (queue *PushQueue) RequestValidator() web.Handler {
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		name := req.Header.Get("X-AppEngine-TaskName")
-		if queue.Name != name {
-			return response.NewErrorWithStatus(
-				fmt.Errorf("task queue validation failed"),
-				response.HTTPStatusBadRequest,
-			)
+		if !appengine.IsDevAppServer() {
+			name := req.Header.Get("X-AppEngine-QueueName")
+			if queue.Name != name {
+				_, logger := xlog.WithContextAndKey(req.Context(), "", LoggerKey)
+				logger.Warnf("Task Queue invalidation: %q != %q", queue.Name, name)
+				return response.NewErrorWithStatus(
+					fmt.Errorf("task queue validation failed"),
+					response.HTTPStatusBadRequest,
+				)
+			}
 		}
 		return next(req)
 	})

@@ -3,13 +3,13 @@ package session
 import (
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestContextKey(t *testing.T) {
 	a := assert.New(t)
 	a.EqStr(
-		"sessionkey@github.com/speedland/go/web/middleware/session",
+		"sessionkey@github.com/yssk22/go/web/middleware/session",
 		contextKey.String(),
 	)
 }

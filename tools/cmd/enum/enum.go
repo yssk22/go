@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 const defaultOutput = "enum_helper.go"
@@ -210,7 +210,7 @@ func (pkg *Package) check(fs *token.FileSet, astFiles []*ast.File) {
 	}
 	typesPkg, err := config.Check(pkg.dir, fs, astFiles, info)
 	if err != nil {
-		log.Fatalf("checking package: %s", err)
+		log.Println("warn", err)
 	}
 	pkg.typesPkg = typesPkg
 }

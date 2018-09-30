@@ -7,36 +7,41 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 // Struct is a parsed result of struct to generate a code.
 type Struct struct {
 	Package        string
 	Type           string
+	Kind           string
 	Instance       string
 	Fields         []*Field
 	Dependencies   map[string]string
 	IDField        string
 	TimestampField string
+	IsSearchable   bool
 }
 
 // NewStruct returns a struct for the type `typeName`
-func NewStruct(typeName string) *Struct {
+func NewStruct(typeName string, kindName string) *Struct {
 	s := &Struct{
 		Type:         typeName,
+		Kind:         kindName,
 		Instance:     xstrings.ToSnakeCase(typeName)[:1],
 		Dependencies: make(map[string]string),
 	}
 	s.AddDependency("fmt")
-	s.AddDependencyAs("github.com/speedland/go/gae/datastore", "helper")
-	s.AddDependency("github.com/speedland/go/ent")
-	s.AddDependency("github.com/speedland/go/gae/memcache")
-	s.AddDependency("github.com/speedland/go/keyvalue")
-	s.AddDependency("github.com/speedland/go/lazy")
-	s.AddDependency("github.com/speedland/go/x/xlog")
-	s.AddDependency("github.com/speedland/go/x/xtime")
-	s.AddDependency("golang.org/x/net/context")
+	s.AddDependency("context")
+	s.AddDependencyAs("github.com/yssk22/go/gae/datastore", "helper")
+	s.AddDependency("github.com/yssk22/go/ent")
+	s.AddDependency("github.com/yssk22/go/gae/memcache")
+	s.AddDependency("github.com/yssk22/go/keyvalue")
+	s.AddDependency("github.com/yssk22/go/lazy")
+	s.AddDependency("github.com/yssk22/go/x/xerrors")
+	s.AddDependency("github.com/yssk22/go/x/xlog")
+	s.AddDependency("github.com/yssk22/go/x/xtime")
+	s.AddDependency("google.golang.org/appengine")
 	s.AddDependency("google.golang.org/appengine/datastore")
 	return s
 }
@@ -63,7 +68,7 @@ func (s *Struct) Inspect(node ast.Node) bool {
 		return true
 	case *ast.GenDecl:
 		decl := node.(*ast.GenDecl)
-		return s.inspecgGenDecl(decl)
+		return s.inspectGenDecl(decl)
 	default:
 		return true
 	}
@@ -84,7 +89,7 @@ func (s *Struct) GenSource(w io.Writer) error {
 	return t.Execute(w, s)
 }
 
-func (s *Struct) inspecgGenDecl(decl *ast.GenDecl) bool {
+func (s *Struct) inspectGenDecl(decl *ast.GenDecl) bool {
 	if decl.Tok != token.TYPE {
 		return true
 	}
@@ -105,6 +110,10 @@ func (s *Struct) inspecgGenDecl(decl *ast.GenDecl) bool {
 			s.Fields[i] = s.newField(
 				structType.Fields.List[i],
 			)
+			if s.Fields[i].IsSearch {
+				s.IsSearchable = true
+				s.AddDependency("google.golang.org/appengine/search")
+			}
 		}
 		return true
 	}
@@ -134,17 +143,22 @@ func (s *Struct) newField(f *ast.Field) *Field {
 					field.IsTimestamp = hasTagValue(tagValueTimestamp, values)
 					field.IsForm = hasTagValue(tagValueForm, values)
 					field.ResetIfMissing = hasTagValue(tagValueResetIfMissing, values)
+					field.IsSearch = hasTagValue(tagValueSearch, values)
 				default:
 					break
 				}
 			}
 		}
 	}
+	// TODO: Refactoring the field generation here!!!!! avoid modification both on f and s.
 	if field.IsID {
 		s.IDField = field.FieldName()
 	}
 	if field.IsTimestamp {
 		s.TimestampField = field.FieldName()
+	}
+	if field.IsSearch {
+		field.SearchFieldTypeName, field.SearchFieldConverter = field.GetSearchFieldTypeName()
 	}
 	if field.IsForm {
 		field.Form = field.GetFormExpr()

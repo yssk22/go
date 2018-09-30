@@ -8,15 +8,16 @@ import (
 	"os"
 	"path/filepath"
 
-	ent "github.com/speedland/go/ent/generator"
-	"github.com/speedland/go/tools/generator"
-	"github.com/speedland/go/x/xstrings"
+	ent "github.com/yssk22/go/ent/generator"
+	"github.com/yssk22/go/tools/generator"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 const defaultOutput = "datastore_helper.go"
 
 var (
 	typeName = flag.String("type", "", "type name must be set")
+	kindName = flag.String("kind", "", "kind name (same value of `type` by default)")
 	output   = flag.String("output", "", "output file name; default srcdir/<type>_datastore.go.go")
 )
 
@@ -32,8 +33,16 @@ func main() {
 	if len(args) == 0 {
 		args = []string{"."}
 	}
+	if *kindName == "" {
+		*kindName = *typeName
+	}
 	for _, directory := range args {
-		g := ent.NewStruct(*typeName)
+		var g *ent.Struct
+		if *kindName == "" {
+			g = ent.NewStruct(*typeName, *typeName)
+		} else {
+			g = ent.NewStruct(*typeName, *kindName)
+		}
 		src, err := generator.Run(directory, g)
 		if err != nil {
 			log.Printf("error: %v", err)

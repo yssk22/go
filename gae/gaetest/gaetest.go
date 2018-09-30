@@ -4,9 +4,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/speedland/go/web/httptest"
+	"github.com/yssk22/go/web/httptest"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
 )
@@ -55,7 +56,8 @@ func Instance() aetest.Instance {
 
 // NewRequest returns a new *http.Request bound with appengine context.Context
 func NewRequest(method string, path string, body io.Reader) (*http.Request, error) {
-	return Instance().NewRequest(method, path, body)
+	i := Instance()
+	return i.NewRequest(method, path, body)
 }
 
 // NewRecorder returns a new *httptest.Recorder object

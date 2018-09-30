@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestLogger_Name(t *testing.T) {
@@ -17,5 +17,5 @@ func TestLogger_Name(t *testing.T) {
 			`{{.LoggerKey}} {{.Data}}`,
 		),
 	)).Infof("FOO")
-	a.EqStr("github.com/speedland/go/x/xlog/xlogtest FOO\n", buff.String())
+	a.EqStr("github.com/yssk22/go/x/xlog/xlogtest FOO\n", buff.String())
 }

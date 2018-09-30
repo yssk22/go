@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/speedland/go/ansi"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/ansi"
+	"github.com/yssk22/go/x/xtime"
 )
 
 func ExampleFormatter() {
@@ -27,7 +27,7 @@ func ExampleFormatter() {
 	// Sample output is like follows:
 	//
 	//  2016-01-01T12:10:25Z [error] This is a log
-	// 	    github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel.func1 (at github.com/speedland/go/x/xlog/xlog_test.go#75)
-	// 	    github.com/speedland/go/x/xtime.RunAt (at github.com/speedland/go/x/xtime/xtime.go#33)
-	//  	github.com/speedland/go/x/xlog.ExampleLoggerWithConfigurationByLevel (at github.com/speedland/go/x/xlog/xlog_test.go#82)
+	// 	    github.com/yssk22/go/x/xlog.ExampleLoggerWithConfigurationByLevel.func1 (at github.com/yssk22/go/x/xlog/xlog_test.go#75)
+	// 	    github.com/yssk22/go/x/xtime.RunAt (at github.com/yssk22/go/x/xtime/xtime.go#33)
+	//  	github.com/yssk22/go/x/xlog.ExampleLoggerWithConfigurationByLevel (at github.com/yssk22/go/x/xlog/xlog_test.go#82)
 }

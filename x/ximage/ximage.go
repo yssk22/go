@@ -3,6 +3,10 @@ package ximage
 
 import (
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"mime"
 )
 
@@ -25,6 +29,18 @@ func TypeByExtension(ext string) ImageType {
 		return ImageTypePNG
 	}
 	return ImageTypeUnknown
+}
+
+// Decode decodes the image
+func Decode(src io.Reader, t ImageType) (image.Image, error) {
+	switch t {
+	case ImageTypePNG:
+		return png.Decode(src)
+	case ImageTypeJPEG:
+		return jpeg.Decode(src)
+	default:
+		return nil, ErrUnsupportedImageType
+	}
 }
 
 // ErrUnsupportedImageType is an error when unsupported ImageType passed

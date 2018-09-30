@@ -3,8 +3,8 @@ package oauth2
 import (
 	"fmt"
 
-	"github.com/speedland/go/web/middleware/session"
-	"golang.org/x/net/context"
+	"github.com/yssk22/go/web/middleware/session"
+	"context"
 )
 
 const oauth2SessionStateKey = "web.middleware.oauth2.state"

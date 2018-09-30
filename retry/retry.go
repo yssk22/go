@@ -1,49 +1,61 @@
 package retry
 
 import (
+	"fmt"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Do retries `task` function until it returns nil error.
 // If task return an error, checker checks if the retry is needed afeter waitng by waiter.
-func Do(ctx context.Context, task func(context.Context) error, waiter Waiter, checker Checker) error {
+func Do(ctx context.Context, task func(context.Context) error, backoff Backoff, checker Checker) error {
 	var err error
-	for checker.Check() {
-		if err = task(ctx); err == nil {
+	var attempt int
+	for {
+		err = task(ctx)
+		attempt++
+		if err == nil {
 			return nil
 		}
-		waiter.Wait()
+		if !checker.NeedRetry(ctx, attempt, err) {
+			return err
+		}
+		ticker := time.NewTicker(backoff.Calc(ctx, attempt))
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("retry canceled: %v", ctx.Err())
+		case <-ticker.C:
+			break
+		}
 	}
 	return err
 }
 
-// Waiter is an interface to wait for the next retry
-type Waiter interface {
-	Wait()
+// Backoff is an interface to implement backoff algorithm
+type Backoff interface {
+	Calc(context.Context, int) time.Duration
 }
 
-// Interval return a Waiter to wait for a given `t` interval.
-func Interval(t time.Duration) Waiter {
-	return &intervalWaiter{
+// ConstBackoff return a Backoff to return a constant time.Duration backoff given by `t`
+func ConstBackoff(t time.Duration) Backoff {
+	return &constBackoff{
 		interval: t,
 	}
 }
 
-// IntervalWaiter is a waiter to wait for the given interval time.
-type intervalWaiter struct {
+type constBackoff struct {
 	interval time.Duration
 }
 
-// Wait implements Waiter#Wait()
-func (w *intervalWaiter) Wait() {
-	time.Sleep(w.interval)
+// Calc implements Backoff#Calc
+func (b *constBackoff) Calc(ctx context.Context, attempt int) time.Duration {
+	return b.interval
 }
 
 // Checker is an interface to check if a retry is needed or not.
 type Checker interface {
-	Check() bool
+	NeedRetry(context.Context, int, error) bool
 }
 
 // Until returns a Checker to check the time is before `t`
@@ -57,24 +69,21 @@ type until struct {
 	t time.Time
 }
 
-func (u *until) Check() bool {
+func (u *until) NeedRetry(ctx context.Context, attempt int, err error) bool {
 	return time.Now().Before(u.t)
 }
 
 // MaxRetries returns a Checker to check the number of retries is less than max.
 func MaxRetries(max int) Checker {
 	return &maxRetries{
-		retries: 0,
-		max:     max,
+		max: max,
 	}
 }
 
 type maxRetries struct {
-	retries int
-	max     int
+	max int
 }
 
-func (mr *maxRetries) Check() bool {
-	mr.retries++
-	return mr.retries <= mr.max
+func (mr *maxRetries) NeedRetry(ctx context.Context, attempt int, err error) bool {
+	return attempt < mr.max
 }

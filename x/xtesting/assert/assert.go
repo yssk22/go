@@ -3,7 +3,7 @@
 //
 //    import (
 //        "testing"
-//        "github.com/speedland/go/x/xtesting/assert"
+//        "github.com/yssk22/go/x/xtesting/assert"
 //    )
 //
 //    func TestSomething(t *testing.T){
@@ -16,12 +16,16 @@
 package assert
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/speedland/go/x/xreflect"
-	"github.com/speedland/go/x/xruntime"
+	"strings"
+
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/yssk22/go/x/xreflect"
+	"github.com/yssk22/go/x/xruntime"
 )
 
 // Assert is a helper struct for testing assersion
@@ -121,6 +125,30 @@ func (a *Assert) EqFloat64(expect, got float64, msgContext ...interface{}) {
 // EqStr for equality assertion (string)
 func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 	if expect != got {
+		if strings.IndexByte(got, '\n') >= 0 {
+			dmp := diffmatchpatch.New()
+			diffs := dmp.DiffMain(expect, got, false)
+			var buff bytes.Buffer
+			buff.WriteString("[DIFF]\n")
+			for _, diff := range diffs {
+				text := diff.Text
+				text = strings.Replace(text, "\n", "\\n\n", -1)
+				switch diff.Type {
+				case diffmatchpatch.DiffInsert:
+					_, _ = buff.WriteString("\x1b[41m")
+					_, _ = buff.WriteString(text)
+					_, _ = buff.WriteString("\x1b[0m")
+				case diffmatchpatch.DiffDelete:
+					_, _ = buff.WriteString("\x1b[44m")
+					_, _ = buff.WriteString(text)
+					_, _ = buff.WriteString("\x1b[0m")
+				case diffmatchpatch.DiffEqual:
+					_, _ = buff.WriteString(text)
+				}
+			}
+			a.Failure(expect, got, buff.String())
+			return
+		}
 		a.Failure(expect, got, msgContext...)
 	}
 }
@@ -128,7 +156,7 @@ func (a *Assert) EqStr(expect, got string, msgContext ...interface{}) {
 // EqByteString for equality assertion ([]byte string)
 func (a *Assert) EqByteString(expect string, got []byte, msgContext ...interface{}) {
 	if expect != string(got) {
-		a.Failure(expect, got, msgContext...)
+		a.Failure(expect, string(got), msgContext...)
 	}
 }
 

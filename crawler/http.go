@@ -43,7 +43,9 @@ func (f *HTTPFetcher) Fetch() (io.Reader, error) {
 	}
 	var buff bytes.Buffer
 	defer resp.Body.Close()
-	io.Copy(&buff, resp.Body)
+	if _, err := io.Copy(&buff, resp.Body); err != nil {
+		return nil, err
+	}
 	if resp.StatusCode != 200 {
 		return nil, &ErrHTTP{Response: resp, Content: buff.Bytes()}
 	}

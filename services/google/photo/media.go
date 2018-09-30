@@ -68,7 +68,7 @@ type Thumbnail struct {
 func NewUploadMediaInfo(title string) *UploadMediaInfo {
 	m := &UploadMediaInfo{}
 	m.Title = title
-	m.Client = "gphoto client (speedland.net)"
+	m.Client = "gphoto client (github.com/yssk22)"
 	m.Category = &Category{
 		Scheme: "http://schemas.google.com/g/2005#kind",
 		Term:   "http://schemas.google.com/photos/2007#photo",

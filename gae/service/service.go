@@ -1,5 +1,5 @@
 // Package service provides a gae service instance framework on top of
-// github.com/speedland/go/web package.
+// github.com/yssk22/go/web package.
 //
 // Using this package, what you need to do in your GAE app looks like this:
 //
@@ -20,11 +20,17 @@ import (
 	"path"
 	"strings"
 
-	xtaskqueue "github.com/speedland/go/gae/taskqueue"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xcontext"
-	"golang.org/x/net/context"
+	"sync"
+
+	"context"
+
+	"github.com/yssk22/go/gae/service/config"
+	xtaskqueue "github.com/yssk22/go/gae/taskqueue"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/web/response/view"
+	"github.com/yssk22/go/x/xcontext"
 	"google.golang.org/appengine"
 )
 
@@ -33,11 +39,18 @@ var ContextKey = xcontext.NewKey("service")
 
 // Service is a set of endpoints
 type Service struct {
-	key       string // service key
-	urlPrefix string // url base path
-	namespace string // datastore/memcache namespace for services
-	crons     []*cron
+	Init      func(*web.Request)
+	Every     func(*web.Request)
+	OnError   func(*web.Request, error) *response.Response
+	Config    *config.Config // Configuration that admin can update.
+	APIConfig *BuiltInAPIConfig
+	once      sync.Once // for Init control
+	key       string    // service key
+	urlPrefix string    // url base path
+	namespace string    // datastore/memcache namespace for services
+	crons     []*Cron
 	queues    []*xtaskqueue.PushQueue
+	tasks     []*Task
 	router    *web.Router // service router
 }
 
@@ -48,6 +61,20 @@ func FromContext(ctx context.Context) *Service {
 		return service
 	}
 	return nil
+}
+
+// WithContext returns a new context.Context associated with the service
+func WithContext(ctx context.Context, s *Service) context.Context {
+	return context.WithValue(ctx, ContextKey, s)
+}
+
+// MustFromContext is like FromContext but panics if a service is not in the context
+func MustFromContext(ctx context.Context) *Service {
+	service, ok := ctx.Value(ContextKey).(*Service)
+	if !ok {
+		panic(fmt.Errorf("not a service context"))
+	}
+	return service
 }
 
 // New returns a new *Service instance
@@ -64,24 +91,27 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 	if key == "" {
 		panic(fmt.Errorf("service key must not be nil"))
 	}
+	option := &web.Option{
+		HMACKey: web.DefaultOption.HMACKey,
+		InitContext: func(r *http.Request) context.Context {
+			return appengine.NewContext(r)
+		},
+	}
 	s := &Service{
 		key:       key,
 		urlPrefix: url,
 		namespace: namespace,
-		router:    web.NewRouter(nil),
+		router:    web.NewRouter(option),
+		Config:    config.New(),
+		APIConfig: &BuiltInAPIConfig{
+			AuthNamespace: "",
+		},
 	}
-
-	s.router.Use(web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		ctx, err := appengine.Namespace(req.Context(), namespace)
-		if err != nil {
-			panic(err)
-		}
-		ctx = context.WithValue(ctx, ContextKey, s)
-		return next(req.WithContext(ctx))
-	}))
-
-	s.Get("/__/cron.yaml", web.HandlerFunc(s.serveCronYAML))
-	s.Get("/__/queue.yaml", web.HandlerFunc(s.serveQueueYAML))
+	s.router.Use(namespaceMiddleware(s))
+	s.router.Use(errorMiddleware)
+	s.Use(initMiddleware)
+	s.Use(session.Default)
+	s.Use(everyMiddleware)
 	return s
 }
 
@@ -100,7 +130,7 @@ func (s *Service) Key() string {
 	return s.key
 }
 
-// URLPrefix returns a namespace string
+// URLPrefix returns a url prefix string
 func (s *Service) URLPrefix() string {
 	return s.urlPrefix
 }
@@ -108,6 +138,15 @@ func (s *Service) URLPrefix() string {
 // Namespace returns a namespace string
 func (s *Service) Namespace() string {
 	return s.namespace
+}
+
+// WithNamespace sets the namespace of the given context
+func (s *Service) WithNamespace(ctx context.Context) context.Context {
+	ctx, err := appengine.Namespace(ctx, s.namespace)
+	if err != nil {
+		panic(err)
+	}
+	return ctx
 }
 
 // Use adds the middleware onto the service router
@@ -133,6 +172,11 @@ func (s *Service) Put(path string, handlers ...web.Handler) {
 // Delete defines an endpoint for DELETE
 func (s *Service) Delete(path string, handlers ...web.Handler) {
 	s.router.Delete(s.Path(path), handlers...)
+}
+
+// Page defines an endpoint for view.Page interaface
+func (s *Service) Page(path string, p view.Page) {
+	view.Mount(s.router, s.Path(path), p)
 }
 
 // Path returns an absolute path for this s.

@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
 )
 
 // ServeFile returns web.Handler that serve a file content on `path`

@@ -10,8 +10,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/speedland/go/x/xerrors"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xerrors"
+	"github.com/yssk22/go/x/xtime"
 )
 
 const uint32max = (1 << 32) - 1

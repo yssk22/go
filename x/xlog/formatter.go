@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/speedland/go/ansi"
+	"github.com/yssk22/go/ansi"
 )
 
 // Formatter is an inerface to convert *Record to []byte
@@ -175,7 +175,7 @@ func (f *textFormatterTemplate) Format(r *Record) ([]byte, error) {
 	return []byte(f.code.Sprintf(buff.String())), nil
 }
 
-const textFormatterTemplateName = "github.com/speedland/go/x/xlog" // template name for TextFormatter
+const textFormatterTemplateName = "github.com/yssk22/go/x/xlog" // template name for TextFormatter
 const textFormatterNewline = "\n"
 
 var defaultFuncMap = map[string]interface{}{
@@ -184,14 +184,11 @@ var defaultFuncMap = map[string]interface{}{
 	},
 	"formatstack": func(r *Record) string {
 		if r.Stack == nil {
-			return "<No stack available>"
+			return ""
 		}
 		var i = 0
 		var buff bytes.Buffer
 		for i = range r.Stack {
-			if r.Stack[i].PackageName == "" {
-				return buff.String()
-			}
 			buff.WriteString(fmt.Sprintf("\n\t%s", r.Stack[i].String()))
 		}
 		if i == 50 {
