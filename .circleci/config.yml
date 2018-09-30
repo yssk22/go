@@ -23,8 +23,8 @@ jobs:
       - run:
           name: Unit Tests
           command: |
-            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test/results.xml" EXIT
             go test ./... | tee ${TEST_RESULTS}/go-test.out
+            go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test/results.xml
       - store_test_results:
           path: /tmp/test-results
       - run:
