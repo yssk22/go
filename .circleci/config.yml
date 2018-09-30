@@ -4,18 +4,18 @@ jobs:
     docker:
       - image: speedland/circle-ci-gae:latest
     working_directory: /go/src/github.com/yssk22/go
-
     environment:
       TEST_RESULTS: /tmp/test-results
       BIN_RESULTS: /tmp/artifacts
-
     steps:
+      - run: echo 'export PATH=${GOPATH}/bin/:${PATH}' >> $BASH_ENV
       - checkout
       - run:
           name: Install Dependencies
           command: |
             go get -t ./...
             go get -u github.com/jstemmer/go-junit-report
+            go get github.com/haya14busa/goverage
       - run:
           name: Prepare Output Store
           command: |
@@ -25,6 +25,11 @@ jobs:
           command: |
             go test -v ./... | tee ${TEST_RESULTS}/go-test.out
             go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test/results.xml
+      - run:
+          name: Coverage
+          command: |
+            goverage -coverprofile=./coverage.text ./...
+            bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: /tmp/test-results
       - run:
