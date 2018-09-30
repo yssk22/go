@@ -6,7 +6,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestHTMLScraper(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"unicode"
 
-	"github.com/speedland/go/keyvalue"
+	"github.com/yssk22/go/keyvalue"
 )
 
 // EnvVar implements keyvalue.Getter for environment variables.

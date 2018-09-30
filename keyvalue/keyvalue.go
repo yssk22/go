@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 
-	"github.com/speedland/go/number"
+	"github.com/yssk22/go/number"
 )
 
 // Getter is an interface to get a value by a key

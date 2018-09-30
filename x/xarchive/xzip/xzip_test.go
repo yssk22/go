@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestArchiver(t *testing.T) {

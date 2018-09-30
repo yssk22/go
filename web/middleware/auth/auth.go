@@ -1,6 +1,6 @@
 package auth
 
-import "github.com/speedland/go/web/middleware/session"
+import "github.com/yssk22/go/web/middleware/session"
 
 type AuthProvider interface {
 	Get(*session.Session) (interface{}, error)

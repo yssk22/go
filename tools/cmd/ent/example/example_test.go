@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/x/xtime"
 
-	"github.com/speedland/go/ent"
-	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/gae/memcache"
+	"github.com/yssk22/go/ent"
+	"github.com/yssk22/go/gae/gaetest"
+	"github.com/yssk22/go/gae/memcache"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 	"google.golang.org/appengine"
 	memc "google.golang.org/appengine/memcache"
 )

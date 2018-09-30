@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/speedland/go/lazy"
+	"github.com/yssk22/go/lazy"
 
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/x/xlog"
 
-	"github.com/speedland/go/web"
+	"github.com/yssk22/go/web"
 
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web/response"
 
 	"context"
 )

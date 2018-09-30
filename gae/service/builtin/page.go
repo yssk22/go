@@ -1,8 +1,8 @@
 package builtin
 
 import (
-	"github.com/speedland/go/gae/service"
-	"github.com/speedland/go/web/response/view/reactapp"
+	"github.com/yssk22/go/gae/service"
+	"github.com/yssk22/go/web/response/view/reactapp"
 )
 
 const appName = "admin"

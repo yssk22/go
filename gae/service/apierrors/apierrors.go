@@ -1,7 +1,7 @@
 package apierrors
 
 import (
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web/response"
 )
 
 // Error represents API error

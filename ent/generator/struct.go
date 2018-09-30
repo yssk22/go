@@ -7,7 +7,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 // Struct is a parsed result of struct to generate a code.
@@ -33,14 +33,14 @@ func NewStruct(typeName string, kindName string) *Struct {
 	}
 	s.AddDependency("fmt")
 	s.AddDependency("context")
-	s.AddDependencyAs("github.com/speedland/go/gae/datastore", "helper")
-	s.AddDependency("github.com/speedland/go/ent")
-	s.AddDependency("github.com/speedland/go/gae/memcache")
-	s.AddDependency("github.com/speedland/go/keyvalue")
-	s.AddDependency("github.com/speedland/go/lazy")
-	s.AddDependency("github.com/speedland/go/x/xerrors")
-	s.AddDependency("github.com/speedland/go/x/xlog")
-	s.AddDependency("github.com/speedland/go/x/xtime")
+	s.AddDependencyAs("github.com/yssk22/go/gae/datastore", "helper")
+	s.AddDependency("github.com/yssk22/go/ent")
+	s.AddDependency("github.com/yssk22/go/gae/memcache")
+	s.AddDependency("github.com/yssk22/go/keyvalue")
+	s.AddDependency("github.com/yssk22/go/lazy")
+	s.AddDependency("github.com/yssk22/go/x/xerrors")
+	s.AddDependency("github.com/yssk22/go/x/xlog")
+	s.AddDependency("github.com/yssk22/go/x/xtime")
 	s.AddDependency("google.golang.org/appengine")
 	s.AddDependency("google.golang.org/appengine/datastore")
 	return s

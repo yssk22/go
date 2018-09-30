@@ -1,8 +1,8 @@
 package ia
 
 import (
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
 )
 
 type Func func(*web.Request) (*PageVars, error)

@@ -2,7 +2,7 @@
 //
 // Setup:
 //
-//     go get github.com/speedland/go/tools/cmd/enum/
+//     go get github.com/yssk22/go/tools/cmd/enum/
 //
 // Usage: Define enum type using type alias and values by constants with the type name prefix.
 //

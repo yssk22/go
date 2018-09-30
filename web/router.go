@@ -3,9 +3,9 @@ package web
 import (
 	"net/http"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xlog"
 )
 
 // Router is a http traffic router

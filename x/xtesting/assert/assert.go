@@ -3,7 +3,7 @@
 //
 //    import (
 //        "testing"
-//        "github.com/speedland/go/x/xtesting/assert"
+//        "github.com/yssk22/go/x/xtesting/assert"
 //    )
 //
 //    func TestSomething(t *testing.T){
@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/speedland/go/x/xreflect"
-	"github.com/speedland/go/x/xruntime"
+	"github.com/yssk22/go/x/xreflect"
+	"github.com/yssk22/go/x/xruntime"
 )
 
 // Assert is a helper struct for testing assersion

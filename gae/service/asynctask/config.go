@@ -9,12 +9,12 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/gae/taskqueue"
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xruntime"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/gae/taskqueue"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xruntime"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // Config is an configuration object to define AsyncTask endpoints

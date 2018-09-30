@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
 )
 
 // RequestFactory is an interface to create a new request.

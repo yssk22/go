@@ -5,8 +5,8 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/web/middleware/session"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/web/middleware/session"
 	"google.golang.org/appengine/user"
 )
 

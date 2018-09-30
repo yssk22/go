@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // ServiceConfig is a configuration object for a service

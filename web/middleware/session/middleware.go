@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // SessionLoggerKey is a logger key for the middleware

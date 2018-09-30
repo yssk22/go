@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/speedland/go/web"
+	"github.com/yssk22/go/web"
 )
 
 // CronTimezone is a timezone used in cron.yaml

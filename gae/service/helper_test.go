@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/speedland/go/web/httptest"
+	"github.com/yssk22/go/web/httptest"
 )
 
 func TestNewHTTPClient(t *testing.T) {

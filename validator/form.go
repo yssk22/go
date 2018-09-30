@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 )
 
 type fieldType int

@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web/middleware/session"
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
 	"context"
 )
 

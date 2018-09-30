@@ -3,7 +3,7 @@ package oauth2
 import (
 	"fmt"
 
-	"github.com/speedland/go/web/middleware/session"
+	"github.com/yssk22/go/web/middleware/session"
 	"context"
 )
 

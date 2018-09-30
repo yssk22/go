@@ -7,8 +7,8 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/x/xruntime"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xruntime"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // Record is a data set for one log line/data

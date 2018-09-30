@@ -8,11 +8,11 @@ import (
 
 	"google.golang.org/appengine/urlfetch"
 
-	"github.com/speedland/go/retry"
-	"github.com/speedland/go/services/facebook/messenger"
-	"github.com/speedland/go/web/response/view/react"
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/retry"
+	"github.com/yssk22/go/services/facebook/messenger"
+	"github.com/yssk22/go/web/response/view/react"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // HTTPClientLoggerKey is a xlog key for this package

@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/speedland/go/ansi"
+	"github.com/yssk22/go/ansi"
 )
 
 // Formatter is an inerface to convert *Record to []byte
@@ -175,7 +175,7 @@ func (f *textFormatterTemplate) Format(r *Record) ([]byte, error) {
 	return []byte(f.code.Sprintf(buff.String())), nil
 }
 
-const textFormatterTemplateName = "github.com/speedland/go/x/xlog" // template name for TextFormatter
+const textFormatterTemplateName = "github.com/yssk22/go/x/xlog" // template name for TextFormatter
 const textFormatterNewline = "\n"
 
 var defaultFuncMap = map[string]interface{}{

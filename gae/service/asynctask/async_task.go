@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/speedland/go/x/xcontext"
+	"github.com/yssk22/go/x/xcontext"
 )
 
 // LoggerKey is a xlog key for this package

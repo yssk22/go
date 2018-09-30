@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func newPayload(jsonStr ...string) io.Reader {

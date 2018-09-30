@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestRss2Scraper(t *testing.T) {

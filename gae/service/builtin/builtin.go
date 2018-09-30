@@ -1,6 +1,6 @@
 package builtin
 
-import "github.com/speedland/go/gae/service"
+import "github.com/yssk22/go/gae/service"
 
 // Setup sets up builtin APIs and Pages
 func Setup(s *service.Service) *service.Service {

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // StubCreator returns *http.Client that creates files for stubs by real accesses if

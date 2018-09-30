@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"html/template"
 
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xtime"
 )
 
 var processStartAt = fmt.Sprintf("%d", xtime.Now().Unix())

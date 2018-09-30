@@ -3,7 +3,7 @@ package messenger
 import (
 	"net/http"
 
-	"github.com/speedland/go/services/facebook"
+	"github.com/yssk22/go/services/facebook"
 	"context"
 )
 

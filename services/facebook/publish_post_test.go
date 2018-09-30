@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func Test_PublishPostMessage(t *testing.T) {

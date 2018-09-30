@@ -7,12 +7,12 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/services/facebook"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/x/xerrors"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/services/facebook"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/x/xerrors"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // AuthType is an enum for authentication types.

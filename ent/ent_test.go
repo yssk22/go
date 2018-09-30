@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/speedland/go/gae/datastore"
-	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/gae/datastore"
+	"github.com/yssk22/go/gae/gaetest"
+	"github.com/yssk22/go/x/xtesting/assert"
 	"google.golang.org/appengine"
 )
 

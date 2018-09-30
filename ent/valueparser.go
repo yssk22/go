@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/speedland/go/number"
-	"github.com/speedland/go/x/xstrings"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/number"
+	"github.com/yssk22/go/x/xstrings"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // ParseBool parse bool value

@@ -2,7 +2,7 @@
 package oauth2
 
 import (
-	"github.com/speedland/go/x/xcontext"
+	"github.com/yssk22/go/x/xcontext"
 	"context"
 	"golang.org/x/oauth2"
 )

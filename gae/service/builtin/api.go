@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/speedland/go/gae/service"
-	"github.com/speedland/go/gae/service/apierrors"
-	"github.com/speedland/go/gae/service/auth"
-	"github.com/speedland/go/services/facebook/messenger"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/gae/service"
+	"github.com/yssk22/go/gae/service/apierrors"
+	"github.com/yssk22/go/gae/service/auth"
+	"github.com/yssk22/go/services/facebook/messenger"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xerrors"
 
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/x/xlog"
 	"google.golang.org/appengine"
 )
 

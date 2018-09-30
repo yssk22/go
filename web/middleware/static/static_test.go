@@ -3,8 +3,8 @@ package static
 import (
 	"testing"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/httptest"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/httptest"
 )
 
 func TestServeFile(t *testing.T) {

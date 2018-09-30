@@ -5,8 +5,8 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/uuid"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/uuid"
 )
 
 // MemorySessionStore implements SessionStore on Memory

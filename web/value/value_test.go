@@ -3,9 +3,9 @@ package value
 import (
 	"fmt"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/httptest"
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/httptest"
+	"github.com/yssk22/go/web/response"
 )
 
 func ExampleNewRequestValue() {

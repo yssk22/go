@@ -1,9 +1,9 @@
 package form
 
 import (
-	"github.com/speedland/go/validator"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/validator"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
 )
 
 type Middleware struct {

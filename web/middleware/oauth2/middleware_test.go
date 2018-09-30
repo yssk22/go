@@ -7,13 +7,13 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/httptest"
-	"github.com/speedland/go/web/middleware/session"
-	"github.com/speedland/go/web/middleware/session/sessiontest"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/httptest"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/web/middleware/session/sessiontest"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
 
 	"golang.org/x/oauth2"
 )

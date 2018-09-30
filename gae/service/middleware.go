@@ -6,10 +6,10 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/gae/service/apierrors"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/gae/service/apierrors"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xlog"
 	"google.golang.org/appengine"
 )
 

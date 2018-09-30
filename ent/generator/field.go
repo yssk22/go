@@ -5,7 +5,7 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 // Field is a type field

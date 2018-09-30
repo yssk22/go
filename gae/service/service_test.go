@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/httptest"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/gae/gaetest"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/httptest"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xlog"
 )
 
 func TestMain(m *testing.M) {

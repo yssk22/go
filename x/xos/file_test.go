@@ -3,7 +3,7 @@ package xos
 import (
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func Test_TryStats(t *testing.T) {
