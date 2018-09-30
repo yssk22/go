@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/speedland/go/x/xarchive/xzip"
+	"github.com/yssk22/go/x/xarchive/xzip"
 
 	"context"
 )

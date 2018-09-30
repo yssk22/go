@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"mime/multipart"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 type VideoParams struct {

@@ -6,7 +6,7 @@ import (
 	"image/png"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestCrop(t *testing.T) {

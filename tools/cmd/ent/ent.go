@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	ent "github.com/speedland/go/ent/generator"
-	"github.com/speedland/go/tools/generator"
-	"github.com/speedland/go/x/xstrings"
+	ent "github.com/yssk22/go/ent/generator"
+	"github.com/yssk22/go/tools/generator"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 const defaultOutput = "datastore_helper.go"

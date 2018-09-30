@@ -10,10 +10,10 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/speedland/go/x/xerrors"
-	"github.com/speedland/go/x/xstrings"
+	"github.com/yssk22/go/x/xerrors"
+	"github.com/yssk22/go/x/xstrings"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 
 	"io/ioutil"
 
@@ -21,7 +21,7 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/x/xlog"
+	"github.com/yssk22/go/x/xlog"
 )
 
 const (

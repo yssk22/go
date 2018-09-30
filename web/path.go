@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/speedland/go/iterator/slice"
-	"github.com/speedland/go/keyvalue"
+	"github.com/yssk22/go/iterator/slice"
+	"github.com/yssk22/go/keyvalue"
 )
 
 // PathPattern is a struct to support path parameters and matches incoming request paths.

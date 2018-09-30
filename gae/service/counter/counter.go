@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/x/xerrors"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/speedland/go/services/google/photo"
+	"github.com/yssk22/go/services/google/photo"
 )
 
 var commandRm = cli.Command{

@@ -1,8 +1,8 @@
 package view
 
 import (
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
 )
 
 // Mount mounts a route of `router` with Page

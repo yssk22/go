@@ -6,12 +6,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/speedland/go/gae/service/apierrors"
-	"github.com/speedland/go/gae/service/asynctask"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/gae/service/apierrors"
+	"github.com/yssk22/go/gae/service/asynctask"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // Task is a defined task in the service.

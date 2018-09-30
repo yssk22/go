@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/lazy"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/gae/gaetest"
+	"github.com/yssk22/go/lazy"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-const queryLoggerKey = "github.com/speedland/go/gae/datastore.Query"
+const queryLoggerKey = "github.com/yssk22/go/gae/datastore.Query"
 
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)

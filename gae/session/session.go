@@ -1,10 +1,10 @@
-// Package session provides github.com/speedland/go/web/middleware/session.SessionStore
+// Package session provides github.com/yssk22/go/web/middleware/session.SessionStore
 // implementation for GAE environment
 package session
 
 import "time"
 
-// Session is a wrapped struct for github.com/speedland/go/web/middleware/sesison.Session
+// Session is a wrapped struct for github.com/yssk22/go/web/middleware/sesison.Session
 //go:generate ent -type=Session
 type Session struct {
 	ID         string    `json:"id" ent:"id"`

@@ -9,11 +9,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/speedland/go/keyvalue"
-	"github.com/speedland/go/uuid"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/x/xcontext"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/uuid"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/x/xcontext"
+	"github.com/yssk22/go/x/xtime"
 	"context"
 )
 

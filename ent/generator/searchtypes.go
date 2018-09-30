@@ -9,14 +9,14 @@ type searchTypeDef struct {
 var searchTypes = map[string]*searchTypeDef{
 	"bool": &searchTypeDef{
 		Type:      "google.golang.org/appengine/search.Atom",
-		Converter: "github.com/speedland/go/ent.BoolToAtom",
+		Converter: "github.com/yssk22/go/ent.BoolToAtom",
 	},
 	"string": &searchTypeDef{
 		Type: "string",
 	},
 	"[]byte": &searchTypeDef{
 		Type:      "google.golang.org/appengine/search.HTML",
-		Converter: "github.com/speedland/go/ent.BytesToHTML",
+		Converter: "github.com/yssk22/go/ent.BytesToHTML",
 	},
 	"int": &searchTypeDef{
 		Type:      "float64",
@@ -35,7 +35,7 @@ var searchTypes = map[string]*searchTypeDef{
 	},
 	"time.Time": &searchTypeDef{
 		Type:      "float64",
-		Converter: "github.com/speedland/go/ent.TimeToFloat64",
+		Converter: "github.com/yssk22/go/ent.TimeToFloat64",
 	},
 	"appengine.GeoPoint": &searchTypeDef{
 		Type: "google.golang.org/appengine.GeoPoint",

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/speedland/go/x/xlog"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xtime"
 
 	"context"
 

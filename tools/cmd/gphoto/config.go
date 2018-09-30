@@ -6,8 +6,8 @@ package main
 import (
 	"context"
 
-	"github.com/speedland/go/services/google/photo"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/services/google/photo"
+	"github.com/yssk22/go/x/xtime"
 	"golang.org/x/oauth2"
 )
 

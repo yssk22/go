@@ -8,8 +8,8 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/x/xcrypto/xhmac"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xcrypto/xhmac"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestSetCookie(t *testing.T) {

@@ -27,11 +27,11 @@ func (f ScraperFunc) Scrape(r io.Reader) (interface{}, error) {
 }
 
 // HTMLScraper is a function wrapper for Scraper interface using goquery.
-// [Deprecation] use github.com/speedland/go/crawler/html.HTMLScraper instead
+// [Deprecation] use github.com/yssk22/go/crawler/html.HTMLScraper instead
 type HTMLScraper func(doc *goquery.Document) (interface{}, error)
 
 // Scrape implements Scraper#Scrape
-// [Deprecation] use github.com/speedland/go/crawler/html.HTMLScraper#Scrape instead
+// [Deprecation] use github.com/yssk22/go/crawler/html.HTMLScraper#Scrape instead
 func (f HTMLScraper) Scrape(r io.Reader) (interface{}, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {

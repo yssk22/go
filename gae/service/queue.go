@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/speedland/go/gae/taskqueue"
+	"github.com/yssk22/go/gae/taskqueue"
 )
 
 // AddPushQueue adds a named queue into the service.

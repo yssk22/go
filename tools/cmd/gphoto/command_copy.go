@@ -13,7 +13,7 @@ import (
 
 	"github.com/cheggaaa/pb"
 	"github.com/codegangsta/cli"
-	"github.com/speedland/go/services/google/photo"
+	"github.com/yssk22/go/services/google/photo"
 )
 
 var commandCopy = cli.Command{

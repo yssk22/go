@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // Timestamp is a time.Time alias that uses timestamp serialization for json.

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/speedland/go/web/response"
+	"github.com/yssk22/go/web/response"
 
 	"context"
 

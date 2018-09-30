@@ -1,5 +1,5 @@
 // Package service provides a gae service instance framework on top of
-// github.com/speedland/go/web package.
+// github.com/yssk22/go/web package.
 //
 // Using this package, what you need to do in your GAE app looks like this:
 //
@@ -24,13 +24,13 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/gae/service/config"
-	xtaskqueue "github.com/speedland/go/gae/taskqueue"
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/middleware/session"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/web/response/view"
-	"github.com/speedland/go/x/xcontext"
+	"github.com/yssk22/go/gae/service/config"
+	xtaskqueue "github.com/yssk22/go/gae/taskqueue"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/web/response/view"
+	"github.com/yssk22/go/x/xcontext"
 	"google.golang.org/appengine"
 )
 

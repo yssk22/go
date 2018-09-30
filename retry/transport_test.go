@@ -8,8 +8,8 @@ import (
 
 	"io/ioutil"
 
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func Test_HTTPTransport_SuccessWithRetry(t *testing.T) {

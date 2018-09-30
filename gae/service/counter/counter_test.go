@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 
-	"github.com/speedland/go/gae/gaetest"
+	"github.com/yssk22/go/gae/gaetest"
 )
 
 func TestMain(m *testing.M) {

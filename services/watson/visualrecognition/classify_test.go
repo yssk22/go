@@ -7,9 +7,9 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/x/xarchive/xzip"
-	"github.com/speedland/go/x/xnet/xhttp/xhttptest"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xarchive/xzip"
+	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestClient_ClassifyURL(t *testing.T) {

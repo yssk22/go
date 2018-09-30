@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/speedland/go/x/xcrypto/xhmac"
+	"github.com/yssk22/go/x/xcrypto/xhmac"
 )
 
 // SignCookie returns a shallow copy of *http.Cookie with adding hmac signature on it's value.

@@ -3,7 +3,7 @@ package dsutil
 import (
 	"log"
 
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtime"
 
 	"google.golang.org/appengine/datastore"
 

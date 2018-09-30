@@ -1,7 +1,7 @@
 package asynctask
 
 import (
-	"github.com/speedland/go/keyvalue"
+	"github.com/yssk22/go/keyvalue"
 	"context"
 )
 

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/speedland/go/tools/gaeutil"
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/tools/gaeutil"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 var (

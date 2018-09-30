@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
-	"github.com/speedland/go/x/xtime"
+	"github.com/yssk22/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtime"
 )
 
 func Test_CreateSlideshow(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 
 	"github.com/codegangsta/cli"
-	"github.com/speedland/go/x/xos"
+	"github.com/yssk22/go/x/xos"
 )
 
 var version = "development"

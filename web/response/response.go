@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/speedland/go/x/xcrypto/xhmac"
-	"github.com/speedland/go/x/xnet/xhttp"
+	"github.com/yssk22/go/x/xcrypto/xhmac"
+	"github.com/yssk22/go/x/xnet/xhttp"
 
 	"context"
 )

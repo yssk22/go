@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/speedland/go/gae/gaetest"
-	"github.com/speedland/go/web/middleware/session"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/gae/gaetest"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestMain(m *testing.M) {

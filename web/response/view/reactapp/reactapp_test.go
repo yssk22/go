@@ -9,9 +9,9 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/x/xerrors"
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/x/xerrors"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func genResponse(p *Page) (*goquery.Document, *httptest.ResponseRecorder) {

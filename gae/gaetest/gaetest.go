@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/speedland/go/web/httptest"
+	"github.com/yssk22/go/web/httptest"
 
 	"context"
 

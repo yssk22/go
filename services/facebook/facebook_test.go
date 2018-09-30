@@ -8,7 +8,7 @@ import (
 
 	"context"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func newTestClient(t *testing.T) *Client {

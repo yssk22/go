@@ -3,7 +3,7 @@ package agent
 import "time"
 import "context"
 
-import "github.com/speedland/go/x/xlog"
+import "github.com/yssk22/go/x/xlog"
 
 // Periodic is an Agent implementation to run a job by periodic intervals.
 type Periodic struct {

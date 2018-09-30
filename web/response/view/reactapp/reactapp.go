@@ -3,10 +3,10 @@ package reactapp
 import (
 	"html/template"
 
-	"github.com/speedland/go/web"
-	"github.com/speedland/go/web/middleware/session"
-	"github.com/speedland/go/web/response"
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/middleware/session"
+	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // PageVarsGenerator is an interface to generate a *PageVars

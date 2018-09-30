@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/speedland/go/x/xtesting/assert"
+	"github.com/yssk22/go/x/xtesting/assert"
 )
 
 func TestRGB_Parse(t *testing.T) {

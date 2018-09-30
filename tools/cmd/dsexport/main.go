@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/speedland/go/tools/dsutil"
+	"github.com/yssk22/go/tools/dsutil"
 )
 
 var (

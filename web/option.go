@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"net/http"
 
-	"github.com/speedland/go/x/xcrypto/xhmac"
+	"github.com/yssk22/go/x/xcrypto/xhmac"
 )
 
 // Option provies the option fields for web package.

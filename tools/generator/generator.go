@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/speedland/go/x/xerrors"
+	"github.com/yssk22/go/x/xerrors"
 
-	"github.com/speedland/go/number"
+	"github.com/yssk22/go/number"
 )
 
 type Generator interface {
