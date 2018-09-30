@@ -23,7 +23,7 @@ jobs:
       - run:
           name: Unit Tests
           command: |
-            go test ./... | tee ${TEST_RESULTS}/go-test.out
+            go test -v ./... | tee ${TEST_RESULTS}/go-test.out
             go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test/results.xml
       - store_test_results:
           path: /tmp/test-results
