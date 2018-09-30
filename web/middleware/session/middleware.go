@@ -31,7 +31,7 @@ type Middleware struct {
 // Default is a middleware instance with default value
 var Default = &Middleware{
 	Store:      NewMemorySessionStore(),
-	CookieName: "speedland-go-session",
+	CookieName: "yssk22-go-session",
 	MaxAge:     7 * 24 * time.Hour,
 	Domain:     "localhost",
 	HttpOnly:   true,

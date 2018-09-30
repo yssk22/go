@@ -19,8 +19,8 @@ var version = "development"
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "speedland-gphoto"
-	app.Usage = "Google Photo Client for speedland apps"
+	app.Name = "yssk22-gphoto"
+	app.Usage = "Google Photo Client for yssk22 apps"
 	app.Version = version
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
