@@ -7,6 +7,7 @@ type generatorTemplateVars struct {
 	Services      []*Service
 	CronYamlPath  string
 	QueueYamlPath string
+	IndexYamlPath string
 }
 
 var goGeneratorTemplate = template.Must(template.New("gendeployment.gogenerator").Parse(`package main
@@ -24,7 +25,7 @@ import (
 )
 
 func main(){
-	var fcron, fqueue *os.File
+	var fcron, fqueue, findex *os.File
 	var err error
 	if fcron, err = os.Create("{{.CronYamlPath}}"); err != nil {
 		panic(err)
@@ -34,8 +35,14 @@ func main(){
 		panic(err)
 	}
 	defer fqueue.Close()
+	if findex, err = os.Create("{{.IndexYamlPath}}"); err != nil {
+		panic(err)
+	}
+	defer fqueue.Close()
+
 	fmt.Fprintf(fcron, "cron:\n")
 	fmt.Fprintf(fqueue, "queue:\n")
+	fmt.Fprintf(findex, "indexes:\n")
 	{{range .Services -}}
 	func(){
 		{{if .PackageAlias}}
@@ -45,6 +52,7 @@ func main(){
 		{{end}}
 		s.GenCronYAML(fcron)
 		s.GenQueueYAML(fqueue)
+		s.GenIndexYAML(findex)
 	}()
 	{{end}}
 }

@@ -57,7 +57,7 @@ func main() {
 }
 
 func createDeployment(deploymentDir string, appName string, main *Service, services ...*Service) {
-	os.MkdirAll(deploymentDir, 0755)
+	os.MkdirAll(filepath.Join(deploymentDir, main.Name), 0755)
 
 	tempdir, err := ioutil.TempDir("", "gendeployment")
 	xerrors.MustNil(err)
@@ -71,6 +71,7 @@ func createDeployment(deploymentDir string, appName string, main *Service, servi
 		AppName:       appName,
 		CronYamlPath:  filepath.Join(deploymentDir, main.Name, "cron.yaml"),
 		QueueYamlPath: filepath.Join(deploymentDir, main.Name, "queue.yaml"),
+		IndexYamlPath: filepath.Join(deploymentDir, main.Name, "index.yaml"),
 		Services:      append([]*Service{main}, services...),
 	}))
 	xerrors.MustNil(generatedFile.Close())

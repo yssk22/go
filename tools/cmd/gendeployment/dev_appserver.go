@@ -16,6 +16,7 @@ func startLocalServer(appName string, deploymentDir string, main *Service, servi
 	args = append(args, fmt.Sprintf("--application=%s", appName))
 	args = append(args, "--storage_path", ".localdata")
 	args = append(args, "--datastore_consistency_policy", "consistent")
+	args = append(args, "--require_indexes", "yes")
 	if len(services) > 0 {
 		args = append(args, filepath.Join(deploymentDir, main.Name, "dispatch.yaml"))
 	}
