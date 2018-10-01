@@ -107,8 +107,8 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 			AuthNamespace: "",
 		},
 	}
-	s.router.Use(namespaceMiddleware(s))
-	s.router.Use(errorMiddleware)
+	s.Use(namespaceMiddleware(s))
+	s.Use(errorMiddleware)
 	s.Use(initMiddleware)
 	s.Use(session.Default)
 	s.Use(everyMiddleware)
@@ -117,7 +117,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 
 // Run register the service on http.Hander
 func (s *Service) Run() {
-	http.Handle("/", s.router)
+	http.Handle("/"+s.urlPrefix, s.router)
 }
 
 // ServeHTTP implements http.Handler#ServeHTTP
