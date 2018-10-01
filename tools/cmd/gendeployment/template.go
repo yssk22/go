@@ -58,6 +58,7 @@ type appTemplateVars struct {
 var goAppTemplate = template.Must(template.New("gendeployment.goapp").Parse(`package {{.PackageName}}
 
 import (
+	"github.com/yssk22/go/gae/service"
 	{{range .Services -}}
 	{{if .PackageAlias -}}
 	{{.PackageAlias}} "{{.PackagePath}}"
@@ -68,13 +69,15 @@ import (
 )
 
 func init(){
+	service.NewDispatcher(
 	{{range .Services -}}
 	{{if .PackageAlias -}}
-	{{.PackageAlias}}.NewService().Run()
+	{{.PackageAlias}}.NewService(),
 	{{else -}}
-	{{.Package}}.NewService().Run()
+	{{.Package}}.NewService(),
 	{{end -}}
 	{{end }}
+	).Run()
 }
 `))
 

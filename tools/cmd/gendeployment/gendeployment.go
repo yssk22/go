@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 
 	"github.com/yssk22/go/x/xerrors"
@@ -20,9 +19,9 @@ var (
 	packagePrefix = flag.String("package", "", "package prefix for each module")
 	servicesDir   = flag.String("services", "./services", "the root directory of services")
 	deploymentDir = flag.String("deployment", "./deployment", "deployment directory")
-	outputDir     = flag.String("output", "./deployment/default/", "output file path of dispatch.yaml")
 	fallback      = flag.String("fallback", "default", "fallback service name")
-	singleService = flag.Bool("single", false, "true to have a single module rather than per-service modules")
+	singleService = flag.Bool("single", false, "set to have a single module rather than per-service modules")
+	startLocal    = flag.Bool("start-local", false, "set to start the local server by dev_appserver.py")
 )
 
 func main() {
@@ -40,16 +39,20 @@ func main() {
 	if !*singleService {
 		for _, s := range nonFallbackServices {
 			log.Printf("Creating %q deployment\n", s.Name)
-			createDeployment(path.Join(*deploymentDir, s.Name), *appName, s)
+			createDeployment(*deploymentDir, *appName, s)
 		}
 	}
 	// create a fallback service deployment
 	log.Printf("Creating %q deployment (fallback)\n", fallbackService.Name)
-	createDeployment(path.Join(*deploymentDir, *fallback), *appName, fallbackService, nonFallbackServices...)
+	createDeployment(*deploymentDir, *appName, fallbackService, nonFallbackServices...)
 	if !*singleService {
 		// dispatch.yaml
 		log.Printf("Creating dispath.yaml\n")
-		createDispatch(path.Join(*deploymentDir, *fallback), fallbackService, nonFallbackServices)
+		createDispatch(*deploymentDir, fallbackService, nonFallbackServices)
+	}
+
+	if *startLocal {
+		startLocalServer(*appName, *deploymentDir, fallbackService, nonFallbackServices)
 	}
 }
 
@@ -66,8 +69,8 @@ func createDeployment(deploymentDir string, appName string, main *Service, servi
 	xerrors.MustNil(err)
 	xerrors.MustNil(goGeneratorTemplate.Execute(generatedFile, &generatorTemplateVars{
 		AppName:       appName,
-		CronYamlPath:  filepath.Join(deploymentDir, "cron.yaml"),
-		QueueYamlPath: filepath.Join(deploymentDir, "queue.yaml"),
+		CronYamlPath:  filepath.Join(deploymentDir, main.Name, "cron.yaml"),
+		QueueYamlPath: filepath.Join(deploymentDir, main.Name, "queue.yaml"),
 		Services:      append([]*Service{main}, services...),
 	}))
 	xerrors.MustNil(generatedFile.Close())
@@ -89,36 +92,50 @@ func createDeployment(deploymentDir string, appName string, main *Service, servi
 	}
 
 	// create app.go
-	generatedFile, err = os.Create(filepath.Join(deploymentDir, "app.go"))
+	generatedFile, err = os.Create(filepath.Join(deploymentDir, main.Name, "app.go"))
 	xerrors.MustNil(err)
-	xerrors.MustNil(goAppTemplate.Execute(generatedFile, &appTemplateVars{
-		PackageName: main.PackageAlias,
-		Services:    append([]*Service{main}, services...),
-	}))
+	if main.PackageAlias != "" {
+		xerrors.MustNil(goAppTemplate.Execute(generatedFile, &appTemplateVars{
+			PackageName: main.PackageAlias,
+			Services:    append([]*Service{main}, services...),
+		}))
+	} else {
+		xerrors.MustNil(goAppTemplate.Execute(generatedFile, &appTemplateVars{
+			PackageName: main.Package,
+			Services:    append([]*Service{main}, services...),
+		}))
+	}
 	xerrors.MustNil(generatedFile.Close())
-
 	// create app.yaml
-	generatedFile, err = os.Create(filepath.Join(deploymentDir, "app.yaml"))
+	generatedFile, err = os.Create(filepath.Join(deploymentDir, main.Name, "app.yaml"))
 	xerrors.MustNil(err)
 	xerrors.MustNil(appYamlTemplate.Execute(generatedFile, &appYamlTemplateVars{
 		ServiceName: main.Name,
 		GoVersion:   "go1.8",
 	}))
 	xerrors.MustNil(generatedFile.Close())
+
+	cmd = exec.Command("go", "fmt", "./"+filepath.Join(deploymentDir, main.Name))
+	cmd.Stderr = &buff
+	if err := cmd.Run(); err != nil {
+		log.Printf("Failed to run go fmt on %s\n", deploymentDir)
+		fmt.Fprintln(os.Stderr, buff.String())
+	}
 }
 
 func createDispatch(deploymentDir string, main *Service, services []*Service) {
 	// dispatch.yaml
-	var dispatchFilePath = filepath.Join(deploymentDir, "dispatch.yaml")
+	var dispatchFilePath = filepath.Join(deploymentDir, main.Name, "dispatch.yaml")
 	dispatchFile, err := os.Create(dispatchFilePath)
 	xerrors.MustNil(err)
 	defer dispatchFile.Close()
+	dispatchFile.WriteString("dispatch:\n")
 	for _, s := range services {
-		dispatchFile.WriteString(fmt.Sprintf("- url: \"*/%s/*\"\n", s.URL))
-		dispatchFile.WriteString(fmt.Sprintf("  module: %s\n", s.Name))
+		dispatchFile.WriteString(fmt.Sprintf("  - url: \"*/%s/*\"\n", s.URL))
+		dispatchFile.WriteString(fmt.Sprintf("    module: %s\n", s.Name))
 	}
-	dispatchFile.WriteString("- url: \"*/*\"\n")
-	dispatchFile.WriteString(fmt.Sprintf("  module: %s\n", main.PackageAlias))
+	dispatchFile.WriteString("  - url: \"*/*\"\n")
+	dispatchFile.WriteString(fmt.Sprintf("    module: %s\n", main.Name))
 }
 
 func cp(dst, src string) error {
