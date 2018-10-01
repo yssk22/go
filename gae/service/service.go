@@ -50,6 +50,7 @@ type Service struct {
 	namespace string    // datastore/memcache namespace for services
 	crons     []*Cron
 	queues    []*xtaskqueue.PushQueue
+	indexes   []*Index
 	tasks     []*Task
 	router    *web.Router // service router
 }
@@ -112,6 +113,11 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 	s.Use(initMiddleware)
 	s.Use(session.Default)
 	s.Use(everyMiddleware)
+
+	s.AddIndex("AsyncTask", false, []*IndexProperty{
+		{Name: "ConfigKey"},
+		{Name: "StartAt", Desc: true},
+	})
 	return s
 }
 
