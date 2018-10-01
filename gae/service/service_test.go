@@ -27,7 +27,7 @@ func TestService(t *testing.T) {
 		}
 		return next(req)
 	}))
-	recorder := gaetest.NewRecorder(s)
+	recorder := gaetest.NewRecorder(NewDispatcher(s))
 	resp := recorder.TestGet("/test/")
 	a.Status(response.HTTPStatusOK, resp)
 	a.Body("test", resp)
@@ -43,7 +43,7 @@ func TestService_withHyphenInKey(t *testing.T) {
 		}
 		return next(req)
 	}))
-	recorder := gaetest.NewRecorder(s)
+	recorder := gaetest.NewRecorder(NewDispatcher(s))
 	resp := recorder.TestGet("/test/bar/")
 	a.Status(response.HTTPStatusOK, resp)
 	a.Body("test-bar", resp)
