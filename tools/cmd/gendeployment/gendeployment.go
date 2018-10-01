@@ -22,6 +22,7 @@ var (
 	fallback      = flag.String("fallback", "default", "fallback service name")
 	singleService = flag.Bool("single", false, "set to have a single module rather than per-service modules")
 	startLocal    = flag.Bool("start-local", false, "set to start the local server by dev_appserver.py")
+	cleanup       = flag.Bool("cleanup", true, "set to recreate deployment directory from scratch")
 )
 
 func main() {
@@ -35,6 +36,10 @@ func main() {
 	fallbackService, nonFallbackServices := collectServices(*servicesDir, *packagePrefix, *fallback)
 	if fallbackService == nil {
 		log.Fatalf("No fallback service (%q) is found", *fallback)
+	}
+	if *cleanup {
+		log.Printf("Cleanup %q\n", *deploymentDir)
+		os.RemoveAll(*deploymentDir)
 	}
 	if !*singleService {
 		for _, s := range nonFallbackServices {
@@ -52,6 +57,7 @@ func main() {
 	}
 
 	if *startLocal {
+		log.Printf("Start dev_appserver.py\n")
 		startLocalServer(*appName, *deploymentDir, fallbackService, nonFallbackServices)
 	}
 }
