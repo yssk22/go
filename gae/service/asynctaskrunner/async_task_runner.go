@@ -42,7 +42,7 @@ func (runner *AsyncTaskRunner) Run(ctx context.Context, path string, query url.V
 	if query != nil {
 		triggerPath = fmt.Sprintf("%s?%s", triggerPath, query.Encode())
 	}
-	recorder := gaetest.NewRecorder(runner.service)
+	recorder := gaetest.NewRecorder(service.NewDispatcher(runner.service))
 
 	// trigger the task
 	var triggered asynctask.TaskStatus

@@ -115,16 +115,6 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 	return s
 }
 
-// Run register the service on http.Hander
-func (s *Service) Run() {
-	http.Handle("/"+s.urlPrefix, s.router)
-}
-
-// ServeHTTP implements http.Handler#ServeHTTP
-func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
-}
-
 // Key returns a key string
 func (s *Service) Key() string {
 	return s.key
