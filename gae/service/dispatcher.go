@@ -24,7 +24,7 @@ func NewDispatcher(services ...*Service) *Dispatcher {
 
 func (d *Dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for prefix, service := range d.rules {
-		if strings.HasPrefix(r.RequestURI, prefix) {
+		if strings.HasPrefix(r.URL.EscapedPath(), prefix) {
 			service.router.ServeHTTP(w, r)
 			return
 		}
