@@ -53,6 +53,12 @@ type Service struct {
 	indexes   []*Index
 	tasks     []*Task
 	router    *web.Router // service router
+
+	// app.yaml configurations
+
+	APIVerison        APIVersion
+	DefaultExpiration string
+	handlerOptions    []*HandlerOption
 }
 
 // FromContext returns a service object associated with the context
@@ -107,6 +113,10 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		APIConfig: &BuiltInAPIConfig{
 			AuthNamespace: "",
 		},
+
+		APIVerison:        APIVersion18,
+		DefaultExpiration: DefaultExpirationValue,
+		handlerOptions:    make([]*HandlerOption, 0),
 	}
 	s.Use(namespaceMiddleware(s))
 	s.Use(errorMiddleware)
@@ -117,6 +127,10 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 	s.AddIndex("AsyncTask", false, []*IndexProperty{
 		{Name: "ConfigKey"},
 		{Name: "StartAt", Desc: true},
+	})
+	s.AddHandlerOption(&HandlerOption{
+		URL:   s.Path("/admin/") + ".*",
+		Login: "admin",
 	})
 	return s
 }
