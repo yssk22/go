@@ -205,3 +205,7 @@ func (s *Service) Path(p string) string {
 	}
 	return p
 }
+
+func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
+}
