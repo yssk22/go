@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-func startLocalServer(appName string, deploymentDir string, main *Service, services []*Service) {
+func startLocalServer(appName string, deploymentDir string, main *Service, services ...*Service) {
 	var args []string
 	args = append(args, fmt.Sprintf("--application=%s", appName))
 	args = append(args, "--storage_path", ".localdata")

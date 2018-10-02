@@ -58,7 +58,11 @@ func main() {
 
 	if *startLocal {
 		log.Printf("Start dev_appserver.py\n")
-		startLocalServer(*appName, *deploymentDir, fallbackService, nonFallbackServices)
+		if *singleService {
+			startLocalServer(*appName, *deploymentDir, fallbackService)
+		} else {
+			startLocalServer(*appName, *deploymentDir, fallbackService, nonFallbackServices...)
+		}
 	}
 }
 
@@ -78,6 +82,7 @@ func createDeployment(deploymentDir string, appName string, main *Service, servi
 		CronYamlPath:  filepath.Join(deploymentDir, main.Name, "cron.yaml"),
 		QueueYamlPath: filepath.Join(deploymentDir, main.Name, "queue.yaml"),
 		IndexYamlPath: filepath.Join(deploymentDir, main.Name, "index.yaml"),
+		AppYamlPath:   filepath.Join(deploymentDir, main.Name, "app.yaml"),
 		Services:      append([]*Service{main}, services...),
 	}))
 	xerrors.MustNil(generatedFile.Close())
@@ -112,14 +117,6 @@ func createDeployment(deploymentDir string, appName string, main *Service, servi
 			Services:    append([]*Service{main}, services...),
 		}))
 	}
-	xerrors.MustNil(generatedFile.Close())
-	// create app.yaml
-	generatedFile, err = os.Create(filepath.Join(deploymentDir, main.Name, "app.yaml"))
-	xerrors.MustNil(err)
-	xerrors.MustNil(appYamlTemplate.Execute(generatedFile, &appYamlTemplateVars{
-		ServiceName: main.Name,
-		GoVersion:   "go1.8",
-	}))
 	xerrors.MustNil(generatedFile.Close())
 
 	cmd = exec.Command("go", "fmt", "./"+filepath.Join(deploymentDir, main.Name))
