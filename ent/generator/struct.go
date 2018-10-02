@@ -7,6 +7,7 @@ import (
 	"io"
 	"text/template"
 
+	"github.com/yssk22/go/tools/generator"
 	"github.com/yssk22/go/x/xstrings"
 )
 
@@ -57,7 +58,7 @@ func (s *Struct) AddDependencyAs(pkg string, as string) {
 }
 
 // Inspect implements Generator#Inspect
-func (s *Struct) Inspect(node ast.Node) bool {
+func (s *Struct) Inspect(node ast.Node, info *generator.FileInfo) bool {
 	if s.Fields != nil && s.Package != "" {
 		// no more inspection needed.
 		return true

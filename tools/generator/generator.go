@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 
@@ -17,8 +18,16 @@ import (
 	"github.com/yssk22/go/number"
 )
 
+// FileInfo is a file info that generator is analysing
+type FileInfo struct {
+	Path   string
+	Ast    *ast.File
+	Source []byte
+}
+
+// Generator is an interface to implement generator command
 type Generator interface {
-	Inspect(ast.Node) bool
+	Inspect(ast.Node, *FileInfo) bool
 	GenSource(io.Writer) error
 }
 
@@ -30,7 +39,9 @@ func Run(dir string, g Generator) ([]byte, error) {
 		return nil, xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	for _, f := range files {
-		ast.Inspect(f, g.Inspect)
+		ast.Inspect(f.Ast, func(n ast.Node) bool {
+			return g.Inspect(n, f)
+		})
 	}
 	var buff bytes.Buffer
 	g.GenSource(&buff)
@@ -44,21 +55,29 @@ func Run(dir string, g Generator) ([]byte, error) {
 	return formatted, nil
 }
 
-func parsePackage(dir string) (*build.Package, []*ast.File, error) {
+func parsePackage(dir string) (*build.Package, []*FileInfo, error) {
 	pkg, err := build.Default.ImportDir(dir, 0)
 	if err != nil {
 		return nil, nil, err
 	}
-	var astFiles []*ast.File
+	var files []*FileInfo
 	fs := token.NewFileSet()
 	for _, goFile := range pkg.GoFiles {
-		parsedGoFile, err := parser.ParseFile(fs, filepath.Join(dir, goFile), nil, 0)
+		path := filepath.Join(dir, goFile)
+		src, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil, nil, fmt.Errorf("io error at %s: %v", goFile, err)
+		}
+		parsedGoFile, err := parser.ParseFile(fs, path, src, 0)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse error at %s: %v", goFile, err)
 		}
-		astFiles = append(astFiles, parsedGoFile)
+		files = append(files, &FileInfo{
+			Source: src,
+			Ast:    parsedGoFile,
+		})
 	}
-	return pkg, astFiles, nil
+	return pkg, files, nil
 }
 
 // InvalidSourceError is an error if generated source is unable to compile.
