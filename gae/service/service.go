@@ -50,8 +50,15 @@ type Service struct {
 	namespace string    // datastore/memcache namespace for services
 	crons     []*Cron
 	queues    []*xtaskqueue.PushQueue
+	indexes   []*Index
 	tasks     []*Task
 	router    *web.Router // service router
+
+	// app.yaml configurations
+
+	APIVerison        APIVersion
+	DefaultExpiration string
+	handlerOptions    []*HandlerOption
 }
 
 // FromContext returns a service object associated with the context
@@ -106,23 +113,26 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		APIConfig: &BuiltInAPIConfig{
 			AuthNamespace: "",
 		},
+
+		APIVerison:        APIVersion18,
+		DefaultExpiration: DefaultExpirationValue,
+		handlerOptions:    make([]*HandlerOption, 0),
 	}
-	s.router.Use(namespaceMiddleware(s))
-	s.router.Use(errorMiddleware)
+	s.Use(namespaceMiddleware(s))
+	s.Use(errorMiddleware)
 	s.Use(initMiddleware)
 	s.Use(session.Default)
 	s.Use(everyMiddleware)
+
+	s.AddIndex("AsyncTask", false, []*IndexProperty{
+		{Name: "ConfigKey"},
+		{Name: "StartAt", Desc: true},
+	})
+	s.AddHandlerOption(&HandlerOption{
+		URL:   s.Path("/admin/") + ".*",
+		Login: "admin",
+	})
 	return s
-}
-
-// Run register the service on http.Hander
-func (s *Service) Run() {
-	http.Handle("/", s.router)
-}
-
-// ServeHTTP implements http.Handler#ServeHTTP
-func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
 }
 
 // Key returns a key string
@@ -194,4 +204,8 @@ func (s *Service) Path(p string) string {
 		return path.Join(p) + "/"
 	}
 	return p
+}
+
+func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
 }
