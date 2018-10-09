@@ -10,6 +10,7 @@ import (
 	"go/types"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/yssk22/go/x/xerrors"
@@ -53,6 +54,7 @@ func parsePackage(dir string) (*PackageInfo, error) {
 			Ast:        parsedFile,
 			CommentMap: ast.NewCommentMap(fs, parsedFile, parsedFile.Comments),
 		})
+		parsedFiles = append(parsedFiles, parsedFile)
 	}
 	conf := types.Config{Importer: importer.Default()}
 	info := &types.Info{
@@ -60,7 +62,7 @@ func parsePackage(dir string) (*PackageInfo, error) {
 		Defs:  map[*ast.Ident]types.Object{},
 		Uses:  map[*ast.Ident]types.Object{},
 	}
-	pkg, err := conf.Check(importedPackage.Name, fs, parsedFiles, info)
+	pkg, err := conf.Check(".", fs, parsedFiles, info)
 	if err != nil {
 		return nil, xerrors.Wrap(err, "type check error: %s", dir)
 	}
@@ -82,13 +84,14 @@ func (p *PackageInfo) Inspect(fun func(ast.Node) bool) {
 // CollectSignatures returns all `@s key=value ..` signatures
 func (p *PackageInfo) CollectSignatures(s string) []*Signature {
 	var signatures []*Signature
+	var re = regexp.MustCompile(fmt.Sprintf("\\s*@%s\\s*", s))
 	for _, f := range p.Files {
 		for node, commentGroups := range f.CommentMap {
 			for _, c := range commentGroups {
 				for _, line := range c.List {
-					idx := strings.Index(line.Text, fmt.Sprintf("%s ", s))
-					if idx >= 0 {
-						remains := line.Text[idx+len(s)+1:]
+					idx := re.FindStringIndex(line.Text)
+					if len(idx) > 0 {
+						remains := line.Text[idx[0]+len(s)+1:]
 						params := parseSignatureParams(remains)
 						signatures = append(signatures, &Signature{
 							Name:   s,
