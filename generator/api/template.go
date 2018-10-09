@@ -1,7 +1,5 @@
 package api
 
-const filename = "api.go"
-
 const templateFile = `
 package {{.Package}}
 

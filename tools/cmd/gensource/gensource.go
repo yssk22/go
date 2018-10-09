@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/yssk22/go/generator/enum"
+
 	"github.com/yssk22/go/generator/api"
 
 	"github.com/yssk22/go/generator"
@@ -28,6 +30,7 @@ func main() {
 	log.Println("gensource", args)
 	runner := generator.NewRunner(
 		api.NewGenerator(),
+		enum.NewGenerator(),
 	)
 	for _, dir := range args {
 		runDirectory(runner, dir, false)

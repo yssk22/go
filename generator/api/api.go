@@ -47,7 +47,7 @@ func (api *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, erro
 	}
 	result := []*generator.Result{
 		{
-			Filename: "api.go",
+			Filename: "__generated__apis.go",
 			Source:   buff.String(),
 		},
 	}
@@ -55,7 +55,7 @@ func (api *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, erro
 }
 
 func (api *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
-	signatures := pkg.CollectSignatures("@api")
+	signatures := pkg.CollectSignatures("api")
 	var specs []*Spec
 	for _, s := range signatures {
 		node, ok := s.Node.(*ast.FuncDecl)
