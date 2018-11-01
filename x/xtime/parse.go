@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// DefaultLocation is a default location to parse the datetime
+var DefaultLocation = JST
+
 var dateRegxp = regexp.MustCompile(`(?:(\d{4})[\/-])?(\d{1,2})[\/-](\d{1,2})`)
 
 // Parse parse RFC3339 format by default.
@@ -50,6 +53,16 @@ func MustParseDate(s string, location *time.Location, hintYear int) time.Time {
 		panic(e)
 	}
 	return t
+}
+
+// ParseDateDefault is an alias for ParseDate(s, DefaultLocation, 0)
+func ParseDateDefault(s string) (time.Time, error) {
+	return ParseDate(s, DefaultLocation, 0)
+}
+
+// MustParseDateDefault is like ParseDateDefault but panic if an error occurrs.
+func MustParseDateDefault(s string) time.Time {
+	return MustParseDate(s, DefaultLocation, 0)
 }
 
 var timeRegexp = regexp.MustCompile(`(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?`)
