@@ -19,6 +19,7 @@ func ExampleStripAndTrimAsMap() {
 
 func ExampleToSnakeCase() {
 	fmt.Println(
+		ToSnakeCase("A"),
 		ToSnakeCase("FooBar"),
 		ToSnakeCase("APIDoc"),
 		ToSnakeCase("OK"),
@@ -26,5 +27,5 @@ func ExampleToSnakeCase() {
 		ToSnakeCase("camelCase"),
 	)
 	// Output:
-	// foo_bar api_doc ok is_ok camel_case
+	// a foo_bar api_doc ok is_ok camel_case
 }
