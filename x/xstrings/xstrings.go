@@ -40,6 +40,9 @@ func ToSnakeCase(s string) string {
 	}
 	var runes = []rune(s)
 	var str = []rune{unicode.ToLower(runes[0])}
+	if len(runes) == 1 {
+		return string(str)
+	}
 	for i := 1; i < len(runes)-1; i++ {
 		previous := runes[i-1]
 		current := runes[i]
