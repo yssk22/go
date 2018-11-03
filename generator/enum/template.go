@@ -28,10 +28,15 @@ var (
 )
 
 func (e {{.EnumName}}) String() string {
-	if str, ok := _{{.EnumName}}ValueToString[i]; ok {
+	if str, ok := _{{.EnumName}}ValueToString[e]; ok {
 		return str
 	}
 	return fmt.Sprintf("{{.EnumName}}(%d)", e)
+}
+
+func (e {{.EnumName}}) IsVaild() bool {
+	_, ok := _{{.EnumName}}ValueToString[e]
+	return ok
 }
 
 func Parse{{.EnumName}}(s string) ({{.EnumName}}, error) {
@@ -57,16 +62,16 @@ func MustParse{{.EnumName}}(s string) {{.EnumName}} {
 	return val
 }
 
-func (i {{.EnumName}}) MarshalJSON() ([]byte, error) {
+func (e {{.EnumName}}) MarshalJSON() ([]byte, error) {
 	var s string
 	var ok bool
-	if s, ok = _{{.EnumName}}ValueToString[i]; !ok {
-		s = fmt.Sprintf("{{.EnumName}}(%d)", i)
+	if s, ok = _{{.EnumName}}ValueToString[e]; !ok {
+		s = fmt.Sprintf("{{.EnumName}}(%d)", e)
 	}
 	return json.Marshal(s)
 }
 
-func (i *{{.EnumName}}) UnmarshalJSON(b []byte) error {
+func (e *{{.EnumName}}) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
 		return fmt.Errorf("invalid JSON string")
 	}
@@ -74,8 +79,16 @@ func (i *{{.EnumName}}) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*i = newval
+	*e = newval
 	return nil
+}
+
+func (e *{{.EnumName}}) Parse(s string) error {
+	if val, ok := _{{.EnumName}}StringToValue[s]; ok {
+		*e = val
+		return nil
+	}
+	return fmt.Errorf("invalid value %q for {{.EnumName}}", s)
 }
 {{end}}
 `

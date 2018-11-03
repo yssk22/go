@@ -7,28 +7,33 @@ import (
 
 var (
 	_MyEnumValueToString = map[MyEnum]string{
-		MyEnumA: "aa",
-		MyEnumB: "bb",
-		MyEnumC: "cc",
-		MyEnumD: "dd",
-		MyEnumE: "ee",
-		MyEnumF: "ff",
+		MyEnumA: "a",
+		MyEnumB: "b",
+		MyEnumC: "c",
+		MyEnumD: "d",
+		MyEnumE: "e",
+		MyEnumF: "f",
 	}
 	_MyEnumStringToValue = map[string]MyEnum{
-		"aa": MyEnumA,
-		"bb": MyEnumB,
-		"cc": MyEnumC,
-		"dd": MyEnumD,
-		"ee": MyEnumE,
-		"ff": MyEnumF,
+		"a": MyEnumA,
+		"b": MyEnumB,
+		"c": MyEnumC,
+		"d": MyEnumD,
+		"e": MyEnumE,
+		"f": MyEnumF,
 	}
 )
 
 func (e MyEnum) String() string {
-	if str, ok := _MyEnumValueToString[i]; ok {
+	if str, ok := _MyEnumValueToString[e]; ok {
 		return str
 	}
 	return fmt.Sprintf("MyEnum(%d)", e)
+}
+
+func (e MyEnum) IsVaild() bool {
+	_, ok := _MyEnumValueToString[e]
+	return ok
 }
 
 func ParseMyEnum(s string) (MyEnum, error) {
@@ -54,16 +59,16 @@ func MustParseMyEnum(s string) MyEnum {
 	return val
 }
 
-func (i MyEnum) MarshalJSON() ([]byte, error) {
+func (e MyEnum) MarshalJSON() ([]byte, error) {
 	var s string
 	var ok bool
-	if s, ok = _MyEnumValueToString[i]; !ok {
-		s = fmt.Sprintf("MyEnum(%d)", i)
+	if s, ok = _MyEnumValueToString[e]; !ok {
+		s = fmt.Sprintf("MyEnum(%d)", e)
 	}
 	return json.Marshal(s)
 }
 
-func (i *MyEnum) UnmarshalJSON(b []byte) error {
+func (e *MyEnum) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
 		return fmt.Errorf("invalid JSON string")
 	}
@@ -71,26 +76,39 @@ func (i *MyEnum) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*i = newval
+	*e = newval
 	return nil
+}
+
+func (e *MyEnum) Parse(s string) error {
+	if val, ok := _MyEnumStringToValue[s]; ok {
+		*e = val
+		return nil
+	}
+	return fmt.Errorf("invalid value %q for MyEnum", s)
 }
 
 var (
 	_YourEnumValueToString = map[YourEnum]string{
-		YourEnumA: "aa",
-		YourEnumB: "bb",
+		YourEnumA: "a",
+		YourEnumB: "b",
 	}
 	_YourEnumStringToValue = map[string]YourEnum{
-		"aa": YourEnumA,
-		"bb": YourEnumB,
+		"a": YourEnumA,
+		"b": YourEnumB,
 	}
 )
 
 func (e YourEnum) String() string {
-	if str, ok := _YourEnumValueToString[i]; ok {
+	if str, ok := _YourEnumValueToString[e]; ok {
 		return str
 	}
 	return fmt.Sprintf("YourEnum(%d)", e)
+}
+
+func (e YourEnum) IsVaild() bool {
+	_, ok := _YourEnumValueToString[e]
+	return ok
 }
 
 func ParseYourEnum(s string) (YourEnum, error) {
@@ -116,16 +134,16 @@ func MustParseYourEnum(s string) YourEnum {
 	return val
 }
 
-func (i YourEnum) MarshalJSON() ([]byte, error) {
+func (e YourEnum) MarshalJSON() ([]byte, error) {
 	var s string
 	var ok bool
-	if s, ok = _YourEnumValueToString[i]; !ok {
-		s = fmt.Sprintf("YourEnum(%d)", i)
+	if s, ok = _YourEnumValueToString[e]; !ok {
+		s = fmt.Sprintf("YourEnum(%d)", e)
 	}
 	return json.Marshal(s)
 }
 
-func (i *YourEnum) UnmarshalJSON(b []byte) error {
+func (e *YourEnum) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' || b[len(b)-1] != '"' {
 		return fmt.Errorf("invalid JSON string")
 	}
@@ -133,6 +151,14 @@ func (i *YourEnum) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*i = newval
+	*e = newval
 	return nil
+}
+
+func (e *YourEnum) Parse(s string) error {
+	if val, ok := _YourEnumStringToValue[s]; ok {
+		*e = val
+		return nil
+	}
+	return fmt.Errorf("invalid value %q for YourEnum", s)
 }
