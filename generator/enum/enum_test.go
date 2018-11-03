@@ -15,6 +15,6 @@ func TestEnum(t *testing.T) {
 	)
 	a.Nil(runner.Run("./example"))
 	expected, _ := ioutil.ReadFile("./example/__generated.expected")
-	actual, _ := ioutil.ReadFile("./example/__generated__enums.go")
+	actual, _ := ioutil.ReadFile("./example/generated_enums.go")
 	a.EqStr(string(expected), string(actual))
 }

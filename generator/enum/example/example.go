@@ -14,7 +14,7 @@ const (
 
 const MyEnumC, MyEnumD MyEnum = 11, 12
 
-const MyEnumE, MyEnumF = MyEnum(11), MyEnum(12)
+const MyEnumE, MyEnumF = MyEnum(13), MyEnum(14)
 
 var NotMyEnumX, NotMyEnumY = MyEnum(100), MyEnum(123)
 
