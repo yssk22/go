@@ -28,9 +28,9 @@ const (
 
 // RequestParameterFieldSpec is a spec to parse the parameters
 type RequestParameterFieldSpec struct {
-	Type     RequestParameterFieldType
-	Default  interface{}
-	Required bool // this checks the parameter has a key or not.
+	Type     RequestParameterFieldType `json:"type"`
+	Default  interface{}               `json:"default"`
+	Required bool                      `json:"required"` // this checks the parameter has a key or not.
 }
 
 // RequestParameterFieldType is a type enum for request parameters
@@ -50,15 +50,15 @@ const (
 
 // ParameterParser is to parse parameter value
 type ParameterParser struct {
-	specs  map[string]*RequestParameterFieldSpec
-	format RequestParameterFormat
+	Specs  map[string]*RequestParameterFieldSpec `json:"specs"`
+	Format RequestParameterFormat                `json:"format"`
 }
 
 // NewParameterParser return a new NewParameterParser instance
 func NewParameterParser(format RequestParameterFormat) *ParameterParser {
 	return &ParameterParser{
-		specs:  make(map[string]*RequestParameterFieldSpec),
-		format: format,
+		Specs:  make(map[string]*RequestParameterFieldSpec),
+		Format: format,
 	}
 }
 
@@ -81,10 +81,10 @@ func (pp *ParameterParser) Required(key string) *ParameterParser {
 }
 
 func (pp *ParameterParser) spec(key string) *RequestParameterFieldSpec {
-	spec, ok := pp.specs[key]
+	spec, ok := pp.Specs[key]
 	if !ok {
 		spec = &RequestParameterFieldSpec{}
-		pp.specs[key] = spec
+		pp.Specs[key] = spec
 	}
 	return spec
 }
@@ -93,7 +93,7 @@ func (pp *ParameterParser) spec(key string) *RequestParameterFieldSpec {
 func (pp *ParameterParser) Parse(req *http.Request, v interface{}) *Error {
 	var err error
 	var jsonBytes []byte // normalized JSON bytes
-	switch pp.format {
+	switch pp.Format {
 	case RequestParameterFormatQuery:
 		jsonBytes, err = pp.toJSONString(req.URL.Query())
 		break
@@ -128,7 +128,7 @@ func (pp *ParameterParser) toJSONString(v url.Values) ([]byte, error) {
 	var err error
 	var errors = NewFieldErrorCollection()
 	var m = make(map[string]interface{})
-	for k, spec := range pp.specs {
+	for k, spec := range pp.Specs {
 		val, ok := v[k]
 		hasKey := ok && len(val) > 0
 		if !hasKey {
