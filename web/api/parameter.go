@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/yssk22/go/x/xerrors"
 
 	"github.com/yssk22/go/x/xtime"
 
@@ -29,7 +30,7 @@ const (
 type RequestParameterFieldSpec struct {
 	Type     RequestParameterFieldType
 	Default  interface{}
-	Required bool
+	Required bool // this checks the parameter has a key or not.
 }
 
 // RequestParameterFieldType is a type enum for request parameters
@@ -107,26 +108,32 @@ func (pp *ParameterParser) Parse(req *http.Request, v interface{}) *Error {
 		if _, ok := err.(*Error); ok {
 			return err.(*Error)
 		}
-		return ServerError
+		xerrors.MustNil(err)
 	}
 	err = json.Unmarshal(jsonBytes, v)
-	if err != nil {
-		return ServerError
+	xerrors.MustNil(err)
+	if validatable, ok := v.(Validatable); ok {
+		errors := NewFieldErrorCollection()
+		if err = validatable.Validate(req.Context(), errors); err != nil {
+			return BadRequest
+		}
+		if err = errors.ToError(); err != nil {
+			return err.(*Error)
+		}
 	}
-
 	return nil
 }
 
 func (pp *ParameterParser) toJSONString(v url.Values) ([]byte, error) {
-	var fe = newFieldErrors()
 	var err error
+	var errors = NewFieldErrorCollection()
 	var m = make(map[string]interface{})
 	for k, spec := range pp.specs {
 		val, ok := v[k]
 		hasKey := ok && len(val) > 0
 		if !hasKey {
 			if spec.Required {
-				fe.addError(k, fmt.Errorf("required"))
+				errors.Add(k, fmt.Errorf("required"))
 			}
 			if spec.Default != nil {
 				m[k] = spec.Default
@@ -141,73 +148,80 @@ func (pp *ParameterParser) toJSONString(v url.Values) ([]byte, error) {
 			m[k] = strValue == "1" || strValue == "true"
 		case RequestParameterFieldTypeInt:
 			if m[k], err = strconv.Atoi(strValue); err != nil {
-				fe.addError(k, fmt.Errorf("must be int, but %q", strValue))
+				errors.Add(k, fmt.Errorf("must be int, but %q", strValue))
 			}
 			break
 		case RequestParameterFieldTypeFloat:
 			if m[k], err = strconv.ParseFloat(strValue, 64); err != nil {
-				fe.addError(k, fmt.Errorf("must be float, but %q", strValue))
+				errors.Add(k, fmt.Errorf("must be float, but %q", strValue))
 			}
 			break
 		case RequestParameterFieldTypeTime:
 			if m[k], err = xtime.Parse(strValue); err != nil {
 				if m[k], err = xtime.ParseDateDefault(strValue); err != nil {
-					fe.addError(k, fmt.Errorf("must be time format, but %q", strValue))
+					errors.Add(k, fmt.Errorf("must be time format, but %q", strValue))
 				}
 			}
 			break
 		case RequestParameterFieldTypeArray:
 			var mm []interface{}
 			if err = json.Unmarshal([]byte(strValue), &mm); err != nil {
-				fe.addError(k, fmt.Errorf("must be json array, but %q", strValue))
+				errors.Add(k, fmt.Errorf("must be json array, but %q", strValue))
 			} else {
 				m[k] = mm
 			}
 			break
 		case RequestParameterFieldTypeObject:
-			log.Println("object")
-			log.Println(k, strValue)
 			var mm = make(map[string]interface{})
 			if err = json.Unmarshal([]byte(strValue), &mm); err != nil {
-				fe.addError(k, fmt.Errorf("must be json object, but %q", strValue))
+				errors.Add(k, fmt.Errorf("must be json object, but %q", strValue))
 			} else {
 				m[k] = mm
 			}
 			break
 		}
 	}
-	if err = fe.ToError(); err != nil {
+	if err = errors.ToError(); err != nil {
 		return nil, err
 	}
 	return json.Marshal(m)
 }
 
-type fieldErrors struct {
-	errors map[string][]string
+// FieldErrorCollection is a struct to collect field errors
+type FieldErrorCollection map[string][]string
+
+// NewFieldErrorCollection returns a new FieldErrorCollection
+func NewFieldErrorCollection() FieldErrorCollection {
+	return FieldErrorCollection(make(map[string][]string))
 }
 
-func newFieldErrors() *fieldErrors {
-	return &fieldErrors{
-		errors: make(map[string][]string),
+// Add to add an error associated the given field key
+func (collection FieldErrorCollection) Add(key string, errors ...error) {
+	var errList []string
+	for _, e := range errors {
+		if e != nil {
+			errList = append(errList, e.Error())
+		}
 	}
-}
-
-func (fe *fieldErrors) addError(key string, e error) {
-	if _, ok := fe.errors[key]; !ok {
-		fe.errors[key] = make([]string, 0)
+	if len(errList) == 0 {
+		return
 	}
-	fe.errors[key] = append(fe.errors[key], e.Error())
+	if _, ok := collection[key]; !ok {
+		collection[key] = make([]string, 0)
+	}
+	collection[key] = append(collection[key], errList...)
 }
 
-func (fe *fieldErrors) ToError() error {
-	if len(fe.errors) == 0 {
+// ToError converts the collection to *Error object
+func (collection FieldErrorCollection) ToError() error {
+	if len(collection) == 0 {
 		return nil
 	}
 	return (&Error{
 		Code:    "invalid_parameter",
 		Message: "one or more parameters are invalid",
 		Extra: map[string]interface{}{
-			"errors": fe.errors,
+			"errors": collection,
 		},
 		Status: response.HTTPStatusBadRequest,
 	})

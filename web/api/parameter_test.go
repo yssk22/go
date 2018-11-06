@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/yssk22/go/validator"
 	"github.com/yssk22/go/x/xtime"
 
 	"github.com/yssk22/go/x/xtesting/assert"
@@ -257,6 +259,30 @@ func Test_ParameterParser_Get_Required(t *testing.T) {
 	a.Nil(err)
 }
 
-func getFieldErrors(err *Error) map[string][]string {
-	return err.Extra.(map[string]interface{})["errors"].(map[string][]string)
+type TestStructValidatable struct {
+	IntVal int `json:"int_val"`
+}
+
+func (t *TestStructValidatable) Validate(ctx context.Context, errors FieldErrorCollection) error {
+	errors.Add("int_val", validator.Int().Min(2).Validate(t.IntVal))
+	return nil
+}
+
+func Test_ParameterParser_Get_Validatable(t *testing.T) {
+	a := assert.New(t)
+	pp := NewParameterParser(RequestParameterFormatQuery)
+	pp.Type("int_val", RequestParameterFieldTypeInt).Required("int_val")
+	var params = TestStructValidatable{}
+	req, _ := http.NewRequest("GET", "/?int_val=1", nil)
+	err := pp.Parse(req, &params)
+	a.NotNil(err)
+	a.EqStr("must be more than or equal to 2", getFieldErrors(err)["int_val"][0])
+
+	req, _ = http.NewRequest("GET", "/?int_val=2", nil)
+	err = pp.Parse(req, &params)
+	a.Nil(err)
+}
+
+func getFieldErrors(err *Error) FieldErrorCollection {
+	return err.Extra.(map[string]interface{})["errors"].(FieldErrorCollection)
 }
