@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/yssk22/go/x/xerrors"
 
@@ -47,6 +48,47 @@ const (
 	RequestParameterFieldTypeArray
 	RequestParameterFieldTypeObject
 )
+
+// ValueOf returns a typed value for strValue
+func (t RequestParameterFieldType) ValueOf(strValue string) (interface{}, error) {
+	switch t {
+	case RequestParameterFieldTypeString:
+		return strValue, nil
+	case RequestParameterFieldTypeBool:
+		return (strValue == "1" || strValue == "true"), nil
+	case RequestParameterFieldTypeInt:
+		if v, err := strconv.Atoi(strValue); err == nil {
+			return v, nil
+		}
+		return 0, fmt.Errorf("must be int, but %q", strValue)
+	case RequestParameterFieldTypeFloat:
+		if v, err := strconv.ParseFloat(strValue, 64); err == nil {
+			return v, nil
+		}
+		return 0.0, fmt.Errorf("must be float, but %q", strValue)
+	case RequestParameterFieldTypeTime:
+		if v, err := xtime.Parse(strValue); err == nil {
+			return v, nil
+		}
+		if v, err := xtime.ParseDateDefault(strValue); err == nil {
+			return v, nil
+		}
+		return time.Time{}, fmt.Errorf("must be time format, but %q", strValue)
+	case RequestParameterFieldTypeArray:
+		var mm []interface{}
+		if err := json.Unmarshal([]byte(strValue), &mm); err == nil {
+			return mm, nil
+		}
+		return nil, fmt.Errorf("must be json array, but %q", strValue)
+	case RequestParameterFieldTypeObject:
+		var mm = make(map[string]interface{})
+		if err := json.Unmarshal([]byte(strValue), &mm); err == nil {
+			return mm, nil
+		}
+		return nil, fmt.Errorf("must be json object, but %q", strValue)
+	}
+	return nil, fmt.Errorf("unknown type %q to evaluate %q", t, strValue)
+}
 
 // ParameterParser is to parse parameter value
 type ParameterParser struct {
@@ -140,45 +182,10 @@ func (pp *ParameterParser) toJSONString(v url.Values) ([]byte, error) {
 			}
 			continue
 		}
-		strValue := val[0]
-		switch spec.Type {
-		case RequestParameterFieldTypeString:
-			m[k] = strValue
-		case RequestParameterFieldTypeBool:
-			m[k] = strValue == "1" || strValue == "true"
-		case RequestParameterFieldTypeInt:
-			if m[k], err = strconv.Atoi(strValue); err != nil {
-				errors.Add(k, fmt.Errorf("must be int, but %q", strValue))
-			}
-			break
-		case RequestParameterFieldTypeFloat:
-			if m[k], err = strconv.ParseFloat(strValue, 64); err != nil {
-				errors.Add(k, fmt.Errorf("must be float, but %q", strValue))
-			}
-			break
-		case RequestParameterFieldTypeTime:
-			if m[k], err = xtime.Parse(strValue); err != nil {
-				if m[k], err = xtime.ParseDateDefault(strValue); err != nil {
-					errors.Add(k, fmt.Errorf("must be time format, but %q", strValue))
-				}
-			}
-			break
-		case RequestParameterFieldTypeArray:
-			var mm []interface{}
-			if err = json.Unmarshal([]byte(strValue), &mm); err != nil {
-				errors.Add(k, fmt.Errorf("must be json array, but %q", strValue))
-			} else {
-				m[k] = mm
-			}
-			break
-		case RequestParameterFieldTypeObject:
-			var mm = make(map[string]interface{})
-			if err = json.Unmarshal([]byte(strValue), &mm); err != nil {
-				errors.Add(k, fmt.Errorf("must be json object, but %q", strValue))
-			} else {
-				m[k] = mm
-			}
-			break
+		if v, err := spec.Type.ValueOf(val[0]); err != nil {
+			errors.Add(k, err)
+		} else {
+			m[k] = v
 		}
 	}
 	if err = errors.ToError(); err != nil {
