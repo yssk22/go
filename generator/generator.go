@@ -113,5 +113,5 @@ func (e *InvalidSourceError) SourceWithLine(all bool) string {
 }
 
 func (e *InvalidSourceError) Error() string {
-	return e.err.Error()
+	return fmt.Sprintf("%s\n%s", e.err.Error(), e.SourceWithLine(false))
 }

@@ -77,6 +77,11 @@ func CompilePathPattern(pattern string) (*PathPattern, error) {
 	}, nil
 }
 
+// GetParamNames returns a list of parameter names
+func (pattern *PathPattern) GetParamNames() []string {
+	return pattern.paramNames
+}
+
 // Match execute the matching with the given path and return the parameter values or nil
 func (pattern *PathPattern) Match(path string) (*keyvalue.GetProxy, bool) {
 	var matched = pattern.compiled.FindStringSubmatch(path)

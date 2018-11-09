@@ -30,7 +30,7 @@ const (
 // RequestParameterFieldSpec is a spec to parse the parameters
 type RequestParameterFieldSpec struct {
 	Type     RequestParameterFieldType `json:"type"`
-	Default  interface{}               `json:"default"`
+	Default  interface{}               `json:"default,omitempty"`
 	Required bool                      `json:"required"` // this checks the parameter has a key or not.
 }
 
