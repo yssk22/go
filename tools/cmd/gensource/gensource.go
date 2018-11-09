@@ -15,10 +15,6 @@ import (
 	"github.com/yssk22/go/generator"
 )
 
-const defaultOutput = "datastore_helper.go"
-
-var ()
-
 func main() {
 	log.SetPrefix("[gensource] ")
 	log.SetFlags(0)
