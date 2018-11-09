@@ -3,8 +3,9 @@ package example
 import (
 	"time"
 
-	"github.com/yssk22/go/rgb"
 	"context"
+
+	"github.com/yssk22/go/types"
 	"google.golang.org/appengine"
 )
 
@@ -22,7 +23,7 @@ type Example struct {
 	UpdatedAt           time.Time          `json:"updated_at" ent:"timestamp"`
 	DefaultTime         time.Time          `json:"default_time" default:"2016-01-01T20:12:10Z"`
 	BeforeSaveProcessed bool               `json:"before_save_processed"`
-	CustomType          rgb.RGB            `json:"custom_type" ent:"form" parser:"github.com/yssk22/go/rgb.MustParseRGB"`
+	CustomType          types.RGB          `json:"custom_type" ent:"form" parser:"github.com/yssk22/go/types.MustParseRGB"`
 	Location            appengine.GeoPoint `json:"location" ent:"search"`
 }
 

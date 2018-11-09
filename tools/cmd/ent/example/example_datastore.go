@@ -10,7 +10,7 @@ import (
 	"github.com/yssk22/go/gae/memcache"
 	"github.com/yssk22/go/keyvalue"
 	"github.com/yssk22/go/lazy"
-	"github.com/yssk22/go/rgb"
+	"github.com/yssk22/go/types"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xlog"
 	"github.com/yssk22/go/x/xtime"
@@ -69,7 +69,7 @@ func (e *Example) UpdateByForm(form *keyvalue.GetProxy) {
 		e.FloatType = ent.ParseFloat64(v.(string))
 	}
 	if v, err := form.Get("custom_type"); err == nil {
-		e.CustomType = rgb.MustParseRGB(v.(string))
+		e.CustomType = types.MustParseRGB(v.(string))
 	}
 }
 
