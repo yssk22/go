@@ -63,3 +63,14 @@ func (d *Dependency) GenImport() string {
 	buff.WriteString(")\n")
 	return buff.String()
 }
+
+// GenImportForJavaScript generates import statements for JavaScript
+func (d *Dependency) GenImportForJavaScript() string {
+	var buff bytes.Buffer
+	for _, pkg := range d.packages {
+		alias := d.packageToAlias[pkg]
+		buff.WriteString(fmt.Sprintf("import * as %s from %q\n", alias, pkg))
+	}
+	buff.WriteString("\n")
+	return buff.String()
+}
