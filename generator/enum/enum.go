@@ -45,6 +45,9 @@ func (enum *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, err
 	if err != nil {
 		return nil, err
 	}
+	if len(specs) == 0 {
+		return nil, nil
+	}
 	enum.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Parse(templateFile))

@@ -1,33 +1,34 @@
 package types
 
 import (
-	"time"
+	"context"
+
+	"github.com/yssk22/go/validator"
+	"github.com/yssk22/go/web/api"
 )
 
 // RequestParams is an example of typed request parameters
 type RequestParams struct {
-	StrVal            string  `json:"str_val"`
-	StrPtr            *string `json:"str_ptr"`
-	StrPtrWithDefault string  `json:"str_ptr_default" default:"foo"`
+	StrVal         string  `json:"str_val"`
+	StrValDefault  string  `json:"str_val_default" default:"foo"`
+	StrValRequired string  `json:"str_val_required" validate:"required"`
+	StrPtr         *string `json:"str_ptr"`
+	StrPtrDefault  *string `json:"str_ptr_default" default:"bar"`
+	StrPtrRequired *string `json:"str_ptr_required" validate:"required"`
 
-	IntVal            int  `json:"int_val"`
-	IntPtr            *int `json:"int_ptr"`
-	IntPtrWithDefault int  `json:"int_ptr_default" default:"10"`
+	IntVal int `json:"int_val"`
+}
 
-	FloatVal            float64  `json:"float_val"`
-	FloatPtr            *float64 `json:"float_ptr"`
-	FloatPtrWithDefault float64  `json:"float_ptr_default" default:"2.0"`
-
-	BoolVal            bool  `json:"bool_val"`
-	BoolPtr            *bool `json:"bool_ptr"`
-	BoolPtrWithDefault bool  `json:"bool_ptr_default" default:"false"`
-
-	TimeVal            time.Time  `json:"time_val"`
-	TimePtr            *time.Time `json:"time_ptr"`
-	TimePtrWithDefault time.Time  `json:"time_ptr_default" default:"false"`
+// Validate validates the parameter
+func (r *RequestParams) Validate(ctx context.Context, errors api.FieldErrorCollection) error {
+	errors.Add("int_val", validator.Int().Min(0).Max(10).Validate(r.IntVal))
+	return nil
 }
 
 // ComplexRequestParams is a struct to represent complex types
 type ComplexRequestParams struct {
-	Str string `json:"str"`
+	Str      string         `json:"str"`
+	Inner    *RequestParams `json:"inner"`
+	IntArray []int          `json:"int_array"`
+	MyEnum   MyEnum         `json:"my_enum"`
 }
