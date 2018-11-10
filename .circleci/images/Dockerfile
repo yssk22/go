@@ -1,8 +1,8 @@
-FROM golang:1.8.0 AS go
+FROM golang:1.11.2 AS go
 
 FROM node:8.3 AS node
 
-FROM google/cloud-sdk:164.0.0 AS cloud-sdk
+FROM google/cloud-sdk:224.0.0 AS cloud-sdk
 
 COPY --from=go /usr/local/go /usr/local/go
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
