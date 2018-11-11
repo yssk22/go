@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 )
 
-func Example_ByteString() {
+func ExampleByteString() {
 	byt := []byte("日本語")
 	str := ByteString("日本語")
 	bytJSON, _ := json.Marshal(byt)

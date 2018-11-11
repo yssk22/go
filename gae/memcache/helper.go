@@ -95,12 +95,12 @@ func CacheResponseWithExpire(name lazy.Value, expire time.Duration, h web.Handle
 
 		resp := h.Process(req, next)
 		if len(resp.Cookies) > 0 {
-			logger.Warnf("disabling cache capability: including cookies")
+			logger.Warnf("[memcache:%s] disabling cache capability: including cookies", ckey)
 			return resp
 		}
 		for k, v := range resp.Header {
 			if _, ok := cachableHeaderKeys[strings.ToLower(k)]; !ok {
-				logger.Warnf("disabling cache capability: including unregistered headres (header-key: %s, header-value: %v)", ckey, k, v)
+				logger.Warnf("[memcache:%s] disabling cache capability: including unregistered headres (header-key: %s, header-value: %v)", ckey, k, v)
 				return resp
 			}
 		}

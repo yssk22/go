@@ -7,11 +7,12 @@ import (
 
 	"github.com/yssk22/go/x/xtesting/assert"
 
+	"context"
+
 	"github.com/yssk22/go/gae/gaetest"
 	"github.com/yssk22/go/gae/service"
 	"github.com/yssk22/go/gae/service/asynctask"
 	"github.com/yssk22/go/keyvalue"
-	"context"
 )
 
 func TestMain(m *testing.M) {
@@ -23,8 +24,10 @@ func TestMain(m *testing.M) {
 func TestLogic(t *testing.T) {
 	a := assert.New(t)
 	s := service.New("foo")
-	var processed = false
-	var queryValue = ""
+	var processed bool
+	var queryValue string
+	processed = false
+	queryValue = ""
 	queue := s.AddPushQueue("myqueue")
 	s.AsyncTask("/async/task/", asynctask.NewConfig(
 		"async-task",
@@ -40,6 +43,8 @@ func TestLogic(t *testing.T) {
 	task := runner.Run(gaetest.NewContext(), "/foo/async/task/", nil, queue.Name)
 	a.NotNil(task)
 	a.EqInt(int(asynctask.StatusSuccess), int(task.Status))
+	a.OK(processed)
+	a.EqStr("", queryValue)
 }
 
 func TestTaskStore(t *testing.T) {
@@ -76,4 +81,5 @@ func TestTaskStore(t *testing.T) {
 	a.NotNil(task)
 	a.EqStr("bar", v.Foo)
 	a.EqInt(int(asynctask.StatusSuccess), int(task.Status))
+	a.EqStr("", queryValue)
 }

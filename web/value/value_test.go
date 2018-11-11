@@ -40,7 +40,7 @@ func ExampleNewQueryIntOr() {
 	// 5 10 10
 }
 
-func ExampleNewQueryIntInRagne() {
+func ExampleNewQueryIntInRange() {
 	val := NewQueryIntInRange("foo", 5, 10, 8)
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -59,7 +59,7 @@ func ExampleNewQueryIntInRagne() {
 	// 5 10 8 8 8
 }
 
-func ExampleNewQueryIntInLit() {
+func ExampleNewQueryIntInList() {
 	val := NewQueryIntInList("foo", []int{1}, 8)
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {

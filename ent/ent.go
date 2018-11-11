@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"context"
+
 	"google.golang.org/appengine/datastore"
 )
 
@@ -17,7 +18,7 @@ func GetMemcacheKey(k *datastore.Key) string {
 	if k.StringID() != "" {
 		return fmt.Sprintf("datastore.%s.%s", k.Kind(), k.StringID())
 	}
-	return fmt.Sprintf("datastore.%s.%s", k.Kind(), k.IntID())
+	return fmt.Sprintf("datastore.%s.%d", k.Kind(), k.IntID())
 }
 
 // MaxEntsPerPutDelete is a maxmum number of entities to be passed to PutMulti or DeleteMulti.

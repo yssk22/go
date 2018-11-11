@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xlog"
 	"github.com/yssk22/go/x/xtime"
 
@@ -129,11 +130,11 @@ func FixtureFromFile(ctx context.Context, path string, bindings interface{}) err
 func DatastoreFixture(ctx context.Context, path string, bindings interface{}) error {
 	data, err := loadFile(path, bindings)
 	if err != nil {
-		return fmt.Errorf("Could not load fixture file from %s: %v", err)
+		return xerrors.Wrap(err, "could not load fixture file from %s", path)
 	}
 	var arr []map[string]interface{}
 	if err = json.Unmarshal(data, &arr); err != nil {
-		return fmt.Errorf("Could not load the json file from %q - JSON Parse error: %v", path, err)
+		return xerrors.Wrap(err, "could not load the json file from %q", path)
 	}
 	for _, v := range arr {
 		if err := loadJsonToDatastore(ctx, nil, v); err != nil {
@@ -269,17 +270,17 @@ func loadJsonToDatastore(ctx context.Context, pkey *datastore.Key, data map[stri
 	var ok bool
 	var err error
 	if _, ok = data["_kind"]; !ok {
-		return fmt.Errorf("Missing key `_kind`")
+		return fmt.Errorf("missing key `_kind`")
 	}
 	kind = data["_kind"].(string)
 	if keyval, ok = data["_key"]; !ok {
-		return fmt.Errorf("Missing key `_key`")
+		return fmt.Errorf("missing key `_key`")
 	}
 	if _, ok = data["_ns"]; ok {
 		ns = data["_ns"].(string)
 		ctx, err = appengine.Namespace(ctx, ns)
 		if err != nil {
-			return fmt.Errorf("Could not change the namespace of %q, check _ns value: ", ns, err)
+			return xerrors.Wrap(err, "could not change the namespace of %q, check _ns value in your fixture", ns)
 		}
 	}
 

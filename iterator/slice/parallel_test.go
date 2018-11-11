@@ -17,7 +17,7 @@ func ExampleParallel() {
 	// Output: [1 2 3 4 5]
 }
 
-func ExampleParallel_Struct() {
+func ExampleParallel_withStruct() {
 	type T struct {
 		i int
 	}
@@ -32,7 +32,7 @@ func ExampleParallel_Struct() {
 	// Output: [{0} {1} {2} {3}]
 }
 
-func ExampleParallel_StructPtr() {
+func ExampleParallel_withStructPtr() {
 	type T struct {
 		i int
 	}
@@ -65,7 +65,7 @@ func TestParallel_withMaxMaxConcurrency(t *testing.T) {
 	}
 }
 
-func ExampleParallel_Error() {
+func ExampleParallel_withError() {
 	var a = []int{0, 1, 2, 3, 4}
 	err := Parallel(a, DefaultParallelOption, func(i int, v int) error {
 		if i%2 == 0 {
@@ -77,7 +77,7 @@ func ExampleParallel_Error() {
 	// Output: error at 0 (and 3 other errors)
 }
 
-func ExampleParallel_Panic() {
+func ExampleParallel_withPanic() {
 	defer func() {
 		x := recover()
 		fmt.Println(x)

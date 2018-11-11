@@ -2,7 +2,7 @@ package number
 
 import "fmt"
 
-func ExampleParseFloatOr() {
+func ExampleParseFloat32Or() {
 	fmt.Println(ParseFloat32Or("20.1", 1))
 	fmt.Println(ParseFloat32Or("20.5a", 1.3))
 	fmt.Println(ParseFloat32Or("a", 1.2))

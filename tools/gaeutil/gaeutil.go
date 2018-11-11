@@ -5,13 +5,15 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
+
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // CollectModules returns a list of module names from diretroies under the deployment directory.
 func CollectModules(deploymentDir string) ([]string, error) {
 	files, err := ioutil.ReadDir(deploymentDir)
 	if err != nil {
-		return nil, fmt.Errorf("could not read the diretory %s: %v", err)
+		return nil, xerrors.Wrap(err, "could not read the diretory %s", deploymentDir)
 	}
 	var list []string
 	for _, f := range files {

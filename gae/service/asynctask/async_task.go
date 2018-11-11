@@ -56,7 +56,7 @@ type AsyncTask struct {
 	Status    Status     `json:"status"`
 	Error     string     `json:"error" datastore:",noindex"`
 	Progress  []Progress `json:"progress" datastore:",noindex"`
-	TaskStore TaskStore  `json:"taskstore" datastore",noindex"`
+	TaskStore TaskStore  `json:"taskstore" datastore:",noindex"`
 	StartAt   time.Time  `json:"start_at"`
 	FinishAt  time.Time  `json:"finish_at"`
 	UpdatedAt time.Time  `json:"updated_at" ent:"timestamp"`
