@@ -34,7 +34,7 @@ func (ce *ComparableExample) Compare(v interface{}) (int, error) {
 	return 0, ErrInvalidComparison
 }
 
-func ExampleAppendIfMissing_Pointer() {
+func ExampleAppendIfMissing_withPointer() {
 	var a = []*ComparableExample{
 		&ComparableExample{"1"},
 		&ComparableExample{"2"},

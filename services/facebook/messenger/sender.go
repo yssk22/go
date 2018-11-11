@@ -3,8 +3,9 @@ package messenger
 import (
 	"net/http"
 
-	"github.com/yssk22/go/services/facebook"
 	"context"
+
+	"github.com/yssk22/go/services/facebook"
 )
 
 // Sender is a struct to send messages
@@ -71,7 +72,7 @@ type SendAttachment struct {
 
 // SendPayload is a payload structure for Send AP{
 type SendPayload struct {
-	URL           string `json:url"`
+	URL           string `json:"url"`
 	IsReusable    string `json:"is_reusable"`
 	AttachementID string `json:"attachment_id"`
 }

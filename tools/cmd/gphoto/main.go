@@ -46,7 +46,7 @@ func main() {
 		if DefaultConfig.ClientID == "" ||
 			DefaultConfig.ClientSecret == "" ||
 			DefaultConfig.AccessToken == "" {
-			log.Println("One of client_id, client_secret, access_token is missing in %s", path)
+			log.Println("One of client_id, client_secret, access_token is missing in", path)
 			log.Println("Parsed content: ")
 			log.Fatalln(string(buff))
 		}

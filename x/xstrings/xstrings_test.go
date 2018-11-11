@@ -2,13 +2,13 @@ package xstrings
 
 import "fmt"
 
-func ExampleStripAndTrim() {
+func ExampleSplitAndTrim() {
 	fmt.Println(SplitAndTrim("a, b, c ,d,,f,", ","))
 	// Output:
 	// [a b c d f]
 }
 
-func ExampleStripAndTrimAsMap() {
+func ExampleSplitAndTrimAsMap() {
 	m := SplitAndTrimAsMap("a, b, c ,d,,f,", ",")
 	_, ok := m["a"]
 	_, not := m["z"]
