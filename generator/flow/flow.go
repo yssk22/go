@@ -33,6 +33,11 @@ func (*Generator) GetAnnotation() *generator.Annotation {
 	return annotation
 }
 
+// GetFormatter implements generator.Generator#GetFormatter
+func (*Generator) GetFormatter() generator.Formatter {
+	return generator.JavaScriptFormatter
+}
+
 // NewGenerator returns a new instance of Generator
 func NewGenerator(opts *Options) *Generator {
 	return &Generator{
@@ -63,7 +68,6 @@ func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotated
 		{
 			Filename: "ServerTypes.js",
 			Source:   buff.String(),
-			FileType: generator.ResultFileTypeFlow,
 		},
 	}
 	return result, nil

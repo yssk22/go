@@ -37,6 +37,11 @@ func (*Generator) GetAnnotation() *generator.Annotation {
 	return annotation
 }
 
+// GetFormatter implements generator.Generator#GetFormatter
+func (*Generator) GetFormatter() generator.Formatter {
+	return generator.GoFormatter
+}
+
 // NewGenerator returns a new instance of Generator
 func NewGenerator() *Generator {
 	return &Generator{}
