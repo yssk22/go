@@ -43,7 +43,7 @@ func Parse{{.EnumName}}(s string) ({{.EnumName}}, error) {
 	if val, ok := _{{.EnumName}}StringToValue[s]; ok {
 		return val, nil
 	}
-	return {{.EnumName}}(0), fmt.Errorf("invalid value %q for {{.EnumName}}", s)
+	return {{.EnumName}}(-1), fmt.Errorf("invalid value %q for {{.EnumName}}", s)
 }
 
 func Parse{{.EnumName}}Or(s string, or {{.EnumName}}) {{.EnumName}} {
