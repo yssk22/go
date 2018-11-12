@@ -66,7 +66,7 @@ func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotated
 	}
 	result := []*generator.Result{
 		{
-			Filename: "ServerTypes.js",
+			Filename: "GoTypes.js",
 			Source:   buff.String(),
 		},
 	}
