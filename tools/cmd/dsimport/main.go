@@ -35,7 +35,7 @@ func main() {
 	}
 	if len(*output) == 0 {
 		if len(*namespace) == 0 {
-			*output = fmt.Sprintf("%s.%s.bk", *host, *namespace, *kind)
+			*output = fmt.Sprintf("%s.%s.bk", *host, *kind)
 		} else {
 			*output = fmt.Sprintf("%s.%s.%s.bk", *host, *namespace, *kind)
 		}

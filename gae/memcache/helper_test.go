@@ -35,7 +35,7 @@ func Test_CachedObjectWithExpiration(t *testing.T) {
 	a.EqStr("10", item.ID)
 	a.Nil(Get(gaetest.NewContext(), "foo", &cachedItem))
 	a.EqStr("10", cachedItem.ID)
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	a.NotNil(Get(gaetest.NewContext(), "foo", &cachedItem))
 }
 
@@ -61,9 +61,9 @@ func Test_CacheResponseWithExpire(t *testing.T) {
 	resp = recorder.TestGet("/")
 	a.EqInt(200, resp.Code)
 	a.EqStr(cachedBody, resp.Body.String())
-	time.Sleep(expires)
+	time.Sleep(expires + 1)
 
 	resp = recorder.TestGet("/")
 	a.EqInt(200, resp.Code)
-	a.Not(cachedBody == resp.Body.String())
+	a.OK(cachedBody != resp.Body.String(), "%q == %q", cachedBody, resp.Body.String())
 }

@@ -2,46 +2,57 @@ package api
 
 import (
 	"fmt"
-	"go/types"
-	"strings"
+
+	"github.com/yssk22/go/web/api"
+
+	"github.com/yssk22/go/generator"
+)
+
+type requestMethod string
+
+const (
+	requestMethodGet     = "Get"
+	requestMethodPost    = "Post"
+	requestMethodPut     = "Put"
+	requestMethodDelete  = "Delete"
+	requestMethodUnknown = "Unknown"
 )
 
 // Spec represents API specification
 type Spec struct {
-	PathPattern string
-	FuncName    string
-	Method      string // one of Get, Post, Put, Delete
+	PathPattern         string
+	PathParameters      []string
+	StructuredParameter *StructuredParameter
+	FuncName            string
+	Method              requestMethod
 }
 
-// Validate validates the spec
-func (spec *Spec) Validate(pkg *types.Package) error {
-	if obj := pkg.Scope().Lookup(spec.FuncName); obj == nil {
-		return fmt.Errorf("%q is not found in %s", spec.FuncName, pkg.Name())
-	}
-	if len(spec.PathPattern) == 0 {
-		return fmt.Errorf("path is empty")
-	}
-	switch spec.Method {
-	case "Get", "Post", "Put", "Delete":
-		break
-	default:
-		return fmt.Errorf("invalid")
-	}
-	return nil
+// ParameterType represents the type information for a parameter
+type ParameterType struct {
+	Name         string
+	Package      string
+	PackageAlias string
 }
 
-func guessMethodByFunctionName(funcName string) string {
-	if strings.HasPrefix(funcName, "get") {
-		return "Get"
+func (pt *ParameterType) String() string {
+	s := pt.PackageAlias
+	if s == "" {
+		s = pt.Package
 	}
-	if strings.HasPrefix(funcName, "update") {
-		return "Put"
+	if s != "" {
+		s = s + "."
 	}
-	if strings.HasPrefix(funcName, "create") {
-		return "Post"
+	return fmt.Sprintf("%s%s", s, pt.Name)
+}
+
+// ResolveAlias resolves PackageAlias field with the given Dependency object.
+func (pt *ParameterType) ResolveAlias(d *generator.Dependency) {
+	if pt.Package != "" {
+		pt.PackageAlias = d.Add(pt.Package)
 	}
-	if strings.HasPrefix(funcName, "delete") {
-		return "Delete"
-	}
-	return "" // unknown
+}
+
+type StructuredParameter struct {
+	Type   *ParameterType
+	Parser *api.ParameterParser
 }

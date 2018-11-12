@@ -2,7 +2,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: speedland/circle-ci-gae:latest
+      - image: yssk22/circle-ci:latest
     working_directory: /go/src/github.com/yssk22/go
     environment:
       TEST_RESULTS: /tmp/test-results

@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -21,6 +22,18 @@ type Signature struct {
 	Name   string
 	Params map[string]string
 	Node   ast.Node
+	Source *FileInfo
+}
+
+// GenError returns an wrapped error object with the node information
+// n must be the ancestor of Signature node or nil
+func (s *Signature) GenError(e error, n ast.Node) error {
+	i := s.Source.GetNodeInfo(s.Node)
+	if n != nil {
+		ii := s.Source.GetNodeInfo(n)
+		return xerrors.Wrap(e, ii.String())
+	}
+	return xerrors.Wrap(e, i.String())
 }
 
 // PackageInfo is a package infomaiton that generator is analysing
@@ -33,7 +46,7 @@ type PackageInfo struct {
 func parsePackage(dir string) (*PackageInfo, error) {
 	importedPackage, err := build.Default.ImportDir(dir, 0)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Wrap(err, "build.Default.Import failed")
 	}
 	fs := token.NewFileSet()
 	var parsedFiles []*ast.File
@@ -64,7 +77,7 @@ func parsePackage(dir string) (*PackageInfo, error) {
 	}
 	pkg, err := conf.Check(".", fs, parsedFiles, info)
 	if err != nil {
-		return nil, xerrors.Wrap(err, "type check error: %s", dir)
+		return nil, xerrors.Wrap(err, "type check error -- you may need to run `go install ./...` at first")
 	}
 	pkg.SetName(importedPackage.Name)
 	return &PackageInfo{
@@ -97,6 +110,7 @@ func (p *PackageInfo) CollectSignatures(s string) []*Signature {
 							Name:   s,
 							Params: params,
 							Node:   node,
+							Source: f,
 						})
 					}
 				}
@@ -139,4 +153,35 @@ type FileInfo struct {
 // Inspect run ast.Inspect for the file
 func (f *FileInfo) Inspect(fun func(ast.Node) bool) {
 	ast.Inspect(f.Ast, fun)
+}
+
+var newline = []byte{'\n'}
+
+// GetNodeInfo returns *NodeInfo from ast.Node
+func (f *FileInfo) GetNodeInfo(node ast.Node) *NodeInfo {
+	lines := bytes.Split(f.Source, newline)
+	start := int(node.Pos() - 1)
+	end := int(node.End())
+	sourceBeforeStart := f.Source[:start]
+	numSourceBeforeStart := len(sourceBeforeStart)
+	numLines := bytes.Count(sourceBeforeStart, newline) + 1
+	return &NodeInfo{
+		FilePath: f.Path,
+		LineNum:  numLines,
+		LineText: string(lines[numLines-1]),
+		Pos:      start - numSourceBeforeStart,
+		End:      end - numSourceBeforeStart,
+	}
+}
+
+type NodeInfo struct {
+	FilePath string
+	LineNum  int
+	LineText string
+	Pos      int
+	End      int
+}
+
+func (ni *NodeInfo) String() string {
+	return fmt.Sprintf("%s [L%d](%d:%d) %s", ni.FilePath, ni.LineNum, ni.Pos, ni.End, ni.LineText)
 }

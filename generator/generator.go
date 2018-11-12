@@ -13,6 +13,15 @@ import (
 	"github.com/yssk22/go/number"
 )
 
+// ResultFileType is a type of the result file
+type ResultFileType int
+
+// Available ResultFileType
+const (
+	ResultFileTypeGo ResultFileType = iota
+	ResultFileTypeFlow
+)
+
 // Generator is an interface to implement generator command
 type Generator interface {
 	Run(*PackageInfo) ([]*Result, error)
@@ -22,9 +31,21 @@ type Generator interface {
 type Result struct {
 	Filename string
 	Source   string
+	FileType ResultFileType
 }
 
 func (gr *Result) write(dir string) (string, error) {
+	switch gr.FileType {
+	case ResultFileTypeGo:
+		return gr.writeGo(dir)
+	case ResultFileTypeFlow:
+		return gr.writeFlow(dir)
+	default:
+		panic(fmt.Errorf("unknown file type value %d", gr.FileType))
+	}
+}
+
+func (gr *Result) writeGo(dir string) (string, error) {
 	formatted, err := format.Source([]byte(gr.Source))
 	if err != nil {
 		return "", &InvalidSourceError{
@@ -37,6 +58,17 @@ func (gr *Result) write(dir string) (string, error) {
 		gr.Filename,
 	)
 	if err = ioutil.WriteFile(filename, formatted, 0644); err != nil {
+		return "", xerrors.Wrap(err, "failed to write the generated source on %s", filename)
+	}
+	return filename, nil
+}
+
+func (gr *Result) writeFlow(dir string) (string, error) {
+	filename := filepath.Join(
+		dir,
+		gr.Filename,
+	)
+	if err := ioutil.WriteFile(filename, []byte(gr.Source), 0644); err != nil {
 		return "", xerrors.Wrap(err, "failed to write the generated source on %s", filename)
 	}
 	return filename, nil
@@ -113,5 +145,5 @@ func (e *InvalidSourceError) SourceWithLine(all bool) string {
 }
 
 func (e *InvalidSourceError) Error() string {
-	return e.err.Error()
+	return fmt.Sprintf("%s\n%s", e.err.Error(), e.SourceWithLine(false))
 }

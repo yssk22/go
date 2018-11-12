@@ -8,7 +8,7 @@ import (
 	"github.com/yssk22/go/x/xtime"
 )
 
-func Example_WithContext() {
+func ExampleWithContext() {
 	formatter := NewTextFormatter(
 		`{{formattimestamp .}} [{{.Level}}] {{.Data}}`,
 	)
@@ -34,7 +34,7 @@ func Example_WithContext() {
 	//
 }
 
-func Example_WithContextAndKey() {
+func ExampleWithContextAndKey() {
 	formatter := NewTextFormatter(
 		`{{formattimestamp .}} [{{.LoggerKey}}] [{{.Level}}] {{.Data}}`,
 	)

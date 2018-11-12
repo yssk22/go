@@ -2,7 +2,7 @@ package web
 
 import "fmt"
 
-func ExamplePathPattern_Match_Something() {
+func ExamplePathPattern_Match_withSomething() {
 	p := MustCompilePathPattern(
 		"/path/to/:something.html",
 	)
@@ -13,7 +13,7 @@ func ExamplePathPattern_Match_Something() {
 	// :something => "a"
 }
 
-func ExamplePathPattern_Match_Anything() {
+func ExamplePathPattern_Match_withAnything() {
 	p := MustCompilePathPattern(
 		"/path/to/*anything",
 	)
@@ -28,7 +28,7 @@ func ExamplePathPattern_Match_Anything() {
 	// :anything => ""
 }
 
-func ExamplePathPattern_Match_URLEncoded() {
+func ExamplePathPattern_Match_withURLEncoded() {
 	p := MustCompilePathPattern(
 		"/path/to/:something.html",
 	)

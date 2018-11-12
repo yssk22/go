@@ -29,7 +29,6 @@ func Do(ctx context.Context, task func(context.Context) error, backoff Backoff, 
 			break
 		}
 	}
-	return err
 }
 
 // Backoff is an interface to implement backoff algorithm

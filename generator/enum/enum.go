@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"go/types"
 	"log"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -44,6 +45,9 @@ func (enum *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, err
 	if err != nil {
 		return nil, err
 	}
+	if len(specs) == 0 {
+		return nil, nil
+	}
 	enum.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Parse(templateFile))
@@ -52,7 +56,7 @@ func (enum *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, err
 	}
 	result := []*generator.Result{
 		{
-			Filename: "__generated__enums.go",
+			Filename: "generated_enums.go",
 			Source:   buff.String(),
 		},
 	}
@@ -72,6 +76,10 @@ func (enum *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error)
 		}
 		log.Printf("INFO: @enum %s", spec.EnumName)
 	}
+	sort.Slice(specs, func(i, j int) bool {
+		a, b := specs[i], specs[j]
+		return strings.Compare(a.EnumName, b.EnumName) < 0
+	})
 	return specs, nil
 }
 
