@@ -233,6 +233,9 @@ func guessMethodByFunctionName(funcName string) (requestMethod, error) {
 	if strings.HasPrefix(funcName, "get") {
 		return requestMethodGet, nil
 	}
+	if strings.HasPrefix(funcName, "list") {
+		return requestMethodGet, nil
+	}
 	if strings.HasPrefix(funcName, "update") {
 		return requestMethodPut, nil
 	}
@@ -242,7 +245,7 @@ func guessMethodByFunctionName(funcName string) (requestMethod, error) {
 	if strings.HasPrefix(funcName, "delete") {
 		return requestMethodDelete, nil
 	}
-	return requestMethodUnknown, fmt.Errorf("invalid function name %q to resolve the method", funcName)
+	return requestMethodUnknown, fmt.Errorf("invalid function name %q to resolve the HTTP method", funcName)
 }
 
 func resolveRequestParameterFormat(format api.RequestParameterFormat, m requestMethod) api.RequestParameterFormat {
