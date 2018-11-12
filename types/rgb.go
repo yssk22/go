@@ -6,6 +6,7 @@ import (
 )
 
 // RGB is a alias for 32bit color interger
+// @flow
 type RGB int
 
 // ToHexString to get the hex string expression for the color
