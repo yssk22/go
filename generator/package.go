@@ -97,7 +97,7 @@ func (p *PackageInfo) Inspect(fun func(ast.Node) bool) {
 // CollectSignatures returns all `@s key=value ..` signatures
 func (p *PackageInfo) CollectSignatures(s string) []*Signature {
 	var signatures []*Signature
-	var re = regexp.MustCompile(fmt.Sprintf("\\s*@%s\\s*", s))
+	var re = regexp.MustCompile(fmt.Sprintf("^\\s*@%s\\s*", s))
 	for _, f := range p.Files {
 		for node, commentGroups := range f.CommentMap {
 			for _, c := range commentGroups {
