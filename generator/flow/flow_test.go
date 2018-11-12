@@ -10,7 +10,7 @@ import (
 func TestFlow(t *testing.T) {
 	a := assert.New(t)
 	runner := generator.NewRunner(
-		NewGenerator(),
+		NewGenerator(NewOptions()),
 	)
 	a.Nil(runner.Run("./example"))
 	// expected, _ := ioutil.ReadFile("./example/__generated.expected")
