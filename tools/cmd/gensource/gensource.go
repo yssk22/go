@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/yssk22/go/generator/enum"
+	"github.com/yssk22/go/generator/flow"
 
 	"github.com/yssk22/go/generator/api"
 
@@ -24,9 +25,13 @@ func main() {
 		args = []string{"."}
 	}
 	log.Println("gensource", args)
+
+	flowOptions := flow.NewOptions()
+	flowOptions.RootDir, _ = os.Getwd()
 	runner := generator.NewRunner(
 		api.NewGenerator(),
 		enum.NewGenerator(),
+		flow.NewGenerator(flowOptions),
 	)
 	for _, dir := range args {
 		runDirectory(runner, dir, false)
