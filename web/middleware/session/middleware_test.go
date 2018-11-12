@@ -96,7 +96,7 @@ func TestMiddleware_SessionExpiration(t *testing.T) {
 	a.EqInt(0, len(middleware.Store.(*MemorySessionStore).store))
 }
 
-func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Middleware) *web.Router {
+func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Middleware) web.Router {
 	router := web.NewRouter(nil)
 	router.Use(middleware)
 	router.Post("/session", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {

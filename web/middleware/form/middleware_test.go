@@ -43,7 +43,7 @@ func TestMiddleware(t *testing.T) {
 	a.Body("10", res)
 }
 
-func prepareRouter(key string) *web.Router {
+func prepareRouter(key string) web.Router {
 	router := web.NewRouter(nil)
 	router.Post("/form",
 		NewMiddleware(func(v *validator.FormValidator) {

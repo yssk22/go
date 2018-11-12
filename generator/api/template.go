@@ -13,7 +13,7 @@ package {{.Package}}
 
 {{.Dependency.GenImport}}
 
-func SetupAPI(r *web.Router) {
+func SetupAPI(r web.Router) {
 	{{range .Specs -}}
 	{{if .StructuredParameter -}}
 	var _{{.FuncName}}ParameterParser api.ParameterParser
