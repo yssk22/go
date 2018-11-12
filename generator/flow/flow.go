@@ -115,6 +115,9 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 		l := ut.NumFields()
 		for i := 0; i < l; i++ {
 			f := ut.Field(i)
+			if !f.Exported() {
+				continue
+			}
 			ft, err := b.getFlowType(f.Type())
 			if err != nil {
 				return nil, n.GenError(
