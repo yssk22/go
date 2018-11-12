@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"log"
 	"sort"
 	"strings"
 	"text/template"
@@ -19,47 +18,51 @@ import (
 	"github.com/yssk22/go/x/xstrings"
 )
 
+var annotation = generator.NewAnnotation(
+	"api",
+)
+
 const (
+	signature          = "api"
 	commandParamPath   = "path"
 	commandParamFormat = "format"
 )
 
 // Generator is a generator for HTTP API sources
-// Usage:
-//   @api path=path/to/api method=[GET|POST|PUT|DELETE] format=[json|form|query]
-//
 type Generator struct {
-	Package    string // package name
-	Dependency *generator.Dependency
-	Specs      []*Spec
+}
+
+// GetAnnotation implements generator.Generator#GetAnnotation
+func (*Generator) GetAnnotation() *generator.Annotation {
+	return annotation
 }
 
 // NewGenerator returns a new instance of Generator
-func NewGenerator(specs ...*Spec) *Generator {
+func NewGenerator() *Generator {
+	return &Generator{}
+}
+
+// Run implementes generator.Generator#Run
+func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*generator.Result, error) {
 	dep := generator.NewDependency()
 	dep.Add("github.com/yssk22/go/web")
 	dep.Add("github.com/yssk22/go/web/response")
 	dep.Add("github.com/yssk22/go/web/api")
-	return &Generator{
+	b := &bindings{
+		Package: pkg.Name,
 		Dependency: dep,
-		Specs:      specs,
 	}
-}
-
-// Run implementes generator.Generator#Run
-func (api *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, error) {
-	api.Package = pkg.Package.Name()
-	specs, err := api.collectSpecs(pkg)
+	specs, err := b.collectSpecs(pkg, nodes)
 	if err != nil {
 		return nil, err
 	}
 	if len(specs) == 0 {
 		return nil, nil
 	}
-	api.Specs = specs
+	b.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Funcs(templateHelper).Parse(templateFile))
-	if err = t.Execute(&buff, api); err != nil {
+	if err = t.Execute(&buff, b); err != nil {
 		return nil, xerrors.Wrap(err, "failed to run a template")
 	}
 	result := []*generator.Result{
@@ -71,12 +74,11 @@ func (api *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, erro
 	return result, nil
 }
 
-func (api *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
-	signatures := pkg.CollectSignatures("api")
+func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
 	var specs []*Spec
 	var errors []error
-	for _, s := range signatures {
-		spec, err := parseSignature(pkg, s)
+	for _, n := range nodes {
+		spec, err := parseAnnotation(pkg, n)
 		if err != nil {
 			errors = append(errors, err)
 		} else {
@@ -100,15 +102,15 @@ func (api *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) 
 	// resolve dependencies
 	for _, s := range specs {
 		if s.StructuredParameter != nil {
-			api.Dependency.Add("encoding/json")
-			s.StructuredParameter.Type.ResolveAlias(api.Dependency)
+			b.Dependency.Add("encoding/json")
+			s.StructuredParameter.Type.ResolveAlias(b.Dependency)
 		}
 	}
 
 	return specs, nil
 }
 
-func parseSignature(pkg *generator.PackageInfo, s *generator.Signature) (*Spec, error) {
+func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*Spec, error) {
 	var spec Spec
 	node, ok := s.Node.(*ast.FuncDecl)
 	if !ok {
@@ -208,7 +210,6 @@ func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*S
 		},
 		Parser: api.NewParameterParser(format),
 	}
-	log.Println(s.Type.Name)
 	st, ok := n.Underlying().(*types.Struct)
 	if !ok {
 		return nil, fmt.Errorf("%s must be a struct but %s", s.Type, n.Underlying().String())
