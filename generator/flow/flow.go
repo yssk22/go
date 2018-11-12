@@ -24,14 +24,16 @@ type Generator struct {
 	Package    string // package name
 	Dependency *generator.Dependency
 	Specs      []*Spec
+	Options    *Options
 }
 
 // NewGenerator returns a new instance of Generator
-func NewGenerator(specs ...*Spec) *Generator {
+func NewGenerator(opts *Options, specs ...*Spec) *Generator {
 	dep := generator.NewDependency()
 	return &Generator{
 		Dependency: dep,
 		Specs:      specs,
+		Options:    opts,
 	}
 }
 
