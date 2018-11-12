@@ -51,6 +51,7 @@ func (a *Annotation) MaybeMarkedIn(contents []byte) bool {
 func (a *Annotation) Collect(p *PackageInfo) []*AnnotatedNode {
 	var nodes []*AnnotatedNode
 	var re = regexp.MustCompile(fmt.Sprintf("\\s*@%s\\s*", a.str))
+	offset := 0
 	for _, f := range p.Files {
 		for node, commentGroups := range f.CommentMap {
 			for _, c := range commentGroups {
@@ -73,6 +74,7 @@ func (a *Annotation) Collect(p *PackageInfo) []*AnnotatedNode {
 				}
 			}
 		}
+		offset += len(f.Source)
 	}
 	return nodes
 }
