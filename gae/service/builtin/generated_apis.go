@@ -4,6 +4,7 @@ package builtin
 
 import (
 	"encoding/json"
+	"github.com/yssk22/go/gae/service/config"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/api"
 	"github.com/yssk22/go/web/response"
@@ -33,11 +34,11 @@ func SetupAPI(r web.Router) {
 	}))
 	var _updateConfigParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"value":{"type":"string","required":false}},"format":"form"}`),
+		[]byte(`{"specs":{"default_value":{"type":"string","required":false},"description":{"type":"string","required":false},"global_value":{"type":"string","required":false},"is_global":{"type":"bool","required":false},"key":{"type":"string","required":false},"updated_at":{"type":"time","required":false},"value":{"type":"string","required":false}},"format":"form"}`),
 		&_updateConfigParameterParser,
 	)
 	r.Put("/admin/api/configs/:key.json", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp updateConfigParams
+		var sp config.ServiceConfig
 		if err := _updateConfigParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
