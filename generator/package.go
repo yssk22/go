@@ -31,6 +31,7 @@ func parsePackage(dir string) (*PackageInfo, error) {
 	fs := token.NewFileSet()
 	var parsedFiles []*ast.File
 	var files []*FileInfo
+	var offset = 0
 	for _, goFile := range importedPackage.GoFiles {
 		path := filepath.Join(dir, goFile)
 		src, err := ioutil.ReadFile(path)
@@ -44,10 +45,12 @@ func parsePackage(dir string) (*PackageInfo, error) {
 		files = append(files, &FileInfo{
 			Path:       path,
 			Source:     src,
+			NodeOffset: offset,
 			Ast:        parsedFile,
 			CommentMap: ast.NewCommentMap(fs, parsedFile, parsedFile.Comments),
 		})
 		parsedFiles = append(parsedFiles, parsedFile)
+		offset += len(src)
 	}
 
 	info := &types.Info{
@@ -91,6 +94,7 @@ type FileInfo struct {
 	Path       string
 	Ast        *ast.File
 	Source     []byte
+	NodeOffset int
 	CommentMap ast.CommentMap
 }
 
@@ -104,8 +108,8 @@ var newline = []byte{'\n'}
 // GetNodeInfo returns *NodeInfo from ast.Node
 func (f *FileInfo) GetNodeInfo(node ast.Node) *NodeInfo {
 	lines := bytes.Split(f.Source, newline)
-	start := int(node.Pos() - 1)
-	end := int(node.End())
+	start := int(node.Pos()-1) - f.NodeOffset
+	end := int(node.End()) - f.NodeOffset
 	sourceBeforeStart := f.Source[:start]
 	numSourceBeforeStart := len(sourceBeforeStart)
 	numLines := bytes.Count(sourceBeforeStart, newline) + 1
