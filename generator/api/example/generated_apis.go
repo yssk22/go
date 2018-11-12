@@ -8,7 +8,7 @@ import (
 	"github.com/yssk22/go/web/response"
 )
 
-func SetupAPI(r *web.Router) {
+func SetupAPI(r web.Router) {
 	var _deleteExampleParameterParser api.ParameterParser
 	json.Unmarshal(
 		[]byte(`{"specs":{"int_val":{"type":"int","required":false},"str_ptr":{"type":"string","required":false},"str_ptr_default":{"type":"string","default":"bar","required":false},"str_ptr_required":{"type":"string","required":true},"str_val":{"type":"string","required":false},"str_val_default":{"type":"string","default":"foo","required":false},"str_val_required":{"type":"string","required":true}},"format":"query"}`),
@@ -32,7 +32,7 @@ func SetupAPI(r *web.Router) {
 	}))
 	var _createExampleParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"query"}`),
+		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"form"}`),
 		&_createExampleParameterParser,
 	)
 	r.Post("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -53,7 +53,7 @@ func SetupAPI(r *web.Router) {
 	}))
 	var _updateExampleParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"query"}`),
+		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"form"}`),
 		&_updateExampleParameterParser,
 	)
 	r.Put("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {

@@ -42,7 +42,7 @@ func ParseRequestParameterFieldType(s string) (RequestParameterFieldType, error)
 	if val, ok := _RequestParameterFieldTypeStringToValue[s]; ok {
 		return val, nil
 	}
-	return RequestParameterFieldType(0), fmt.Errorf("invalid value %q for RequestParameterFieldType", s)
+	return RequestParameterFieldType(-1), fmt.Errorf("invalid value %q for RequestParameterFieldType", s)
 }
 
 func ParseRequestParameterFieldTypeOr(s string, or RequestParameterFieldType) RequestParameterFieldType {
@@ -119,7 +119,7 @@ func ParseRequestParameterFormat(s string) (RequestParameterFormat, error) {
 	if val, ok := _RequestParameterFormatStringToValue[s]; ok {
 		return val, nil
 	}
-	return RequestParameterFormat(0), fmt.Errorf("invalid value %q for RequestParameterFormat", s)
+	return RequestParameterFormat(-1), fmt.Errorf("invalid value %q for RequestParameterFormat", s)
 }
 
 func ParseRequestParameterFormatOr(s string, or RequestParameterFormat) RequestParameterFormat {

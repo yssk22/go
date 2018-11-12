@@ -40,7 +40,7 @@ func ParseMyEnum(s string) (MyEnum, error) {
 	if val, ok := _MyEnumStringToValue[s]; ok {
 		return val, nil
 	}
-	return MyEnum(0), fmt.Errorf("invalid value %q for MyEnum", s)
+	return MyEnum(-1), fmt.Errorf("invalid value %q for MyEnum", s)
 }
 
 func ParseMyEnumOr(s string, or MyEnum) MyEnum {
@@ -115,7 +115,7 @@ func ParseYourEnum(s string) (YourEnum, error) {
 	if val, ok := _YourEnumStringToValue[s]; ok {
 		return val, nil
 	}
-	return YourEnum(0), fmt.Errorf("invalid value %q for YourEnum", s)
+	return YourEnum(-1), fmt.Errorf("invalid value %q for YourEnum", s)
 }
 
 func ParseYourEnumOr(s string, or YourEnum) YourEnum {
