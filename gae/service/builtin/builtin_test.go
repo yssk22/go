@@ -10,6 +10,7 @@ import (
 	"github.com/yssk22/go/gae/service/config"
 	"github.com/yssk22/go/web/httptest"
 	"github.com/yssk22/go/web/response"
+	"log"
 )
 
 func TestMain(m *testing.M) {
@@ -78,10 +79,12 @@ func Test_API_Configs_Put(t *testing.T) {
 	a.JSON(&cfg, res)
 	a.EqStr("20", cfg.Value)
 
+	log.Println("POST OK")
 	res = recorder.TestGet("/myapp/admin/api/configs/urlfetch.deadline.json")
 	a.Status(response.HTTPStatusOK, res)
 	a.JSON(&cfg, res)
 	a.EqStr("20", cfg.Value)
+	log.Println("FOOO")
 
 	// Check the global config value is not changed.
 	globalCfg := config.DefaultServiceConfigKind.MustGet(gaetest.NewContext(), "urlfetch.deadline")
