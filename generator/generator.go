@@ -5,12 +5,13 @@ import (
 	"go/format"
 	"io/ioutil"
 	"log"
+	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/yssk22/go/x/xerrors"
-
+	"github.com/yssk22/go/ansi"
 	"github.com/yssk22/go/number"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // ResultFileType is a type of the result file
@@ -24,7 +25,8 @@ const (
 
 // Generator is an interface to implement generator command
 type Generator interface {
-	Run(*PackageInfo) ([]*Result, error)
+	Run(*PackageInfo, []*AnnotatedNode) ([]*Result, error)
+	GetAnnotation() *Annotation
 }
 
 // Result represents a result of Generator#Run
@@ -88,13 +90,22 @@ func NewRunner(generators ...Generator) *Runner {
 
 // Run executes Generator#run for all generators.
 func (r *Runner) Run(dir string) error {
+	hasAnnotated, err := r.hasAnnotated(dir)
+	if err != nil {
+		return err
+	}
+	if !hasAnnotated {
+		return nil
+	}
+	log.Printf("INFO: parsing %s", dir)
 	pkg, err := parsePackage(dir)
 	if err != nil {
 		absPath, _ := filepath.Abs(dir)
 		return xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	for _, g := range r.generators {
-		generated, err := g.Run(pkg)
+		nodes := g.GetAnnotation().Collect(pkg)
+		generated, err := g.Run(pkg, nodes)
 		if err != nil {
 			return err
 		}
@@ -103,10 +114,31 @@ func (r *Runner) Run(dir string) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("INFO: Generated: %s", filename)
+			log.Printf("INFO: Generated: %s", ansi.Blue.Sprintf(filename))
 		}
 	}
 	return nil
+}
+
+func (r *Runner) hasAnnotated(dir string) (bool, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+	for _, f := range files {
+		if !f.IsDir() {
+			buff, err := ioutil.ReadFile(path.Join(dir, f.Name()))
+			if err != nil {
+				return false, err
+			}
+			for _, g := range r.generators {
+				if g.GetAnnotation().MaybeMarkedIn(buff) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }
 
 // InvalidSourceError is an error if generated source is unable to compile.
