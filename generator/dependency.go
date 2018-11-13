@@ -47,6 +47,25 @@ func (d *Dependency) Add(pkg string) string {
 	}
 }
 
+// AddAs is like Add, but use the specific alias name
+func (d *Dependency) AddAs(pkg string, alias string) string {
+	a, ok := d.packageToAlias[pkg]
+	if ok {
+		if a != alias {
+			panic(fmt.Errorf("%s is already added with %s", pkg, a))
+		}
+		return a
+	}
+	p, ok := d.aliasToPackage[alias]
+	if ok {
+		panic(fmt.Errorf("%s is already used by %s", alias, p))
+	}
+	d.packages = append(d.packages, pkg)
+	d.packageToAlias[pkg] = alias
+	d.aliasToPackage[alias] = pkg
+	return alias
+}
+
 // GenImport generates import statements
 func (d *Dependency) GenImport() string {
 	var buff bytes.Buffer
