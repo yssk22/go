@@ -25,3 +25,10 @@ func Test_Dependency(t *testing.T) {
 		")\n"
 	a.EqStr(expect, d.GenImport())
 }
+
+func Test_Dependency_AddAs(t *testing.T) {
+	a := assert.New(t)
+	d := NewDependency()
+	alias := d.AddAs("github.com/yssk22/go", "foo")
+	a.EqStr("foo", alias)
+}
