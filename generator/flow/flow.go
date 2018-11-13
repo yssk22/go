@@ -101,10 +101,10 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 	var spec Spec
 	node, ok := n.Node.(*ast.GenDecl)
 	if !ok {
-		return nil, n.GenError(fmt.Errorf("@flow is used on non struct type definition"), nil)
+		return nil, n.GenError(fmt.Errorf("@flow is used on non type declaration"), nil)
 	}
 	if node.Tok != token.TYPE {
-		return nil, n.GenError(fmt.Errorf("@flow is used on non struct type definition"), nil)
+		return nil, n.GenError(fmt.Errorf("@flow is used on non type declaration"), nil)
 	}
 	typeSpec := node.Specs[0].(*ast.TypeSpec)
 	t := pkg.TypeInfo.Defs[typeSpec.Name]
