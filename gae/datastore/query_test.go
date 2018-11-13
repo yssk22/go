@@ -5,18 +5,15 @@ import (
 	"testing"
 
 	"github.com/yssk22/go/gae/gaetest"
-	"github.com/yssk22/go/lazy"
 	"github.com/yssk22/go/x/xtesting/assert"
 )
-
-const queryLoggerKey = "github.com/yssk22/go/gae/datastore.Query"
 
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Eq("ID", lazy.New("example-1"))
+	q := NewQuery("Example").Eq("ID", "example-1")
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
@@ -27,7 +24,7 @@ func TestQuery_Order(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Desc("ID")
+	q := NewQuery("Example").Desc("ID")
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(5, len(result))
@@ -41,7 +38,7 @@ func TestQuery_Limit(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1))
+	q := NewQuery("Example").Desc("ID").Limit(1)
 	_, err := q.GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
@@ -52,7 +49,7 @@ func TestQuery_KeysOnly(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
-	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1)).KeysOnly(true)
+	q := NewQuery("Example").Desc("ID").Limit(1).KeysOnly(true)
 	keys, err := q.GetAll(gaetest.NewContext(), nil)
 	a.Nil(err)
 	a.EqInt(1, len(keys))
