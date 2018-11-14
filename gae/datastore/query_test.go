@@ -14,8 +14,7 @@ func TestQuery_Filter(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Eq("ID", "example-1")
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := GetAll(gaetest.NewContext(), "Example", &result, Eq("ID", "example-1"))
 	a.Nil(err)
 	a.EqInt(1, len(result))
 }
@@ -26,8 +25,7 @@ func TestQuery_Order(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Desc("ID")
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := GetAll(gaetest.NewContext(), "Example", &result, Desc("ID"))
 	a.Nil(err)
 	a.EqInt(5, len(result))
 	for i := range result {
@@ -41,8 +39,7 @@ func TestQuery_Limit(t *testing.T) {
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example").Desc("ID").Limit(1)
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := GetAll(gaetest.NewContext(), "Example", &result, Desc("ID"), Limit(1))
 	a.Nil(err)
 	a.EqInt(1, len(result))
 	a.EqStr("example-5", result[0].ID)
@@ -53,13 +50,8 @@ func TestQuery_KeysOnly(t *testing.T) {
 	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
-	q := NewQuery("Example").Desc("ID").Limit(1).KeysOnly(true)
-	keys, err := q.GetAll(gaetest.NewContext(), nil)
+	keys, err := GetAll(gaetest.NewContext(), "Example", nil, Desc("ID"), Limit(1))
 	a.Nil(err)
 	a.EqInt(1, len(keys))
 	a.EqStr("/Example,example-5", keys[0].String())
-
-	q = q.KeysOnly(false)
-	keys, err = q.GetAll(gaetest.NewContext(), nil)
-	a.EqStr("datastore: invalid entity type", err.Error())
 }
