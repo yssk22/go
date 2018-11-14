@@ -10,9 +10,6 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-// QueryOption is an option arg to build a query
-type QueryOption func(*query) *query
-
 // NewQuery returns an *query configured with options
 func NewQuery(kind string) Query {
 	return &query{

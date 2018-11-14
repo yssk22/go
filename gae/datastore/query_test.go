@@ -10,6 +10,7 @@ import (
 
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
@@ -21,6 +22,7 @@ func TestQuery_Filter(t *testing.T) {
 
 func TestQuery_Order(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
@@ -35,6 +37,7 @@ func TestQuery_Order(t *testing.T) {
 
 func TestQuery_Limit(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
@@ -47,6 +50,7 @@ func TestQuery_Limit(t *testing.T) {
 
 func TestQuery_KeysOnly(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	q := NewQuery("Example").Desc("ID").Limit(1).KeysOnly(true)
