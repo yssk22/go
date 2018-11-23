@@ -94,6 +94,12 @@ func (q *Query) Ancestor(a *datastore.Key) *Query {
 	return q
 }
 
+// KeysOnly sets the query to return only keys
+func (q *Query) KeysOnly() *Query {
+	q.keysOnly = true
+	return q
+}
+
 // Eq sets the "=" filter on the `name` field.
 func (q *Query) Eq(name string, value interface{}) *Query {
 	q.filters = append(q.filters, &filter{
