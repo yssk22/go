@@ -8,6 +8,16 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
+func TestQuery_KeysOnly(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
+
+	keys, err := NewQuery("Example").Eq("ID", "example-1").KeysOnly().GetAll(gaetest.NewContext(), nil)
+	a.Nil(err)
+	a.EqInt(1, len(keys))
+}
+
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)
 	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
