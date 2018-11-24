@@ -8,6 +8,7 @@ type Spec struct {
 	TimestampField string
 	IsSearchable   bool
 	Fields         []*FieldSpec
+	QuerySpecs     []*QuerySpec
 }
 
 // FieldSpec is a specification for datasatore entity fields.
@@ -17,4 +18,11 @@ type FieldSpec struct {
 	IsID        bool
 	IsTimestamp bool
 	IsSearch    bool
+}
+
+// QuerySpec is a specification for query
+type QuerySpec struct {
+	Name         string
+	PropertyName string
+	Type         string
 }

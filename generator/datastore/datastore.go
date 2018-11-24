@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"sort"
 	"strings"
 	"text/template"
@@ -47,9 +48,7 @@ func NewGenerator() *Generator {
 func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*generator.Result, error) {
 	dep := generator.NewDependency()
 	dep.Add("context")
-	dep.Add("google.golang.org/appengine")
 	dep.Add("google.golang.org/appengine/datastore")
-	dep.Add("github.com/yssk22/go/gae/memcache")
 	dep.AddAs("github.com/yssk22/go/gae/datastore", "ds")
 	dep.Add("github.com/yssk22/go/x/xerrors")
 	dep.Add("github.com/yssk22/go/x/xtime")
@@ -129,9 +128,10 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 		if !f.Exported() {
 			continue
 		}
-		fieldSpec, err := b.parseField(pkg, f, generator.ParseTag(st.Tag(i)))
+		tag := generator.ParseTag(st.Tag(i))
+		fieldSpec, err := b.getFieldSpec(pkg, f, tag)
 		if err != nil {
-			return nil, n.GenError(xerrors.Wrap(err, "could not parse the field %q", f.Name()), nil)
+			return nil, n.GenError(xerrors.Wrap(err, "could not get the field spec for %q", f.Name()), nil)
 		}
 		if fieldSpec.IsKey {
 			if spec.KeyField != "" {
@@ -146,17 +146,19 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 			spec.TimestampField = fieldSpec.Name
 		}
 		spec.Fields = append(spec.Fields, fieldSpec)
+		querySpecs, err := b.getQuerySpecs(pkg, f, tag)
+		if err != nil {
+			return nil, n.GenError(xerrors.Wrap(err, "could not get the query specs for %q", f.Name()), nil)
+		}
+		spec.QuerySpecs = append(spec.QuerySpecs, querySpecs...)
 	}
 	if spec.KeyField == "" {
 		return nil, n.GenError(fmt.Errorf("struct %s doesn't have the key field - use ent:\"key\" tag to fix", spec.StructName), nil)
 	}
-	if spec.TimestampField == "" {
-		return nil, n.GenError(fmt.Errorf("struct %s doesn't have the timestamp field - use ent:\"timestamp\" tag to fix", spec.StructName), nil)
-	}
 	return &spec, nil
 }
 
-func (b *bindings) parseField(pkg *generator.PackageInfo, field *types.Var, tags keyvalue.Getter) (*FieldSpec, error) {
+func (b *bindings) getFieldSpec(pkg *generator.PackageInfo, field *types.Var, tags keyvalue.Getter) (*FieldSpec, error) {
 	var f FieldSpec
 	f.Name = field.Name()
 	if v, err := tags.Get(fieldTagName); err == nil {
@@ -175,6 +177,85 @@ func (b *bindings) parseField(pkg *generator.PackageInfo, field *types.Var, tags
 		}
 	}
 	return &f, nil
+}
+
+func (b *bindings) getQuerySpecs(pkg *generator.PackageInfo, field *types.Var, tags keyvalue.Getter) ([]*QuerySpec, error) {
+	name := field.Name()
+	t := field.Type()
+	return b.getQuerySpecsRec(name, name, t)
+}
+
+func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Type) ([]*QuerySpec, error) {
+	var specs []*QuerySpec
+	switch tt := t.(type) {
+	case *types.Basic:
+		specs = append(specs, &QuerySpec{
+			Name:         name,
+			PropertyName: propertyName,
+			Type:         tt.Name(),
+		})
+		return specs, nil
+	case *types.Pointer:
+		return b.getQuerySpecsRec(name, name, tt.Elem())
+	case *types.Struct:
+		numFields := tt.NumFields()
+		for i := 0; i < numFields; i++ {
+			f := tt.Field(i)
+			if !f.Exported() {
+				continue
+			}
+			underlyingSpecs, err := b.getQuerySpecsRec(
+				fmt.Sprintf("%s%s", name, f.Name()),
+				fmt.Sprintf("%s.%s", propertyName, f.Name()),
+				f.Type(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			specs = append(specs, underlyingSpecs...)
+		}
+		return specs, nil
+	case *types.Named:
+		str := tt.String()
+		if str == "time.Time" {
+			alias := b.Dependency.Add("time")
+			specs = append(specs, &QuerySpec{
+				Name:         name,
+				PropertyName: propertyName,
+				Type:         fmt.Sprintf("%s.Time", alias),
+			})
+			return specs, nil
+		}
+		underlying := tt.Underlying()
+		if ut, ok := underlying.(*types.Struct); ok {
+			return b.getQuerySpecsRec(name, propertyName, ut)
+		}
+		obj := tt.Obj()
+		importPath := obj.Pkg().Path()
+		if importPath == "." {
+			specs = append(specs, &QuerySpec{
+				Name:         name,
+				PropertyName: propertyName,
+				Type:         str,
+			})
+		} else {
+			alias := b.Dependency.Add(importPath)
+			specs = append(specs, &QuerySpec{
+				Name:         name,
+				PropertyName: propertyName,
+				Type:         fmt.Sprintf("%s.%s", alias, obj.Name()),
+			})
+		}
+		return specs, nil
+	case *types.Slice:
+		str := tt.String()
+		if str != "[]byte" {
+			return b.getQuerySpecsRec(name, propertyName, tt.Elem())
+		}
+		return specs, nil
+	default:
+		return nil, fmt.Errorf("unsupported field %s (node type: %s)", name, reflect.ValueOf(tt))
+	}
 }
 
 const (
