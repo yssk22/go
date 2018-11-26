@@ -12,6 +12,7 @@ import (
 	"github.com/yssk22/go/generator/enum"
 	"github.com/yssk22/go/generator/flow"
 	"github.com/yssk22/go/generator/api"
+	"github.com/yssk22/go/generator/datastore"
 	"github.com/yssk22/go/iterator/slice"
 	"github.com/yssk22/go/x/xstrings"
 )
@@ -36,19 +37,25 @@ func main() {
 	generators := []generator.Generator{
 		api.NewGenerator(),
 		enum.NewGenerator(),
+		datastore.NewGenerator(),
 		flow.NewGenerator(flowOptions),		
 	}
-	if *annotation != "" {
-		anns := xstrings.SplitAndTrim(*annotation, ",")
-		generators = slice.Filter(generators, func(i int, g interface{}) bool{
-			for _, a := range anns {
-				if g.(generator.Generator).GetAnnotation().Is(a) {
-					return false
-				}	
-			}
-			return true
-		}).([]generator.Generator)
-	}
+	anns := xstrings.SplitAndTrim(*annotation, ",")
+	generators = slice.Filter(generators, func(i int, g interface{}) bool{
+		gena := g.(generator.Generator).GetAnnotation()
+		if *annotation == "" {
+			log.Printf("%s: yes\n", gena)
+			return false
+		}
+		for _, a := range anns {
+			if gena.Is(a) {
+				log.Printf("%s: yes\n", gena)
+				return false
+			}	
+		}
+		log.Printf("%s: no\n", gena)
+		return true
+	}).([]generator.Generator)
 	runner := generator.NewRunner(generators...)
 	for _, dir := range args {
 		runDirectory(runner, dir, false)
