@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/yssk22/go/generator"
@@ -13,7 +14,7 @@ func TestFlow(t *testing.T) {
 		NewGenerator(NewOptions()),
 	)
 	a.Nil(runner.Run("./example"))
-	// expected, _ := ioutil.ReadFile("./example/__generated.expected")
-	// actual, _ := ioutil.ReadFile("./example/__generated__apis.go")
-	// a.EqStr(string(expected), string(actual))
+	expected, _ := ioutil.ReadFile("./example/GoTypes.expected.js")
+	actual, _ := ioutil.ReadFile("./example/GoTypes.js")
+	a.EqStr(string(expected), string(actual))
 }
