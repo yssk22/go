@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"go/format"
 	"io"
 	"os/exec"
@@ -41,10 +42,12 @@ var GoFormatter = FormatterFunc(func(src string) (string, error) {
 // JavaScriptFormatter is a formatter for js
 var JavaScriptFormatter = FormatterFunc(func(src string) (string, error) {
 	var out bytes.Buffer
-	c := exec.Command("prettier")
+	var errOut bytes.Buffer
+	c := exec.Command("prettier", "--stdin", "--parser", "flow")
 	r, w := io.Pipe()
 	c.Stdin = r
 	c.Stdout = &out
+	c.Stderr = &errOut
 	if err := c.Start(); err != nil {
 		w.Close()
 		return "", xerrors.Wrap(err, "cannot launch prettier")
@@ -61,5 +64,9 @@ var JavaScriptFormatter = FormatterFunc(func(src string) (string, error) {
 	}
 	w.Close()
 	c.Wait()
+	if !c.ProcessState.Success() {
+		return "", fmt.Errorf("failed to run prettier: %s", errOut.String())
+
+	}
 	return out.String(), nil
 })
