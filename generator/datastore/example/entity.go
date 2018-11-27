@@ -23,4 +23,7 @@ type Entity struct {
 	BeforeSaveProcessed bool               `json:"before_save_processed"`
 	CustomType          types.RGB          `json:"custom_type"`
 	Location            appengine.GeoPoint `json:"location" ent:"search"`
+
+	FieldWithNoIndex int `datastore:",noindex"`
+	FieldWithHyphen  int `datastore:"-"`
 }
