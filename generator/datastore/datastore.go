@@ -133,24 +133,29 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 		if err != nil {
 			return nil, n.GenError(xerrors.Wrap(err, "could not get the field spec for %q", f.Name()), nil)
 		}
-		if fieldSpec.IsKey {
-			if spec.KeyField != "" {
-				return nil, n.GenError(fmt.Errorf("struct %s have multiple key fields - use ent:\"key\" tag only once", spec.StructName), nil)
+		if fieldSpec != nil {
+			if fieldSpec.IsKey {
+				if spec.KeyField != "" {
+					return nil, n.GenError(fmt.Errorf("struct %s have multiple key fields - use ent:\"key\" tag only once", spec.StructName), nil)
+				}
+				spec.KeyField = fieldSpec.Name
 			}
-			spec.KeyField = fieldSpec.Name
-		}
-		if fieldSpec.IsTimestamp {
-			if spec.TimestampField != "" {
-				return nil, n.GenError(fmt.Errorf("struct %s have multiple timestamp fields - use ent:\"key\" tag only once", spec.StructName), nil)
+			if fieldSpec.IsTimestamp {
+				if spec.TimestampField != "" {
+					return nil, n.GenError(fmt.Errorf("struct %s have multiple timestamp fields - use ent:\"key\" tag only once", spec.StructName), nil)
+				}
+				spec.TimestampField = fieldSpec.Name
 			}
-			spec.TimestampField = fieldSpec.Name
+
+			spec.Fields = append(spec.Fields, fieldSpec)
+			if !fieldSpec.NoIndex {
+				querySpecs, err := b.getQuerySpecs(pkg, f, tag)
+				if err != nil {
+					return nil, n.GenError(xerrors.Wrap(err, "could not get the query specs for %q", f.Name()), nil)
+				}
+				spec.QuerySpecs = append(spec.QuerySpecs, querySpecs...)
+			}
 		}
-		spec.Fields = append(spec.Fields, fieldSpec)
-		querySpecs, err := b.getQuerySpecs(pkg, f, tag)
-		if err != nil {
-			return nil, n.GenError(xerrors.Wrap(err, "could not get the query specs for %q", f.Name()), nil)
-		}
-		spec.QuerySpecs = append(spec.QuerySpecs, querySpecs...)
 	}
 	if spec.KeyField == "" {
 		return nil, n.GenError(fmt.Errorf("struct %s doesn't have the key field - use ent:\"key\" tag to fix", spec.StructName), nil)
@@ -174,6 +179,27 @@ func (b *bindings) getFieldSpec(pkg *generator.PackageInfo, field *types.Var, ta
 			case fieldTagValueTimestamp:
 				f.IsTimestamp = true
 			}
+		}
+	}
+	if v, err := tags.Get(datastoreTagName); err == nil {
+		var fieldName string
+		var fieldOption string
+		values := strings.Split(v.(string), ",")
+		fieldName = strings.TrimSpace(values[0])
+		if len(values) > 1 {
+			fieldOption = strings.TrimSpace(values[1])
+		}
+		if fieldName == "-" {
+			return nil, nil
+		}
+		if fieldName != "" {
+			if fieldName == "noindex" {
+				return nil, fmt.Errorf("%s has tagged with datastore but name is spcified with noindex. You would probably want to tag \",noindex\"", f.Name)
+			}
+			f.Name = fieldName
+		}
+		if fieldOption == "noindex" {
+			f.NoIndex = true
 		}
 	}
 	return &f, nil
@@ -265,4 +291,6 @@ const (
 	fieldTagValueKey       = "key"
 	fieldTagValueTimestamp = "timestamp"
 	fieldTagValueSearch    = "search"
+
+	datastoreTagName = "datastore"
 )

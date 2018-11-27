@@ -18,6 +18,8 @@ type FieldSpec struct {
 	IsID        bool
 	IsTimestamp bool
 	IsSearch    bool
+
+	NoIndex bool
 }
 
 // QuerySpec is a specification for query
