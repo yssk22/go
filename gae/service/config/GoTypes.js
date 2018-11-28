@@ -2,10 +2,10 @@
 // eslint-edisable
 
 export type ServiceConfig = {
-  Key: string,
-  Value: string,
-  UpdatedAt: Date,
-  Description: string,
-  DefaultValue: string,
-  GlobalValue: string
-};
+    Key: string,
+    Value: string,
+    UpdatedAt: Date,
+    Description: string,
+    DefaultValue: string,
+    GlobalValue: string,
+}

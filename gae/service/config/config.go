@@ -48,13 +48,14 @@ func (c *Config) register(cfg *ServiceConfig) {
 
 // All returns all *ServiceConfig in app.
 func (c *Config) All(ctx context.Context) []*ServiceConfig {
-	serviceConfigs := DefaultServiceConfigKind.MustGetMulti(
+	datastore := NewServiceConfigKind()
+	_, serviceConfigs := datastore.MustGetMulti(
 		ctx,
 		c.defaultKeys,
 	)
 	globalCtx, err := appengine.Namespace(ctx, "")
 	xerrors.MustNil(err)
-	globalConfigs := DefaultServiceConfigKind.MustGetMulti(
+	_, globalConfigs := datastore.MustGetMulti(
 		globalCtx,
 		c.defaultKeys,
 	)
@@ -68,11 +69,12 @@ func (c *Config) All(ctx context.Context) []*ServiceConfig {
 
 // Get gets the *ServiceConfig
 func (c *Config) Get(ctx context.Context, key string) *ServiceConfig {
-	serviceCfg := DefaultServiceConfigKind.MustGet(ctx, key)
+	datastore := NewServiceConfigKind()
+	_, serviceCfg := datastore.MustGet(ctx, key)
 	defaultCfg := c.getDefault(key)
 	globalCtx, err := appengine.Namespace(ctx, "")
 	xerrors.MustNil(err)
-	globalCfg := DefaultServiceConfigKind.MustGet(globalCtx, key)
+	_, globalCfg := datastore.MustGet(globalCtx, key)
 	return c.normalize(serviceCfg, globalCfg, defaultCfg)
 }
 
@@ -142,14 +144,14 @@ func (c *Config) GetBoolDefaultValue(key string) bool {
 
 // Set sets the *ServiceConfig
 func (c *Config) Set(ctx context.Context, cfg *ServiceConfig) {
-	DefaultServiceConfigKind.MustPut(ctx, cfg)
+	NewServiceConfigKind().MustPut(ctx, cfg)
 }
 
 // SetValue set the new value on key
 func (c *Config) SetValue(ctx context.Context, key string, value string) {
 	cfg := c.Get(ctx, key)
 	cfg.Value = value
-	DefaultServiceConfigKind.MustPut(ctx, cfg)
+	NewServiceConfigKind().MustPut(ctx, cfg)
 }
 
 // LoadFromJSON loads config values from a given file path
@@ -166,26 +168,26 @@ func (c *Config) LoadFromJSON(ctx context.Context, path string) {
 		cfg.Value = value
 		updates = append(updates, cfg)
 	}
-	DefaultServiceConfigKind.MustPutMulti(ctx, updates)
+	NewServiceConfigKind().MustPutMulti(ctx, updates)
 }
 
-func (c *Config) normalize(s *ServiceConfig, global *ServiceConfig, default_ *ServiceConfig) *ServiceConfig {
+func (c *Config) normalize(s *ServiceConfig, global *ServiceConfig, defaultCfg *ServiceConfig) *ServiceConfig {
 	// normalize *ServiceConfig object with fallback if it's nil.
 	// global can be nil if it is not a global config.
 	// default_ must not be nil.
 	if global == nil {
-		global = default_
+		global = defaultCfg
 	}
 	if s == nil {
-		if default_.isGlobal {
+		if defaultCfg.isGlobal {
 			s = &ServiceConfig{
 				Key:   global.Key,
 				Value: global.Value,
 			}
 		} else {
 			s = &ServiceConfig{
-				Key:   default_.Key,
-				Value: default_.Value,
+				Key:   defaultCfg.Key,
+				Value: defaultCfg.Value,
 			}
 		}
 	} else {
@@ -194,9 +196,9 @@ func (c *Config) normalize(s *ServiceConfig, global *ServiceConfig, default_ *Se
 			Value: s.Value,
 		}
 	}
-	s.Description = default_.Description
-	s.DefaultValue = default_.Value
-	if default_.isGlobal {
+	s.Description = defaultCfg.Description
+	s.DefaultValue = defaultCfg.Value
+	if defaultCfg.isGlobal {
 		s.GlobalValue = global.Value
 	}
 	return s
