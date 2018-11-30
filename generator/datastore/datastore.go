@@ -262,7 +262,7 @@ func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Ty
 			specs = append(specs, &QuerySpec{
 				Name:         name,
 				PropertyName: propertyName,
-				Type:         str,
+				Type:         obj.Name(),
 			})
 		} else {
 			alias := b.Dependency.Add(importPath)

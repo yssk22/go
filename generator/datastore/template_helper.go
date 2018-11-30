@@ -34,6 +34,10 @@ var templateHelper = template.FuncMap(map[string]interface{}{
 	"snakecase": func(s string) string {
 		return xstrings.ToSnakeCase(s)
 	},
+	"mkPrivate": func(s string) string {
+		// FooBar => fooBar
+		return fmt.Sprintf("%s%s", strings.ToUpper(string(s[0])), string(s[0:]))
+	},
 	"queryFuncs": func(spec *Spec) string {
 		// generate EqXXX() like query funcs.
 		var funcs []string
