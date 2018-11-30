@@ -32,7 +32,7 @@ func (f {{.StructName}}ReplacerFunc) Replace(old *{{.StructName}}, new *{{.Struc
 type {{.StructName}}Kind struct {}
 
 func New{{.StructName}}Kind() *{{.StructName}}Kind {
-	return {{snakecase .StructName}}KindInstance
+	return {{mkPrivate .StructName}}KindInstance
 }
 
 func (d *{{.StructName}}Kind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *{{.StructName}}, error) {
@@ -377,7 +377,7 @@ func (iter *{{.StructName}}Iterator) MustNext() (*datastore.Key, *{{.StructName}
 	return key, ent
 }
 
-var {{snakecase .StructName}}KindInstance = &{{.StructName}}Kind{}
+var {{mkPrivate .StructName}}KindInstance = &{{.StructName}}Kind{}
 
 {{end -}}
 `
