@@ -28,7 +28,7 @@ func (f AsyncTaskReplacerFunc) Replace(old *AsyncTask, new *AsyncTask) *AsyncTas
 type AsyncTaskKind struct{}
 
 func NewAsyncTaskKind() *AsyncTaskKind {
-	return AAsyncTaskKindInstance
+	return asyncTaskKindInstance
 }
 
 func (d *AsyncTaskKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *AsyncTask, error) {
@@ -478,7 +478,7 @@ func (d *AsyncTaskQuery) GetAll(ctx context.Context) ([]*datastore.Key, []AsyncT
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := async_taskKindInstance.GetMulti(ctx, keys)
+		_, ents, err := asyncTaskKindInstance.GetMulti(ctx, keys)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -585,7 +585,7 @@ func (iter *AsyncTaskIterator) Next() (*datastore.Key, *AsyncTask, error) {
 			}
 			return nil, nil, err
 		}
-		_, ent, err := async_taskKindInstance.Get(iter.ctx, key)
+		_, ent, err := asyncTaskKindInstance.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -609,4 +609,4 @@ func (iter *AsyncTaskIterator) MustNext() (*datastore.Key, *AsyncTask) {
 	return key, ent
 }
 
-var AAsyncTaskKindInstance = &AsyncTaskKind{}
+var asyncTaskKindInstance = &AsyncTaskKind{}
