@@ -103,7 +103,7 @@ func PutMulti(ctx context.Context, keys []*datastore.Key, ent interface{}, optio
 	if size > CrudEntsLimit {
 		return nil, ErrTooManyEnts
 	}
-	keys, err = datastore.PutMulti(ctx, keys, ent)
+	_, err = datastore.PutMulti(ctx, keys, ent)
 	if IsDatastoreError(err) {
 		_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("datastore.%s.%s", keys[0].Namespace(), keys[0].Kind()), datastoreLoggerKey)
 		logger.Fatalf("database error: %v", err)
