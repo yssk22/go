@@ -246,7 +246,7 @@ func (d *{{.StructName}}Query) GetAll(ctx context.Context) ([]*datastore.Key, []
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := {{snakecase .StructName}}KindInstance.GetMulti(ctx, keys)
+		_, ents, err := {{mkPrivate .StructName}}KindInstance.GetMulti(ctx, keys)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -353,7 +353,7 @@ func (iter *{{.StructName}}Iterator) Next() (*datastore.Key, *{{.StructName}}, e
 			}
 			return nil, nil, err
 		}
-		_, ent, err := {{snakecase .StructName}}KindInstance.Get(iter.ctx, key)
+		_, ent, err := {{mkPrivate .StructName}}KindInstance.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
