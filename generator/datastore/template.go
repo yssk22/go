@@ -53,7 +53,7 @@ func (d *{{.StructName}}Kind) GetMulti(ctx context.Context, keys interface{}, op
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*{{.StructName}}
-	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.StructName}}", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.KindName}}", keys); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -127,7 +127,7 @@ func (d *{{.StructName}}Kind) MustDelete(ctx context.Context, key interface{}, o
 func (d *{{.StructName}}Kind) DeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.StructName}}", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.KindName}}", keys); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
