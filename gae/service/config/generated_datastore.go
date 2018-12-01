@@ -27,7 +27,7 @@ func (f ServiceConfigReplacerFunc) Replace(old *ServiceConfig, new *ServiceConfi
 type ServiceConfigKind struct{}
 
 func NewServiceConfigKind() *ServiceConfigKind {
-	return service_configKindInstance
+	return serviceConfigKindInstance
 }
 
 func (d *ServiceConfigKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *ServiceConfig, error) {
@@ -277,7 +277,7 @@ func (d *ServiceConfigQuery) GetAll(ctx context.Context) ([]*datastore.Key, []Se
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := service_configKindInstance.GetMulti(ctx, keys)
+		_, ents, err := serviceConfigKindInstance.GetMulti(ctx, keys)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -384,7 +384,7 @@ func (iter *ServiceConfigIterator) Next() (*datastore.Key, *ServiceConfig, error
 			}
 			return nil, nil, err
 		}
-		_, ent, err := service_configKindInstance.Get(iter.ctx, key)
+		_, ent, err := serviceConfigKindInstance.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -408,4 +408,4 @@ func (iter *ServiceConfigIterator) MustNext() (*datastore.Key, *ServiceConfig) {
 	return key, ent
 }
 
-var service_configKindInstance = &ServiceConfigKind{}
+var serviceConfigKindInstance = &ServiceConfigKind{}
