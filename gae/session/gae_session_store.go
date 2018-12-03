@@ -12,8 +12,6 @@ import (
 	"github.com/yssk22/go/web/middleware/session"
 )
 
-const LoggerKey = session.SessionLoggerKey
-
 // GAESessionStore implements SessionStore on GAE memcache and datastore
 type GAESessionStore struct {
 	namespace string
@@ -32,7 +30,7 @@ func (s *GAESessionStore) Get(ctx context.Context, key uuid.UUID) (*session.Sess
 	if err != nil {
 		return nil, err
 	}
-	wrapper := DefaultSessionKind.MustGet(_ctx, key.String())
+	_, wrapper := NewSessionKind().MustGet(_ctx, key.String())
 	if wrapper == nil {
 		return nil, keyvalue.KeyError(fmt.Sprintf("seesion:%s", key.String()))
 	}
@@ -62,7 +60,7 @@ func (s *GAESessionStore) Set(ctx context.Context, session *session.Session) err
 		Timestamp:  session.Timestamp,
 		Data:       data,
 	}
-	DefaultSessionKind.MustPut(_ctx, wrapper)
+	NewSessionKind().MustPut(_ctx, wrapper)
 	return nil
 }
 
@@ -72,7 +70,7 @@ func (s *GAESessionStore) Del(ctx context.Context, session *session.Session) err
 	if err != nil {
 		return err
 	}
-	DefaultSessionKind.MustDelete(_ctx, session.ID.String())
+	NewSessionKind().MustDelete(_ctx, session.ID.String())
 	return nil
 }
 

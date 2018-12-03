@@ -71,6 +71,6 @@ func (runner *AsyncTaskRunner) Run(ctx context.Context, path string, query url.V
 		execPath = fmt.Sprintf("%s?%s", basePath, next.Encode())
 	}
 	// now the task has been completed.
-	task := asynctask.DefaultAsyncTaskKind.MustGet(ctx, triggered.ID)
+	_, task := asynctask.NewAsyncTaskKind().MustGet(ctx, triggered.ID)
 	return task
 }
