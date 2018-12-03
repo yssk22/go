@@ -5,7 +5,7 @@ package session
 import "time"
 
 // Session is a wrapped struct for github.com/yssk22/go/web/middleware/sesison.Session
-//go:generate ent -type=Session
+// @datastore
 type Session struct {
 	ID         string    `json:"id" ent:"id"`
 	CSRFSecret string    `json:"csrf_secret" datastore:",noindex"`

@@ -87,7 +87,7 @@ func Test_API_Configs_Put(t *testing.T) {
 	log.Println("FOOO")
 
 	// Check the global config value is not changed.
-	globalCfg := config.DefaultServiceConfigKind.MustGet(gaetest.NewContext(), "urlfetch.deadline")
+	_, globalCfg := config.NewServiceConfigKind().MustGet(gaetest.NewContext(), "urlfetch.deadline")
 	a.NotNil(globalCfg)
 	a.EqStr("45", globalCfg.Value)
 }
