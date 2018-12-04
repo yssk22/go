@@ -4,6 +4,7 @@ package xruntime
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -67,6 +68,8 @@ func captureFrames(skip int, maxDepth int) []*Frame {
 		}
 		frame.FullFilePath, frame.LineNumber = f.FileLine(pc)
 		frame.PackageName, frame.FunctionName = getPackageAndFunction(f)
+		log.Println(frame.FullFilePath)
+		log.Println(frame.PackageName)
 		if idx := strings.LastIndex(frame.FullFilePath, frame.PackageName); idx >= 0 {
 			frame.ShortFilePath = frame.FullFilePath[idx:]
 		} else {
@@ -76,7 +79,7 @@ func captureFrames(skip int, maxDepth int) []*Frame {
 			if idx := strings.LastIndex(s, frame.PackageName); idx >= 0 {
 				frame.ShortFilePath = s[idx:]
 			} else {
-				panic(fmt.Errorf("could not resolve short file path from (%q, %q)", frame.FullFilePath, frame.PackageName))
+				frame.ShortFilePath = frame.FullFilePath
 			}
 		}
 		stack[i] = frame
