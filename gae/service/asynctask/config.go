@@ -177,6 +177,7 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	if c.GetStatus(ctx, taskID) != nil {
 		return nil, ErrAlreadyExists
 	}
+	kind := NewAsyncTaskKind()
 	t := &AsyncTask{}
 	t.ID = taskID
 	t.ConfigKey = c.key
@@ -186,10 +187,10 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	t.Status = StatusReady
 	t.TaskStore = nil
 	ctx, logger := xlog.WithContextAndKey(ctx, t.GetLogPrefix(), LoggerKey)
-	// DefaultAsyncTaskKind.MustPut(ctx, t)
+	kind.MustPut(ctx, t)
 	if err := c.pushTask(ctx, instancePath, params); err != nil {
 		logger.Infof("PushTask fails due to %v, clean up...", err)
-		// DefaultAsyncTaskKind.MustDelete(ctx, taskID)
+		kind.MustDelete(ctx, taskID)
 		return nil, ErrPushTaskFailed
 	}
 	logger.Infof("Prepared")
