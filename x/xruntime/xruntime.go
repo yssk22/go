@@ -3,8 +3,15 @@ package xruntime
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // Frame is a stack frame
@@ -61,12 +68,52 @@ func captureFrames(skip int, maxDepth int) []*Frame {
 		}
 		frame.FullFilePath, frame.LineNumber = f.FileLine(pc)
 		frame.PackageName, frame.FunctionName = getPackageAndFunction(f)
+		log.Println(frame.FullFilePath)
+		log.Println(frame.PackageName)
 		if idx := strings.LastIndex(frame.FullFilePath, frame.PackageName); idx >= 0 {
 			frame.ShortFilePath = frame.FullFilePath[idx:]
+		} else {
+			// source is in module so lookup go.mod file
+			moduleRoot, moduleName := lookupGoModuleInfoFromFilePath(frame.FullFilePath)
+			s := strings.Replace(frame.FullFilePath, moduleRoot, moduleName, 1)
+			if idx := strings.LastIndex(s, frame.PackageName); idx >= 0 {
+				frame.ShortFilePath = s[idx:]
+			} else {
+				frame.ShortFilePath = frame.FullFilePath
+			}
 		}
 		stack[i] = frame
 	}
 	return stack
+}
+
+var (
+	moduleDefRe = regexp.MustCompile("module\\s+(\\S+)\n")
+)
+
+func lookupGoModuleInfoFromFilePath(path string) (string, string) {
+	dirname, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		panic(err)
+	}
+	gomod := filepath.Join(dirname, "go.mod")
+	_, err = os.Stat(gomod)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if dirname == "/" {
+				return "", ""
+			}
+			return lookupGoModuleInfoFromFilePath(filepath.Join(dirname, "..") + "/")
+		}
+		panic(err)
+	}
+	contents, err := ioutil.ReadFile(gomod)
+	xerrors.MustNil(err)
+	found := moduleDefRe.Copy().FindSubmatch(contents)
+	if len(found) == 0 {
+		panic(fmt.Errorf("could not find module declaration in %s", gomod))
+	}
+	return dirname, string(found[1])
 }
 
 func getPackageAndFunction(f *runtime.Func) (string, string) {

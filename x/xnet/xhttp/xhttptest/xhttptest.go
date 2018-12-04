@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 )
 
-func GetCookies(w *httptest.ResponseRecorder) ([]*http.Cookie, error) {
+type Response interface {
+	Header() http.Header
+}
+
+func GetCookies(w Response) ([]*http.Cookie, error) {
 	rawCookies, ok := w.Header()["Set-Cookie"]
 	if !ok {
 		return nil, fmt.Errorf("'Set-Cookie' header does not present")
@@ -28,7 +31,7 @@ func GetCookies(w *httptest.ResponseRecorder) ([]*http.Cookie, error) {
 }
 
 // GetCookie returns *http.Cookie from httptes.ResponseRecorder
-func GetCookie(w *httptest.ResponseRecorder, name string) (*http.Cookie, error) {
+func GetCookie(w Response, name string) (*http.Cookie, error) {
 	cookies, err := GetCookies(w)
 	if err != nil {
 		return nil, err

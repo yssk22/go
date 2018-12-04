@@ -8,19 +8,29 @@ import (
 	"github.com/yssk22/go/x/xlog"
 )
 
-// Router is a http traffic router
-type Router struct {
+// Router is an interface to set up http router
+type Router interface {
+	Use(...Handler)
+	Get(string, ...Handler)
+	Post(string, ...Handler)
+	Put(string, ...Handler)
+	Delete(string, ...Handler)
+	ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+// defaultRouter is a http traffic router default implementation
+type defaultRouter struct {
 	middleware *handlerPipeline
 	routes     map[string][]*route // (method -> []*route) mapping
 	option     *Option
 }
 
 // NewRouter returns a new *Router
-func NewRouter(option *Option) *Router {
+func NewRouter(option *Option) Router {
 	if option == nil {
 		option = DefaultOption
 	}
-	return &Router{
+	return &defaultRouter{
 		middleware: &handlerPipeline{},
 		routes:     make(map[string][]*route),
 		option:     option,
@@ -28,31 +38,31 @@ func NewRouter(option *Option) *Router {
 }
 
 // Use adds middleware handlers to process on every request before all handlers are processed.
-func (r *Router) Use(handlers ...Handler) {
+func (r *defaultRouter) Use(handlers ...Handler) {
 	r.middleware.Append(handlers...)
 }
 
 // Get adds handlers for "GET {pattern}" requests
-func (r *Router) Get(pattern string, handlers ...Handler) {
+func (r *defaultRouter) Get(pattern string, handlers ...Handler) {
 	r.addRoute("GET", pattern, handlers...)
 }
 
 // Post adds handlers for "POST {pattern}" requests
-func (r *Router) Post(pattern string, handlers ...Handler) {
+func (r *defaultRouter) Post(pattern string, handlers ...Handler) {
 	r.addRoute("POST", pattern, handlers...)
 }
 
 // Put adds handlers for "PUT {pattern}" requests
-func (r *Router) Put(pattern string, handlers ...Handler) {
+func (r *defaultRouter) Put(pattern string, handlers ...Handler) {
 	r.addRoute("PUT", pattern, handlers...)
 }
 
 // Delete adds handlers for "DELETE {pattern}" requests
-func (r *Router) Delete(pattern string, handlers ...Handler) {
+func (r *defaultRouter) Delete(pattern string, handlers ...Handler) {
 	r.addRoute("DELETE", pattern, handlers...)
 }
 
-func (r *Router) addRoute(method string, pattern string, handlers ...Handler) {
+func (r *defaultRouter) addRoute(method string, pattern string, handlers ...Handler) {
 	var rt *route
 	if routes, ok := r.routes[method]; !ok {
 		rt = newRoute(method, pattern)
@@ -74,7 +84,7 @@ func (r *Router) addRoute(method string, pattern string, handlers ...Handler) {
 }
 
 // Dispatch dispaches *http.Request to the matched handlers and return Response
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const RequestIDHeader = "X-SPEEDLAND-REQUEST-ID"
 	var request = NewRequest(req, r.option)
 	var logger = xlog.WithKey("web.router").WithContext(request.Context())
@@ -119,7 +129,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	res.Render(request.Context(), w)
 }
 
-func (r *Router) findRoute(method string, path string) (*route, *keyvalue.GetProxy) {
+func (r *defaultRouter) findRoute(method string, path string) (*route, *keyvalue.GetProxy) {
 	if methodRoutes, ok := r.routes[method]; ok {
 		for _, route := range methodRoutes {
 			if params, ok := route.pattern.Match(path); ok {

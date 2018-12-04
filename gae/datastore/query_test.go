@@ -5,30 +5,37 @@ import (
 	"testing"
 
 	"github.com/yssk22/go/gae/gaetest"
-	"github.com/yssk22/go/lazy"
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-const queryLoggerKey = "github.com/yssk22/go/gae/datastore.Query"
+func TestQuery_KeysOnly(t *testing.T) {
+	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
+	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
+
+	keys, err := NewQuery("Example").Eq("ID", "example-1").KeysOnly().GetAll(gaetest.NewContext(), nil)
+	a.Nil(err)
+	a.EqInt(1, len(keys))
+}
 
 func TestQuery_Filter(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Eq("ID", lazy.New("example-1"))
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := NewQuery("Example").Eq("ID", "example-1").GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
 }
 
 func TestQuery_Order(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Desc("ID")
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := NewQuery("Example").Desc("ID").GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(5, len(result))
 	for i := range result {
@@ -38,27 +45,12 @@ func TestQuery_Order(t *testing.T) {
 
 func TestQuery_Limit(t *testing.T) {
 	a := assert.New(t)
+	a.Nil(gaetest.CleanupDatastore(gaetest.NewContext()))
 	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
 
 	var result []Example
-	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1))
-	_, err := q.GetAll(gaetest.NewContext(), &result)
+	_, err := NewQuery("Example").Desc("ID").Limit(1).GetAll(gaetest.NewContext(), &result)
 	a.Nil(err)
 	a.EqInt(1, len(result))
 	a.EqStr("example-5", result[0].ID)
-}
-
-func TestQuery_KeysOnly(t *testing.T) {
-	a := assert.New(t)
-	a.Nil(gaetest.FixtureFromFile(gaetest.NewContext(), "./fixtures/TestQuery.json", nil))
-
-	q := NewQuery("Example", queryLoggerKey).Desc("ID").Limit(lazy.New(1)).KeysOnly(true)
-	keys, err := q.GetAll(gaetest.NewContext(), nil)
-	a.Nil(err)
-	a.EqInt(1, len(keys))
-	a.EqStr("/Example,example-5", keys[0].String())
-
-	q = q.KeysOnly(false)
-	keys, err = q.GetAll(gaetest.NewContext(), nil)
-	a.EqStr("datastore: invalid entity type", err.Error())
 }

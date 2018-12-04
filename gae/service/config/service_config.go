@@ -7,7 +7,8 @@ import (
 )
 
 // ServiceConfig is a configuration object for a service
-//go:generate ent -type=ServiceConfig
+// @flow
+// @datastore
 type ServiceConfig struct {
 	Key       string    `json:"key" ent:"id"`
 	Value     string    `json:"value" ent:"form" datastore:",noindex"`

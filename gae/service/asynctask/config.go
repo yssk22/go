@@ -11,7 +11,6 @@ import (
 
 	"github.com/yssk22/go/gae/taskqueue"
 	"github.com/yssk22/go/keyvalue"
-	"github.com/yssk22/go/lazy"
 	"github.com/yssk22/go/x/xlog"
 	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xtime"
@@ -70,7 +69,7 @@ func (c *Config) GetSchedule() string {
 
 // GetStatus returns a *TaskStatus for the given taskID
 func (c *Config) GetStatus(ctx context.Context, taskID string) *TaskStatus {
-	t := DefaultAsyncTaskKind.MustGet(ctx, taskID)
+	_, t := NewAsyncTaskKind().MustGet(ctx, taskID)
 	if t == nil {
 		return nil
 	}
@@ -84,7 +83,7 @@ func (c *Config) GetRecentTasks(ctx context.Context, n int) []*TaskStatus {
 	if n <= 0 || n > maxNum {
 		n = defaultNum
 	}
-	tasks := NewAsyncTaskQuery().Eq("ConfigKey", lazy.New(c.key)).Desc("StartAt").Limit(lazy.New(n)).MustGetAllValues(ctx)
+	_, tasks := NewAsyncTaskQuery().EqConfigKey(c.key).DescStartAt().Limit(n).MustGetAll(ctx)
 	list := make([]*TaskStatus, len(tasks))
 	for i, t := range tasks {
 		list[i] = t.GetStatus()
@@ -107,7 +106,8 @@ const executionTimeWarningThreshold = exceutionTimeLimit * 90 / 100 // 90% of ex
 func (c *Config) Process(ctx context.Context, taskID string, instancePath string, params url.Values) (*Progress, error) {
 	// TODO: There would be orphan tasks that need to be cleaned up since
 	// a task progress is tracked on datastore, and we use MustPut() to update the record without any retries.
-	t := DefaultAsyncTaskKind.MustGet(ctx, taskID)
+	kind := NewAsyncTaskKind()
+	_, t := kind.MustGet(ctx, taskID)
 	if t == nil {
 		return nil, ErrNoTaskInstance
 	}
@@ -120,7 +120,7 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 		logger.Infof("Starting")
 		t.StartAt = xtime.Now()
 		t.Status = StatusRunning
-		DefaultAsyncTaskKind.MustPut(ctx, t)
+		kind.MustPut(ctx, t)
 	}
 
 	var err error
@@ -146,7 +146,7 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 
 	if progress != nil {
 		t.Progress = append(t.Progress, *progress)
-		DefaultAsyncTaskKind.MustPut(ctx, t)
+		kind.MustPut(ctx, t)
 		if err = c.pushTask(ctx, instancePath, progress.Next); err == nil {
 			return progress, nil
 		}
@@ -168,7 +168,7 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 	} else {
 		logger.Infof("Finished with %s in %s.", t.Status, t.FinishAt.Sub(t.StartAt))
 	}
-	DefaultAsyncTaskKind.MustPut(ctx, t)
+	kind.MustPut(ctx, t)
 	return nil, nil
 }
 
@@ -177,6 +177,7 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	if c.GetStatus(ctx, taskID) != nil {
 		return nil, ErrAlreadyExists
 	}
+	kind := NewAsyncTaskKind()
 	t := &AsyncTask{}
 	t.ID = taskID
 	t.ConfigKey = c.key
@@ -186,10 +187,10 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 	t.Status = StatusReady
 	t.TaskStore = nil
 	ctx, logger := xlog.WithContextAndKey(ctx, t.GetLogPrefix(), LoggerKey)
-	DefaultAsyncTaskKind.MustPut(ctx, t)
+	kind.MustPut(ctx, t)
 	if err := c.pushTask(ctx, instancePath, params); err != nil {
 		logger.Infof("PushTask fails due to %v, clean up...", err)
-		DefaultAsyncTaskKind.MustDelete(ctx, taskID)
+		kind.MustDelete(ctx, taskID)
 		return nil, ErrPushTaskFailed
 	}
 	logger.Infof("Prepared")

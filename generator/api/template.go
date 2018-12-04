@@ -1,11 +1,19 @@
 package api
 
+import "github.com/yssk22/go/generator"
+
+type bindings struct {
+	Package    string
+	Dependency *generator.Dependency
+	Specs      []*Spec
+}
+
 const templateFile = `
 package {{.Package}}
 
 {{.Dependency.GenImport}}
 
-func SetupAPI(r *web.Router) {
+func SetupAPI(r web.Router) {
 	{{range .Specs -}}
 	{{if .StructuredParameter -}}
 	var _{{.FuncName}}ParameterParser api.ParameterParser

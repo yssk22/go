@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/yssk22/go/lazy"
 	"github.com/yssk22/go/x/xerrors"
 
 	"golang.org/x/net/context"
@@ -14,7 +13,7 @@ import (
 )
 
 // Config is a counter shard configuration
-//go:generate ent -type=Config -kind=CounterConfig
+// @datastore kind=CounterConfig
 type Config struct {
 	Key       string    `json:"key" ent:"id"`
 	NumShards int       `json:"num_shareds"`
@@ -22,7 +21,7 @@ type Config struct {
 }
 
 // Shard is a counter shard.
-//go:generate ent -type=Shard -kind=CounterShared
+// @datastore kind=CounterShard
 type Shard struct {
 	Key        string    `json:"key" ent:"id"`
 	CounterKey string    `json:"counter_key"`
@@ -44,7 +43,7 @@ func Count(ctx context.Context, key string) (int, error) {
 	if _, err := memcache.JSON.Get(ctx, memkey, &total); err == nil {
 		return total, nil
 	}
-	shards, err := NewShardQuery().Eq("CounterKey", lazy.New(key)).GetAllValues(ctx)
+	_, shards, err := NewShardQuery().EqCounterKey(key).GetAll(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -68,11 +67,12 @@ func MustCount(ctx context.Context, key string) int {
 
 // Reset resets the counter of the given key
 func Reset(ctx context.Context, key string) error {
-	keys, _, err := NewShardQuery().Eq("CounterKey", lazy.New(key)).GetAll(ctx)
+	kind := NewShardKind()
+	keys, _, err := NewShardQuery().EqCounterKey(key).GetAll(ctx)
 	if err != nil {
 		return err
 	}
-	if _, err := DefaultShardKind.DeleteMulti(ctx, keys); err != nil {
+	if _, err := kind.DeleteMulti(ctx, keys); err != nil {
 		return err
 	}
 	memcache.Delete(ctx, countMemcacheKey(key))
@@ -86,30 +86,26 @@ func MustReset(ctx context.Context, key string) {
 
 // Increment increments the counter of the given key
 func Increment(ctx context.Context, key string) error {
-	var cfg *Config
+	configKind := NewConfigKind()
+	shardKind := NewShardKind()
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		_, _cfg, err := DefaultConfigKind.Get(ctx, key)
+		var cfg *Config
+		_, cfg, err := configKind.Get(ctx, key)
 		if err != nil {
 			return err
 		}
-		if _cfg == nil {
+		if cfg == nil {
 			cfg = &Config{
 				Key:       key,
 				NumShards: defaultNumShareds,
 			}
-			_, err := DefaultConfigKind.Put(ctx, cfg)
-			return err
+			_, err := configKind.Put(ctx, cfg)
+			if err != nil {
+				return err
+			}
 		}
-		cfg = _cfg
-		return nil
-	}, nil)
-	if err != nil {
-		return err
-	}
-
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		shardKey := fmt.Sprintf("%s.shard.%d", key, rand.Intn(cfg.NumShards))
-		_, shard, err := DefaultShardKind.Get(ctx, shardKey)
+		_, shard, err := shardKind.Get(ctx, shardKey)
 		if err != nil {
 			return err
 		}
@@ -121,11 +117,12 @@ func Increment(ctx context.Context, key string) error {
 			}
 		}
 		shard.Count++
-		_, err = DefaultShardKind.Put(ctx, shard)
+		_, err = shardKind.Put(ctx, shard)
 		return err
-	}, nil)
+	}, &datastore.TransactionOptions{XG: true})
+
 	if err != nil {
-		return err
+		return xerrors.Wrap(err, "could not increment %s", key)
 	}
 	memcache.IncrementExisting(ctx, countMemcacheKey(key), 1)
 	return nil

@@ -17,7 +17,7 @@ const LoggerKey = "gae.service.asynctask"
 var TaskIDContextKey = xcontext.NewKey("taskid")
 
 // Status is a value to represent the task status
-//go:generate enum -type=Status
+// @enum
 type Status int
 
 // Available values of Status
@@ -48,7 +48,7 @@ func (cs *TaskStore) UnmarshalJSON(b []byte) error {
 }
 
 // AsyncTask is a record to track a task progress
-//go:generate ent -type=AsyncTask
+// @datastore
 type AsyncTask struct {
 	ID        string     `json:"id" ent:"id"`
 	ConfigKey string     `json:"config_key"`

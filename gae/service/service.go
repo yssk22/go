@@ -52,7 +52,7 @@ type Service struct {
 	queues    []*xtaskqueue.PushQueue
 	indexes   []*Index
 	tasks     []*Task
-	router    *web.Router // service router
+	router    web.Router // service router
 
 	// app.yaml configurations
 

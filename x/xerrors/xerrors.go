@@ -41,7 +41,7 @@ func (me MultiError) Error() string {
 	case 1:
 		return firstError.Error()
 	}
-	return fmt.Sprintf("%s (and %d other errors)", firstError.Error(), errorCount)
+	return fmt.Sprintf("%s (and %d other errors)", firstError.Error(), errorCount-1)
 }
 
 // HasError returns if there is an error in the errors.

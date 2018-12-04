@@ -7,7 +7,6 @@ import (
 	"go/constant"
 	"go/token"
 	"go/types"
-	"log"
 	"sort"
 	"strings"
 	"text/template"
@@ -17,41 +16,55 @@ import (
 	"github.com/yssk22/go/x/xstrings"
 )
 
+var annotation = generator.NewAnnotation(
+	"enum",
+)
+
+const (
+	signature = "enum"
+)
+
 // Generator is a generator for Enum sources
-// Usage:
-//   @enum
-//
 type Generator struct {
 	Package      string            // package name
 	Dependencies map[string]string // imports (full package path => imported name)
 	Specs        []*Spec
 }
 
+// GetAnnotation implements generator.Generator#GetAnnotation
+func (*Generator) GetAnnotation() *generator.Annotation {
+	return annotation
+}
+
+// GetFormatter implements generator.Generator#GetFormatter
+func (*Generator) GetFormatter() generator.Formatter {
+	return generator.GoFormatter
+}
+
 // NewGenerator returns a new instance of Generator
-func NewGenerator(specs ...*Spec) *Generator {
-	return &Generator{
-		Dependencies: map[string]string{
-			"encoding/json": "",
-			"fmt":           "",
-		},
-		Specs: specs,
-	}
+func NewGenerator() *Generator {
+	return &Generator{}
 }
 
 // Run implementes generator.Generator#Run
-func (enum *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, error) {
-	enum.Package = pkg.Package.Name()
-	specs, err := enum.collectSpecs(pkg)
+func (enum *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*generator.Result, error) {
+	dep := generator.NewDependency()
+	dep.Add("encoding/json")
+	dep.Add("fmt")
+	b := &bindings{
+		Package:    pkg.Name,
+		Dependency: dep,
+	}
+	err := b.collectSpecs(pkg, nodes)
 	if err != nil {
 		return nil, err
 	}
-	if len(specs) == 0 {
+	if len(b.Specs) == 0 {
 		return nil, nil
 	}
-	enum.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Parse(templateFile))
-	if err = t.Execute(&buff, enum); err != nil {
+	if err = t.Execute(&buff, b); err != nil {
 		return nil, xerrors.Wrap(err, "failed to run a template")
 	}
 	result := []*generator.Result{
@@ -63,31 +76,30 @@ func (enum *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, err
 	return result, nil
 }
 
-func (enum *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
-	specs, err := enum.collectEnumDecls(pkg)
+func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) error {
+	specs, err := b.collectEnumDecls(pkg, nodes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	maps := enum.collectConstDelcs(pkg)
+	maps := b.collectConstDelcs(pkg)
 	for _, spec := range specs {
-		spec.Values, err = enum.filterValues(spec.EnumName, maps)
+		spec.Values, err = filterValues(spec.EnumName, maps)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		log.Printf("INFO: @enum %s", spec.EnumName)
 	}
 	sort.Slice(specs, func(i, j int) bool {
 		a, b := specs[i], specs[j]
 		return strings.Compare(a.EnumName, b.EnumName) < 0
 	})
-	return specs, nil
+	b.Specs = specs
+	return nil
 }
 
-func (enum *Generator) collectEnumDecls(pkg *generator.PackageInfo) ([]*Spec, error) {
-	signatures := pkg.CollectSignatures("enum")
+func (b *bindings) collectEnumDecls(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
 	var specs []*Spec
-	for _, s := range signatures {
-		node, ok := s.Node.(*ast.GenDecl)
+	for _, n := range nodes {
+		node, ok := n.Node.(*ast.GenDecl)
 		if !ok {
 			return nil, fmt.Errorf("@enum not a decralation")
 		}
@@ -103,7 +115,7 @@ func (enum *Generator) collectEnumDecls(pkg *generator.PackageInfo) ([]*Spec, er
 	return specs, nil
 }
 
-func (enum *Generator) collectConstDelcs(pkg *generator.PackageInfo) map[string][]types.Object {
+func (b *bindings) collectConstDelcs(pkg *generator.PackageInfo) map[string][]types.Object {
 	decls := make(map[string][]types.Object)
 	for _, f := range pkg.Files {
 		ast.Inspect(f.Ast, func(node ast.Node) bool {
@@ -128,7 +140,7 @@ func (enum *Generator) collectConstDelcs(pkg *generator.PackageInfo) map[string]
 	return decls
 }
 
-func (enum *Generator) filterValues(enumName string, maps map[string][]types.Object) ([]Value, error) {
+func filterValues(enumName string, maps map[string][]types.Object) ([]Value, error) {
 	constants, ok := maps[".."+enumName]
 	if !ok {
 		return nil, fmt.Errorf("@enum no constant is defined for %s", enumName)

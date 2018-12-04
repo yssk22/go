@@ -8,13 +8,19 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/yssk22/go/generator"
 	"github.com/yssk22/go/generator/enum"
 	"github.com/yssk22/go/generator/flow"
-
 	"github.com/yssk22/go/generator/api"
-
-	"github.com/yssk22/go/generator"
+	"github.com/yssk22/go/generator/datastore"
+	"github.com/yssk22/go/iterator/slice"
+	"github.com/yssk22/go/x/xstrings"
 )
+
+var (
+	annotation = flag.String("a", "", "annotation name to generate the sources")
+)
+
 
 func main() {
 	log.SetPrefix("[gensource] ")
@@ -28,11 +34,29 @@ func main() {
 
 	flowOptions := flow.NewOptions()
 	flowOptions.RootDir, _ = os.Getwd()
-	runner := generator.NewRunner(
+	generators := []generator.Generator{
 		api.NewGenerator(),
 		enum.NewGenerator(),
-		flow.NewGenerator(flowOptions),
-	)
+		datastore.NewGenerator(),
+		flow.NewGenerator(flowOptions),		
+	}
+	anns := xstrings.SplitAndTrim(*annotation, ",")
+	generators = slice.Filter(generators, func(i int, g interface{}) bool{
+		gena := g.(generator.Generator).GetAnnotation()
+		if *annotation == "" {
+			log.Printf("%s: yes\n", gena)
+			return false
+		}
+		for _, a := range anns {
+			if gena.Is(a) {
+				log.Printf("%s: yes\n", gena)
+				return false
+			}	
+		}
+		log.Printf("%s: no\n", gena)
+		return true
+	}).([]generator.Generator)
+	runner := generator.NewRunner(generators...)
 	for _, dir := range args {
 		runDirectory(runner, dir, false)
 	}
@@ -44,11 +68,6 @@ func runDirectory(runner *generator.Runner, dir string, recursive bool) {
 		runDirectory(runner, filepath.Dir(dir), true)
 		return
 	}
-	log.Printf("INFO: >> %q", dir)
-	defer func() {
-		log.Printf("INFO: << %q", dir)
-	}()
-
 	info, err := os.Stat(dir)
 	if err != nil {
 		log.Printf("ERROR: %s", err)
@@ -73,7 +92,6 @@ func runDirectory(runner *generator.Runner, dir string, recursive bool) {
 	if err != nil {
 		s := err.Error()
 		if strings.Index(s, "no buildable Go source files") >= 0 {
-			log.Println("INFO: No buildable Go source files")
 			return
 		}
 		log.Printf("ERROR: %s", err)

@@ -56,7 +56,7 @@ func TestMiddleware(t *testing.T) {
 	a.Body("AccessToken: test-access-token, RefreshToken: test-refresh-token", res)
 }
 
-func prepareRouter(middleware *Middleware) *web.Router {
+func prepareRouter(middleware *Middleware) web.Router {
 	router := web.NewRouter(nil)
 	router.Use(sessionMiddleware)
 	router.Use(middleware)

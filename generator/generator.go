@@ -2,68 +2,31 @@ package generator
 
 import (
 	"fmt"
-	"go/format"
 	"io/ioutil"
 	"log"
+	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/yssk22/go/x/xerrors"
-
+	"github.com/yssk22/go/ansi"
 	"github.com/yssk22/go/number"
-)
-
-// ResultFileType is a type of the result file
-type ResultFileType int
-
-// Available ResultFileType
-const (
-	ResultFileTypeGo ResultFileType = iota
-	ResultFileTypeFlow
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // Generator is an interface to implement generator command
 type Generator interface {
-	Run(*PackageInfo) ([]*Result, error)
+	Run(*PackageInfo, []*AnnotatedNode) ([]*Result, error)
+	GetAnnotation() *Annotation
+	GetFormatter() Formatter
 }
 
 // Result represents a result of Generator#Run
 type Result struct {
 	Filename string
 	Source   string
-	FileType ResultFileType
 }
 
 func (gr *Result) write(dir string) (string, error) {
-	switch gr.FileType {
-	case ResultFileTypeGo:
-		return gr.writeGo(dir)
-	case ResultFileTypeFlow:
-		return gr.writeFlow(dir)
-	default:
-		panic(fmt.Errorf("unknown file type value %d", gr.FileType))
-	}
-}
-
-func (gr *Result) writeGo(dir string) (string, error) {
-	formatted, err := format.Source([]byte(gr.Source))
-	if err != nil {
-		return "", &InvalidSourceError{
-			Source: gr.Source,
-			err:    err,
-		}
-	}
-	filename := filepath.Join(
-		dir,
-		gr.Filename,
-	)
-	if err = ioutil.WriteFile(filename, formatted, 0644); err != nil {
-		return "", xerrors.Wrap(err, "failed to write the generated source on %s", filename)
-	}
-	return filename, nil
-}
-
-func (gr *Result) writeFlow(dir string) (string, error) {
 	filename := filepath.Join(
 		dir,
 		gr.Filename,
@@ -88,25 +51,59 @@ func NewRunner(generators ...Generator) *Runner {
 
 // Run executes Generator#run for all generators.
 func (r *Runner) Run(dir string) error {
+	hasAnnotated, err := r.hasAnnotated(dir)
+	if err != nil {
+		return err
+	}
+	if !hasAnnotated {
+		return nil
+	}
+	log.Printf("INFO: parsing %s", dir)
 	pkg, err := parsePackage(dir)
 	if err != nil {
 		absPath, _ := filepath.Abs(dir)
 		return xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	for _, g := range r.generators {
-		generated, err := g.Run(pkg)
+		nodes := g.GetAnnotation().Collect(pkg)
+		generated, err := g.Run(pkg, nodes)
 		if err != nil {
 			return err
 		}
 		for _, result := range generated {
+			result.Source, err = g.GetFormatter().Format(result.Source)
+			if err != nil {
+				return err
+			}
 			filename, err := result.write(dir)
 			if err != nil {
 				return err
 			}
-			log.Printf("INFO: Generated: %s", filename)
+			log.Printf("INFO: Generated: %s", ansi.Blue.Sprintf(filename))
 		}
 	}
 	return nil
+}
+
+func (r *Runner) hasAnnotated(dir string) (bool, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+	for _, f := range files {
+		if !f.IsDir() {
+			buff, err := ioutil.ReadFile(path.Join(dir, f.Name()))
+			if err != nil {
+				return false, err
+			}
+			for _, g := range r.generators {
+				if g.GetAnnotation().MaybeMarkedIn(buff) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }
 
 // InvalidSourceError is an error if generated source is unable to compile.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"context"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
@@ -53,23 +54,26 @@ func IsDatastoreError(err error) bool {
 	return true
 }
 
-// GetMulti is wrapper for google.golang.org/appengine/datastore.GetMulti
-// to support +1000 keys
-func GetMulti(ctx context.Context, keys []*datastore.Key, ent interface{}) error {
-	// TODO: support +1000 keys
-	return datastore.GetMulti(ctx, keys, ent)
-}
-
-// PutMulti is wrapper for google.golang.org/appengine/datastore.PutMulti
-// to support +1000 keys
-func PutMulti(ctx context.Context, keys []*datastore.Key, ent interface{}) ([]*datastore.Key, error) {
-	// TODO: support +1000 keys
-	return datastore.PutMulti(ctx, keys, ent)
-}
-
-// DeleteMulti is wrapper for google.golang.org/appengine/datastore.DeleteMulti
-// to support +1000 keys
-func DeleteMulti(ctx context.Context, keys []*datastore.Key) error {
-	// TODO: support +1000 keys
-	return datastore.DeleteMulti(ctx, keys)
+// NormalizeKeys to normalize keys from []string, []interface{} to []*datastore.Key
+func NormalizeKeys(ctx context.Context, kind string, keys interface{}) ([]*datastore.Key, error) {
+	var dsKeys []*datastore.Key
+	switch t := keys.(type) {
+	case []string:
+		tmp := keys.([]string)
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = NewKey(ctx, kind, s)
+		}
+	case []interface{}:
+		tmp := keys.([]interface{})
+		dsKeys = make([]*datastore.Key, len(tmp))
+		for i, s := range tmp {
+			dsKeys[i] = NewKey(ctx, kind, s)
+		}
+	case []*datastore.Key:
+		dsKeys = keys.([]*datastore.Key)
+	default:
+		return nil, fmt.Errorf("unsupported keys type: %s", t)
+	}
+	return dsKeys, nil
 }

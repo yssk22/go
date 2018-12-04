@@ -1,17 +1,17 @@
 package enum
 
+import "github.com/yssk22/go/generator"
+
+type bindings struct {
+	Package    string
+	Dependency *generator.Dependency
+	Specs      []*Spec
+}
+
 const templateFile = `
 package {{.Package}}
 
-import (
-    {{range $key, $as := .Dependencies -}}
-    {{if $as -}}
-    {{$as}} "{{$key}}"
-    {{else -}}
-    "{{$key}}"
-    {{end -}}
-    {{end }}
-)
+{{.Dependency.GenImport}}
 
 {{range .Specs -}}
 var (
@@ -43,7 +43,7 @@ func Parse{{.EnumName}}(s string) ({{.EnumName}}, error) {
 	if val, ok := _{{.EnumName}}StringToValue[s]; ok {
 		return val, nil
 	}
-	return {{.EnumName}}(0), fmt.Errorf("invalid value %q for {{.EnumName}}", s)
+	return {{.EnumName}}(-1), fmt.Errorf("invalid value %q for {{.EnumName}}", s)
 }
 
 func Parse{{.EnumName}}Or(s string, or {{.EnumName}}) {{.EnumName}} {

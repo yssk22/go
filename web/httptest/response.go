@@ -14,6 +14,35 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
+type ResponseRecorder struct {
+	*httptest.ResponseRecorder
+	Request *http.Request
+}
+
+// Dump returns the http trace dump
+func (r *ResponseRecorder) Dump() string {
+	var lines []string
+	lines = append(lines, "==== full trace ====")
+	lines = append(lines, fmt.Sprintf("> %s %s", r.Request.Method, r.Request.URL.String()))
+	for k, v := range r.Request.Header {
+		for _, vv := range v {
+			lines = append(lines, fmt.Sprintf("> %s: %s", k, vv))
+		}
+	}
+	lines = append(lines, ">")
+	lines = append(lines, fmt.Sprintf("< %d", r.Code))
+	for k, v := range r.Header() {
+		for _, vv := range v {
+			lines = append(lines, fmt.Sprintf("< %s: %s", k, vv))
+		}
+	}
+	lines = append(lines, "<")
+	for _, l := range strings.Split(r.Body.String(), "\n") {
+		lines = append(lines, "< "+l)
+	}
+	return strings.Join(lines, "\n\t")
+}
+
 // Assert is a wrapper for github.com/yssk22/go/x/xtesting/assert.Assert and provides
 // http specific assertions
 type Assert struct {
@@ -28,28 +57,28 @@ func NewAssert(t *testing.T) *Assert {
 }
 
 // Status asserts the http status code
-func (a *Assert) Status(expected response.HTTPStatus, res *httptest.ResponseRecorder, msgContext ...interface{}) {
+func (a *Assert) Status(expected response.HTTPStatus, res *ResponseRecorder, msgContext ...interface{}) {
 	if expected != response.HTTPStatus(res.Code) {
 		if len(msgContext) > 0 {
 			a.Failure(expected, res.Code, msgContext...)
 		} else {
-			a.Failure(expected, res.Code, "**** HTTP Body ****\n\t%s", res.Body)
+			a.Failure(expected, res.Code, res.Dump())
 		}
 	}
 }
 
 // Header asserts the header value
-func (a *Assert) Header(expected string, res *httptest.ResponseRecorder, fieldName string, msgContext ...interface{}) {
+func (a *Assert) Header(expected string, res *ResponseRecorder, fieldName string, msgContext ...interface{}) {
 	a.EqStr(expected, res.Header().Get(fieldName), msgContext...)
 }
 
 // Body asserts the body string
-func (a *Assert) Body(expected string, res *httptest.ResponseRecorder, msgContext ...interface{}) {
+func (a *Assert) Body(expected string, res *ResponseRecorder, msgContext ...interface{}) {
 	a.EqStr(expected, res.Body.String(), msgContext...)
 }
 
 // Cookie asserts the cookie name and extract it as *http.Cookie
-func (a *Assert) Cookie(res *httptest.ResponseRecorder, name string, msgContext ...interface{}) *http.Cookie {
+func (a *Assert) Cookie(res *ResponseRecorder, name string, msgContext ...interface{}) *http.Cookie {
 	rawCookies, ok := res.Header()["Set-Cookie"]
 	if !ok {
 		a.Failure("Set-Cookie header exists", nil, msgContext)
@@ -73,7 +102,7 @@ func (a *Assert) Cookie(res *httptest.ResponseRecorder, name string, msgContext 
 }
 
 // JSON asserts the body string as as json and returns the result as interface{}
-func (a *Assert) JSON(v interface{}, res *httptest.ResponseRecorder, msgContext ...interface{}) {
+func (a *Assert) JSON(v interface{}, res *ResponseRecorder, msgContext ...interface{}) {
 	var body = res.Body.Bytes()
 	err := json.Unmarshal(body, v)
 	if err != nil {

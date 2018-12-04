@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"sort"
 	"strings"
 	"text/template"
@@ -18,57 +19,65 @@ const (
 	signature = "flow"
 )
 
+var annotation = generator.NewAnnotation(
+	"flow",
+)
+
 // Generator is a generator for Flow types
-// Usage: @flow
 type Generator struct {
-	Package    string // package name
-	Dependency *generator.Dependency
-	Specs      []*Spec
-	Options    *Options
+	Options *Options
+}
+
+// GetAnnotation implements generator.Generator#GetAnnotation
+func (*Generator) GetAnnotation() *generator.Annotation {
+	return annotation
+}
+
+// GetFormatter implements generator.Generator#GetFormatter
+func (*Generator) GetFormatter() generator.Formatter {
+	return generator.JavaScriptFormatter
 }
 
 // NewGenerator returns a new instance of Generator
-func NewGenerator(opts *Options, specs ...*Spec) *Generator {
-	dep := generator.NewDependency()
+func NewGenerator(opts *Options) *Generator {
 	return &Generator{
-		Dependency: dep,
-		Specs:      specs,
-		Options:    opts,
+		Options: opts,
 	}
 }
 
 // Run implementes generator.Generator#Run
-func (g *Generator) Run(pkg *generator.PackageInfo) ([]*generator.Result, error) {
-	g.Package = pkg.Package.Name()
-	specs, err := g.collectSpecs(pkg)
+func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*generator.Result, error) {
+	dep := generator.NewDependency()
+	b := &bindings{
+		Package:    pkg.Name,
+		Dependency: dep,
+	}
+	err := b.collectSpecs(pkg, nodes)
 	if err != nil {
 		return nil, err
 	}
-	if len(specs) == 0 {
+	if len(b.Specs) == 0 {
 		return nil, nil
 	}
-	g.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Funcs(templateHelper).Parse(templateFile))
-	if err = t.Execute(&buff, g); err != nil {
+	if err = t.Execute(&buff, b); err != nil {
 		return nil, xerrors.Wrap(err, "failed to run a template")
 	}
 	result := []*generator.Result{
 		{
-			Filename: "ServerTypes.js",
+			Filename: "GoTypes.js",
 			Source:   buff.String(),
-			FileType: generator.ResultFileTypeFlow,
 		},
 	}
 	return result, nil
 }
 
-func (g *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
-	signatures := pkg.CollectSignatures(signature)
+func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) error {
 	var specs []*Spec
 	var errors []error
-	for _, s := range signatures {
-		spec, err := g.parseSignature(pkg, s)
+	for _, n := range nodes {
+		spec, err := b.parseAnnotatedNode(pkg, n)
 		if err != nil {
 			errors = append(errors, err)
 		} else {
@@ -76,7 +85,7 @@ func (g *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
 		}
 	}
 	if len(errors) > 0 {
-		return nil, xerrors.MultiError(errors)
+		return xerrors.MultiError(errors)
 	}
 
 	// sort
@@ -84,17 +93,18 @@ func (g *Generator) collectSpecs(pkg *generator.PackageInfo) ([]*Spec, error) {
 		a, b := specs[i], specs[j]
 		return strings.Compare(string(a.TypeName), string(b.TypeName)) < 0
 	})
-	return specs, nil
+	b.Specs = specs
+	return nil
 }
 
-func (g *Generator) parseSignature(pkg *generator.PackageInfo, s *generator.Signature) (*Spec, error) {
+func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.AnnotatedNode) (*Spec, error) {
 	var spec Spec
-	node, ok := s.Node.(*ast.GenDecl)
+	node, ok := n.Node.(*ast.GenDecl)
 	if !ok {
-		return nil, s.GenError(fmt.Errorf("@flow is used on non struct type definition"), nil)
+		return nil, n.GenError(fmt.Errorf("@flow is used on non type declaration"), nil)
 	}
 	if node.Tok != token.TYPE {
-		return nil, s.GenError(fmt.Errorf("@flow is used on non struct type definition"), nil)
+		return nil, n.GenError(fmt.Errorf("@flow is used on non type declaration"), nil)
 	}
 	typeSpec := node.Specs[0].(*ast.TypeSpec)
 	t := pkg.TypeInfo.Defs[typeSpec.Name]
@@ -105,9 +115,12 @@ func (g *Generator) parseSignature(pkg *generator.PackageInfo, s *generator.Sign
 		l := ut.NumFields()
 		for i := 0; i < l; i++ {
 			f := ut.Field(i)
-			ft, err := g.getFlowType(f.Type())
+			if !f.Exported() {
+				continue
+			}
+			ft, err := b.getFlowType(f.Type())
 			if err != nil {
-				return nil, s.GenError(
+				return nil, n.GenError(
 					xerrors.Wrap(err, "cannot resolve flowtype for the field %s - ", f.Name()),
 					nil,
 				)
@@ -118,16 +131,27 @@ func (g *Generator) parseSignature(pkg *generator.PackageInfo, s *generator.Sign
 			})
 		}
 		spec.FlowType = o
+	case *types.Basic:
+		o, err := b.getFlowTypeFromBasic(ut)
+		if err != nil {
+			return nil, n.GenError(
+				xerrors.Wrap(err, "cannot resolve flowtype: %s", ut.Name()),
+				nil,
+			)
+		}
+		spec.FlowType = o
+	default:
+		return nil, fmt.Errorf("unsupported type: %s", reflect.TypeOf(ut))
 	}
 	return &spec, nil
 }
 
-func (g *Generator) getFlowType(t types.Type) (FlowType, error) {
+func (b *bindings) getFlowType(t types.Type) (FlowType, error) {
 	switch tt := t.(type) {
 	case *types.Basic:
-		return g.getFlowTypeFromBasic(tt)
+		return b.getFlowTypeFromBasic(tt)
 	case *types.Pointer:
-		elem, err := g.getFlowType(tt.Elem())
+		elem, err := b.getFlowType(tt.Elem())
 		if err != nil {
 			return nil, err
 		}
@@ -136,13 +160,13 @@ func (g *Generator) getFlowType(t types.Type) (FlowType, error) {
 		}, nil
 	case *types.Struct:
 	case *types.Named:
-		return g.getFlowTypeFromNamed(tt)
+		return b.getFlowTypeFromNamed(tt)
 	}
 	return nil, fmt.Errorf("unsupported")
 }
 
-func (g *Generator) getFlowTypeFromBasic(b *types.Basic) (FlowType, error) {
-	switch b.Kind() {
+func (b *bindings) getFlowTypeFromBasic(t *types.Basic) (FlowType, error) {
+	switch t.Kind() {
 	case types.Bool:
 		return FlowTypeBool, nil
 	case types.Int, types.Int8, types.Int16, types.Int32, types.Int64:
@@ -157,7 +181,7 @@ func (g *Generator) getFlowTypeFromBasic(b *types.Basic) (FlowType, error) {
 	return nil, fmt.Errorf("unsuppored basic type: %s", b)
 }
 
-func (g *Generator) getFlowTypeFromNamed(n *types.Named) (FlowType, error) {
+func (b *bindings) getFlowTypeFromNamed(n *types.Named) (FlowType, error) {
 	s := n.String()
 	switch s {
 	case "time.Time":
@@ -171,7 +195,7 @@ func (g *Generator) getFlowTypeFromNamed(n *types.Named) (FlowType, error) {
 	}
 	switch importPath {
 	case "github.com/yssk22/go/types":
-		importName := g.Dependency.Add("types")
+		importName := b.Dependency.Add("types")
 		return &FlowTypeNamed{
 			Name:       n.Obj().Name(),
 			ImportPath: "types",
