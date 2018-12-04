@@ -75,6 +75,8 @@ func captureFrames(skip int, maxDepth int) []*Frame {
 			s := strings.Replace(frame.FullFilePath, moduleRoot, moduleName, 1)
 			if idx := strings.LastIndex(s, frame.PackageName); idx >= 0 {
 				frame.ShortFilePath = s[idx:]
+			} else {
+				panic(fmt.Errorf("could not resolve short file path from (%q, %q)", frame.FullFilePath, frame.PackageName))
 			}
 		}
 		stack[i] = frame
@@ -98,7 +100,7 @@ func lookupGoModuleInfoFromFilePath(path string) (string, string) {
 			if dirname == "/" {
 				return "", ""
 			}
-			return lookupGoModuleInfoFromFilePath(filepath.Join(dirname, ".."))
+			return lookupGoModuleInfoFromFilePath(filepath.Join(dirname, "..") + "/")
 		}
 		panic(err)
 	}
