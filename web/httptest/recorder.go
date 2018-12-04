@@ -53,35 +53,39 @@ func NewRecorderWithFactory(handler http.Handler, factory RequestFactory) *Recor
 }
 
 // TestGet make a test GET request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestGet(path string) *httptest.ResponseRecorder {
+func (r *Recorder) TestGet(path string) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	r.handler.ServeHTTP(w, r.NewRequest("GET", path, nil))
+	req := r.NewRequest("GET", path, nil)
+	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
-	return w
+	return &ResponseRecorder{w, req}
 }
 
 // TestPost make a test POST request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestPost(path string, v interface{}) *httptest.ResponseRecorder {
+func (r *Recorder) TestPost(path string, v interface{}) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	r.handler.ServeHTTP(w, r.NewRequest("POST", path, v))
+	req := r.NewRequest("POST", path, v)
+	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
-	return w
+	return &ResponseRecorder{w, req}
 }
 
 // TestPut make a test PUT request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestPut(path string, v interface{}) *httptest.ResponseRecorder {
+func (r *Recorder) TestPut(path string, v interface{}) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	r.handler.ServeHTTP(w, r.NewRequest("PUT", path, v))
+	req := r.NewRequest("PUT", path, v)
+	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
-	return w
+	return &ResponseRecorder{w, req}
 }
 
 // TestDelete make a test DELETE request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestDelete(path string) *httptest.ResponseRecorder {
+func (r *Recorder) TestDelete(path string) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	r.handler.ServeHTTP(w, r.NewRequest("DELETE", path, nil))
+	req := r.NewRequest("DELETE", path, nil)
+	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
-	return w
+	return &ResponseRecorder{w, req}
 }
 
 // NewRequest returns http.Request with request body given by `v`
@@ -119,9 +123,9 @@ func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request 
 }
 
 // TestRequest make a test request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestRequest(req *http.Request) *httptest.ResponseRecorder {
+func (r *Recorder) TestRequest(req *http.Request) *ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
-	return w
+	return &ResponseRecorder{w, req}
 }
