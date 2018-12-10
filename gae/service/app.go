@@ -46,17 +46,6 @@ func (option *HandlerOption) ToYAML() string {
 	return buff.String()
 }
 
-// APIVersion is a version string for app engine
-type APIVersion string
-
-// APIVersion constants
-const (
-	APIVersion1  APIVersion = "go1"
-	APIVersion16 APIVersion = "go1.6"
-	APIVersion18 APIVersion = "go1.8"
-	APIVersion19 APIVersion = "go1.9"
-)
-
 // LoginOption is a option string for handler login
 type LoginOption string
 
@@ -70,8 +59,7 @@ const (
 func (s *Service) ToYAML() string {
 	var buff bytes.Buffer
 	fmt.Fprintf(&buff, "service: %s\n", s.key)
-	fmt.Fprintf(&buff, "runtime: go\n")
-	fmt.Fprintf(&buff, "api_version: %s\n", s.APIVerison)
+	fmt.Fprintf(&buff, "runtime: go111\n")
 	fmt.Fprintf(&buff, "handlers:\n")
 	for _, option := range s.handlerOptions {
 		fmt.Fprintf(&buff, option.ToYAML())
