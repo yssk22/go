@@ -99,7 +99,7 @@ import (
 	"google.golang.org/appengine"
 )
 
-func init(){
+func main(){
 	service.NewDispatcher(
 	{{range .Services -}}
 	{{if .PackageAlias -}}
