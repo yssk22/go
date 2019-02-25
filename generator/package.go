@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/token"
 	"go/types"
 	"io/ioutil"
 	"os"
@@ -96,20 +95,21 @@ func parsePackage(dir string) (*PackageInfo, error) {
 	if len(pkg.GoFiles) == 0 {
 		return nil, fmt.Errorf("no go file is parsed in %s", dir)
 	}
-	fs := token.NewFileSet()
+	// fs := token.NewFileSet()
 	var files []*FileInfo
 	for i, path := range pkg.GoFiles {
 		src, err := ioutil.ReadFile(path)
 		if err != nil {
 			return nil, xerrors.Wrap(err, "io error: %s", path)
 		}
+
 		parsedFile := pkg.Syntax[i]
 		// log.Println("File", path, parsedFile.Pos(), parsedFile.End(), offset, parsedFile.End()-parsedFile.Pos(), len(src))
 		files = append(files, &FileInfo{
 			Path:       path,
 			Source:     src,
 			Ast:        parsedFile,
-			CommentMap: ast.NewCommentMap(fs, parsedFile, parsedFile.Comments),
+			CommentMap: ast.NewCommentMap(pkg.Fset, parsedFile, parsedFile.Comments),
 		})
 	}
 	// NOTE: We use *PackageInfo when we used in go 1.8.
