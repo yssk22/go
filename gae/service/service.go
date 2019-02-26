@@ -101,6 +101,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		InitContext: func(r *http.Request) context.Context {
 			return appengine.NewContext(r)
 		},
+		OnDebugRequest: web.DefaultOption.OnDebugRequest,
 	}
 	s := &Service{
 		key:       key,

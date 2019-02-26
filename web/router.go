@@ -1,6 +1,9 @@
 package web
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/yssk22/go/keyvalue"
@@ -30,10 +33,41 @@ func NewRouter(option *Option) Router {
 	if option == nil {
 		option = DefaultOption
 	}
-	return &defaultRouter{
+	r := &defaultRouter{
 		middleware: &handlerPipeline{},
 		routes:     make(map[string][]*route),
 		option:     option,
+	}
+
+	r.Get("/__debug__/routes", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+		var logger = xlog.WithKey("web.router").WithContext(req.Context())
+		if r.option.OnDebugRequest == nil {
+			logger.Debugf("OnDebugRequest is nil: %v")
+			return nil
+		}
+		if err := r.option.OnDebugRequest(req); err != nil {
+			logger.Infof("OnDebugRequest reject access: %v", err)
+			return nil
+		}
+		var buff bytes.Buffer
+		r.printRoutes("GET", &buff)
+		r.printRoutes("POST", &buff)
+		r.printRoutes("PUT", &buff)
+		r.printRoutes("DELETE", &buff)
+		return response.NewText(buff.String())
+	}))
+	return r
+}
+
+func (r *defaultRouter) printRoutes(method string, dst io.Writer) {
+	if routes, ok := r.routes[method]; ok {
+		for _, r := range routes {
+			if _, err := dst.Write(
+				[]byte(fmt.Sprintf("%s %s\n", r.method, r.pattern.source)),
+			); err != nil {
+				panic(err)
+			}
+		}
 	}
 }
 
