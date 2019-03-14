@@ -42,7 +42,6 @@ func NewRouter(option *Option) Router {
 	r.Get("/__debug__/routes", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 		var logger = xlog.WithKey("web.router").WithContext(req.Context())
 		if r.option.OnDebugRequest == nil {
-			logger.Debugf("OnDebugRequest is nil: %v")
 			return nil
 		}
 		if err := r.option.OnDebugRequest(req); err != nil {
