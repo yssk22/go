@@ -208,10 +208,10 @@ func (b *bindings) getFieldSpec(pkg *generator.PackageInfo, field *types.Var, ta
 func (b *bindings) getQuerySpecs(pkg *generator.PackageInfo, field *types.Var, tags keyvalue.Getter) ([]*QuerySpec, error) {
 	name := field.Name()
 	t := field.Type()
-	return b.getQuerySpecsRec(name, name, t)
+	return b.getQuerySpecsRec(pkg, name, name, t)
 }
 
-func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Type) ([]*QuerySpec, error) {
+func (b *bindings) getQuerySpecsRec(pkg *generator.PackageInfo, name string, propertyName string, t types.Type) ([]*QuerySpec, error) {
 	var specs []*QuerySpec
 	switch tt := t.(type) {
 	case *types.Basic:
@@ -222,7 +222,7 @@ func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Ty
 		})
 		return specs, nil
 	case *types.Pointer:
-		return b.getQuerySpecsRec(name, name, tt.Elem())
+		return b.getQuerySpecsRec(pkg, name, name, tt.Elem())
 	case *types.Struct:
 		numFields := tt.NumFields()
 		for i := 0; i < numFields; i++ {
@@ -231,6 +231,7 @@ func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Ty
 				continue
 			}
 			underlyingSpecs, err := b.getQuerySpecsRec(
+				pkg,
 				fmt.Sprintf("%s%s", name, f.Name()),
 				fmt.Sprintf("%s.%s", propertyName, f.Name()),
 				f.Type(),
@@ -254,11 +255,11 @@ func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Ty
 		}
 		underlying := tt.Underlying()
 		if ut, ok := underlying.(*types.Struct); ok {
-			return b.getQuerySpecsRec(name, propertyName, ut)
+			return b.getQuerySpecsRec(pkg, name, propertyName, ut)
 		}
 		obj := tt.Obj()
 		importPath := obj.Pkg().Path()
-		if importPath == "." {
+		if importPath == pkg.Package.Path() {
 			specs = append(specs, &QuerySpec{
 				Name:         name,
 				PropertyName: propertyName,
@@ -276,7 +277,7 @@ func (b *bindings) getQuerySpecsRec(name string, propertyName string, t types.Ty
 	case *types.Slice:
 		str := tt.String()
 		if str != "[]byte" {
-			return b.getQuerySpecsRec(name, propertyName, tt.Elem())
+			return b.getQuerySpecsRec(pkg, name, propertyName, tt.Elem())
 		}
 		return specs, nil
 	default:
