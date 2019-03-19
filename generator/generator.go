@@ -58,6 +58,7 @@ func (r *Runner) Run(dir string) error {
 	if !hasAnnotated {
 		return nil
 	}
+
 	log.Printf("INFO: parsing %s", dir)
 	pkg, err := parsePackage(dir)
 	if err != nil {
@@ -65,10 +66,12 @@ func (r *Runner) Run(dir string) error {
 		return xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	for _, g := range r.generators {
-		nodes := g.GetAnnotation().Collect(pkg)
+		annotation := g.GetAnnotation()
+		nodes := annotation.Collect(pkg)
 		generated, err := g.Run(pkg, nodes)
 		if err != nil {
-			return err
+			log.Printf("ERROR: %s (by %s)", err, annotation.String())
+			continue
 		}
 		for _, result := range generated {
 			result.Source, err = g.GetFormatter().Format(result.Source)
@@ -79,7 +82,7 @@ func (r *Runner) Run(dir string) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("INFO: Generated: %s", ansi.Blue.Sprintf(filename))
+			log.Printf("INFO: Generated: %s (by %s)", ansi.Blue.Sprintf(filename), annotation.String())
 		}
 	}
 	return nil

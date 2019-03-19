@@ -59,18 +59,26 @@ func (f *FlowTypeObject) GetExpr() string {
 	var lines []string
 	lines = append(lines, "{")
 	for _, field := range f.Fields {
-		lines = append(
-			lines,
-			fmt.Sprintf("%s: %s,", field.Name, field.Type.GetExpr()),
-		)
+		if field.OmitEmpty {
+			lines = append(
+				lines,
+				fmt.Sprintf("%s?: %s,", field.Name, field.Type.GetExpr()),
+			)
+		} else {
+			lines = append(
+				lines,
+				fmt.Sprintf("%s: %s,", field.Name, field.Type.GetExpr()),
+			)
+		}
 	}
 	lines = append(lines, "}")
 	return strings.Join(lines, "\n")
 }
 
 type FlowTypeObjectField struct {
-	Name string
-	Type FlowType
+	Name      string
+	Type      FlowType
+	OmitEmpty bool
 }
 
 // Other Named object

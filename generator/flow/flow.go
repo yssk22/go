@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/yssk22/go/generator"
+	"github.com/yssk22/go/x/xstrings"
 	"github.com/yssk22/go/x/xerrors"
 )
 
@@ -126,13 +127,23 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 				)
 			}
 			fieldName := f.Name()
+			omitEmpty := false
 			tags := generator.ParseTag(ut.Tag(i))
 			if jsonName, err := tags.Get("json"); err == nil {
-				fieldName = jsonName.(string)
+				jsonTags := xstrings.SplitAndTrim(jsonName.(string), ",")
+				l := len(jsonTags)
+				fieldName = jsonTags[0]
+				if l == 2 {
+					omitEmpty = jsonTags[1] == "omitempty" 
+				}
+				if fieldName == "-" {
+					continue
+				}
 			}
 			o.Fields = append(o.Fields, FlowTypeObjectField{
 				Name: fieldName,
 				Type: ft,
+				OmitEmpty: omitEmpty,
 			})
 		}
 		spec.FlowType = o

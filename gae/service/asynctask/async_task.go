@@ -120,14 +120,16 @@ func (t *AsyncTask) GetStatus() *TaskStatus {
 }
 
 // Progress is a struct that represents the task progress
+// @flow
 type Progress struct {
-	Total   int        `json:"total,omitempty"`
-	Current int        `json:"current,omitempty"`
+	Total   int        `json:"total"`
+	Current int        `json:"current"`
 	Message string     `json:"message,omitempty"`
 	Next    url.Values `json:"-" datastore:"-"`
 }
 
 // TaskStatus is a struct that can be used in task manager clients.
+// @flow
 type TaskStatus struct {
 	ID       string     `json:"id"`
 	Status   Status     `json:"status"`
