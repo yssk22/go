@@ -1,6 +1,7 @@
 package reactapp
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/yssk22/go/web"
@@ -34,6 +35,7 @@ type Page struct {
 	body           []byte
 	favicon        string
 	basePath       string
+	reactAppPath   string
 	config         *PageConfig
 	generator      PageVarsGenerator
 	parent         *Page
@@ -121,6 +123,13 @@ func GeneratorFunc(f func(req *web.Request) (*PageVars, error)) PageOption {
 	}
 }
 
+func ReactAppPath(path string) PageOption {
+	return func(p *Page) (*Page, error) {
+		p.reactAppPath = path
+		return p, nil
+	}
+}
+
 // Template returns a PageOption to overwrite the default template
 func Template(str string) PageOption {
 	return func(p *Page) (*Page, error) {
@@ -178,6 +187,7 @@ func (p *Page) genVar(req *web.Request) (*PageVars, error) {
 		AppName:        p.appName,
 		AppData:        make(map[string]interface{}),
 		Config:         &PageConfig{},
+		ReactAppPath:   fmt.Sprintf("%s/%s/static/js/main.js", p.basePath, p.appName),
 	}
 	if p.title != "" {
 		data.Title = p.title
@@ -187,6 +197,9 @@ func (p *Page) genVar(req *web.Request) (*PageVars, error) {
 	}
 	if p.body != nil {
 		data.Body = template.HTML(string(p.body))
+	}
+	if p.reactAppPath != "" {
+		data.ReactAppPath = p.reactAppPath
 	}
 	data.MetaProperties = mergeStringMap(data.MetaProperties, p.metaProperties)
 	data.AppData = mergeObjectMap(data.AppData, p.appData)

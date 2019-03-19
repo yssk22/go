@@ -62,6 +62,7 @@ type PageVars struct {
 	AppName        string
 	AppData        map[string]interface{}
 	Auth           interface{}
+	ReactAppPath   string
 }
 
 func (pv *PageVars) Merge(pv2 *PageVars) {
@@ -87,6 +88,7 @@ func (pv *PageVars) Merge(pv2 *PageVars) {
 	pv.MetaProperties = mergeStringMap(pv.MetaProperties, pv2.MetaProperties)
 	pv.AppData = mergeObjectMap(pv.AppData, pv2.AppData)
 	pv.Auth = mergeObject(pv.Auth, pv2.Auth)
+	pv.ReactAppPath = mergeString(pv.ReactAppPath, pv2.ReactAppPath)
 }
 
 // Default is a default template
@@ -110,7 +112,6 @@ var defaultPageTemplate = template.Must(template.New("react").Funcs(reactPageTem
   <script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
   <style>body {padding: 0;margin: 0;}</style>
-  <link rel="stylesheet" type="text/css" href="{{.BasePath}}/{{.AppName}}/static/css/main.css" />
 </head>
 <body>
   <div id="fb-root"></div>
@@ -120,7 +121,7 @@ var defaultPageTemplate = template.Must(template.New("react").Funcs(reactPageTem
 	data-config="{{json .Config}}">
   	<div class="body">{{.Body}}</div>
   </div>
-  <script type="text/javascript" src="{{.BasePath}}/{{.AppName}}/static/js/main.js"></script>
+  <script type="text/javascript" src="{{.ReactAppPath}}"></script>
 </body>
 </html>
 `))
