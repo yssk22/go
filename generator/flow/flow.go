@@ -125,8 +125,13 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 					nil,
 				)
 			}
+			fieldName := f.Name()
+			tags := generator.ParseTag(ut.Tag(i))
+			if jsonName, err := tags.Get("json"); err == nil {
+				fieldName = jsonName.(string)
+			}
 			o.Fields = append(o.Fields, FlowTypeObjectField{
-				Name: f.Name(),
+				Name: fieldName,
 				Type: ft,
 			})
 		}
@@ -202,5 +207,8 @@ func (b *bindings) getFlowTypeFromNamed(n *types.Named) (FlowType, error) {
 			ImportName: importName,
 		}, nil
 	}
-	return nil, fmt.Errorf("unsuppored named type: %s", n)
+	// TODO: we need to check import path and import name if named type n is defiend in the different package.
+	return &FlowTypeNamed{
+		Name: n.Obj().Name(),
+	}, nil
 }
