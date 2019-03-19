@@ -15,6 +15,7 @@ import (
 )
 
 // Task is a defined task in the service.
+// @flow
 type Task struct {
 	Path        string `json:"path"`
 	Key         string `json:"key"`
