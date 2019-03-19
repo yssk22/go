@@ -104,8 +104,6 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 		}
 		return strings.Compare(string(a.Method), string(b.Method)) < 0
 	})
-
-	// resolve dependencies
 	for _, s := range specs {
 		if s.StructuredParameter != nil {
 			b.Dependency.Add("encoding/json")
@@ -189,10 +187,10 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		var parameter *StructuredParameter
 		arg := arguments[len(pathParamNames)+1]
 		if format, err := api.ParseRequestParameterFormat(s.Params[commandParamFormat]); err != nil {
-			parameter, err = getParameterParser(arg, resolveRequestParameterFormat(spec.Method))
+			parameter, err = getParameterParser(pkg, arg, resolveRequestParameterFormat(spec.Method))
 
 		}else {
-			parameter, err = getParameterParser(arg, format)
+			parameter, err = getParameterParser(pkg, arg, format)
 		}
 		if err != nil {
 			return nil, s.GenError(xerrors.Wrap(err, "could not build parameter parser"), nil)
@@ -202,7 +200,7 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	return &spec, nil
 }
 
-func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*StructuredParameter, error) {
+func getParameterParser(pkg *generator.PackageInfo, arg types.Object, format api.RequestParameterFormat) (*StructuredParameter, error) {
 	p, ok := arg.Type().(*types.Pointer)
 	if !ok {
 		return nil, fmt.Errorf("%s must be a pointer of named struct but %s", arg.Name(), arg.Type().String())
@@ -213,7 +211,7 @@ func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*S
 	}
 	obj := n.Obj()
 	pkgPath := obj.Pkg().Path()
-	if pkgPath == "." {
+	if pkgPath == pkg.Package.Path() {
 		pkgPath = ""
 	}
 	var s = StructuredParameter{
