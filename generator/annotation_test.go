@@ -6,19 +6,22 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-func Test_parseSignatureParams(t *testing.T) {
+func Test_parseAnnotation(t *testing.T) {
 	a := assert.New(t)
-	p := parseSignatureParams("key1=value1 key2=value2")
-	a.EqInt(2, len(p))
-	a.EqStr("value1", p["key1"])
-	a.EqStr("value2", p["key2"])
+	ann := parseAnnotation("@foo key1=value1 key2=value2")
+	a.EqStr("foo", string(ann.Symbol))
+	a.EqInt(2, len(ann.Params))
+	a.EqStr("value1", ann.Params["key1"].(string))
+	a.EqStr("value2", ann.Params["key2"].(string))
 
-	p = parseSignatureParams("key1=value1 key2")
-	a.EqInt(2, len(p))
-	a.EqStr("value1", p["key1"])
-	a.EqStr("", p["key2"])
+	ann = parseAnnotation("@foo key1=value1 key2")
+	a.EqStr("foo", string(ann.Symbol))
+	a.EqInt(2, len(ann.Params))
+	a.EqStr("value1", ann.Params["key1"].(string))
+	a.Nil(ann.Params["key2"])
 
-	p = parseSignatureParams("key1=value1key2=fo")
-	a.EqInt(1, len(p))
-	a.EqStr("value1key2=fo", p["key1"])
+	ann = parseAnnotation("@bar key1=value1key2=fo")
+	a.EqStr("bar", string(ann.Symbol))
+	a.EqInt(1, len(ann.Params))
+	a.EqStr("value1key2=fo", ann.Params["key1"].(string))
 }

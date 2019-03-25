@@ -17,6 +17,8 @@ export type Example = {
     inner_val: Inner,
     inner_ptr: ?Inner,
     rgb: types.RGB,
+    enum_value: MyEnum,
+    enum_ptr: ?MyEnum,
 };
 export type Inner = {
     bool_val: boolean,
@@ -30,3 +32,4 @@ export type Inner = {
     time_val: Date,
     time_ptr: ?Date,
 };
+export type MyEnum = 'a' | 'b';

@@ -12,25 +12,24 @@ import (
 	"text/template"
 
 	"github.com/yssk22/go/generator"
-	"github.com/yssk22/go/x/xstrings"
+	"github.com/yssk22/go/generator/enum"
 	"github.com/yssk22/go/x/xerrors"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 const (
 	signature = "flow"
 )
 
-var annotation = generator.NewAnnotation(
-	"flow",
-)
+var annotation = generator.NewAnnotationSymbol("flow")
 
 // Generator is a generator for Flow types
 type Generator struct {
 	Options *Options
 }
 
-// GetAnnotation implements generator.Generator#GetAnnotation
-func (*Generator) GetAnnotation() *generator.Annotation {
+// GetAnnotationSymbol implements generator.Generator#AnnotationSymbol
+func (*Generator) GetAnnotationSymbol() generator.AnnotationSymbol {
 	return annotation
 }
 
@@ -53,7 +52,15 @@ func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotated
 		Package:    pkg.Name,
 		Dependency: dep,
 	}
-	err := b.collectSpecs(pkg, nodes)
+	enumValues := make(map[string]*enum.Spec)
+	specs, err := enum.CollectSpecs(pkg, nodes)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range specs {
+		enumValues[s.EnumName] = s
+	}
+	err = b.collectSpecs(pkg, nodes, enumValues)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +81,11 @@ func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotated
 	return result, nil
 }
 
-func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) error {
+func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode, enumSpecs map[string]*enum.Spec) error {
 	var specs []*Spec
 	var errors []error
 	for _, n := range nodes {
-		spec, err := b.parseAnnotatedNode(pkg, n)
+		spec, err := b.parseAnnotatedNode(pkg, n, enumSpecs)
 		if err != nil {
 			errors = append(errors, err)
 		} else {
@@ -98,7 +105,7 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 	return nil
 }
 
-func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.AnnotatedNode) (*Spec, error) {
+func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.AnnotatedNode, enumSpecs map[string]*enum.Spec) (*Spec, error) {
 	var spec Spec
 	node, ok := n.Node.(*ast.GenDecl)
 	if !ok {
@@ -110,6 +117,12 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 	typeSpec := node.Specs[0].(*ast.TypeSpec)
 	t := pkg.TypeInfo.Defs[typeSpec.Name]
 	spec.TypeName = t.Name()
+	if enumSpec, ok := enumSpecs[spec.TypeName]; ok {
+		spec.FlowType = &FlowTypeEnum{
+			spec: enumSpec,
+		}
+		return &spec, nil
+	}
 	switch ut := t.Type().Underlying().(type) {
 	case *types.Struct:
 		o := &FlowTypeObject{}
@@ -134,15 +147,15 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 				l := len(jsonTags)
 				fieldName = jsonTags[0]
 				if l == 2 {
-					omitEmpty = jsonTags[1] == "omitempty" 
+					omitEmpty = jsonTags[1] == "omitempty"
 				}
 				if fieldName == "-" {
 					continue
 				}
 			}
 			o.Fields = append(o.Fields, FlowTypeObjectField{
-				Name: fieldName,
-				Type: ft,
+				Name:      fieldName,
+				Type:      ft,
 				OmitEmpty: omitEmpty,
 			})
 		}

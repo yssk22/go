@@ -18,9 +18,7 @@ import (
 	"github.com/yssk22/go/x/xstrings"
 )
 
-var annotation = generator.NewAnnotation(
-	"api",
-)
+var annotation = generator.NewAnnotationSymbol("api")
 
 const (
 	signature          = "api"
@@ -33,8 +31,8 @@ const (
 type Generator struct {
 }
 
-// GetAnnotation implements generator.Generator#GetAnnotation
-func (*Generator) GetAnnotation() *generator.Annotation {
+// GetAnnotationSymbol implements generator.Generator#GetAnnotationSymbol
+func (*Generator) GetAnnotationSymbol() generator.AnnotationSymbol {
 	return annotation
 }
 
@@ -120,20 +118,22 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	if !ok {
 		return nil, s.GenError(fmt.Errorf("@api is used on non func"), nil)
 	}
+	params := s.GetParamsBy(annotation)
+
 	// check "path" parameter
 	declaredParams := node.Type.Params
-	pattern, err := web.CompilePathPattern(s.Params[commandParamPath])
+	pathPattern := keyvalue.GetStringOr(params, commandParamPath, "[undefined]")
+	pattern, err := web.CompilePathPattern(pathPattern) 
 	if err != nil {
-		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", s.Params[commandParamPath]), nil)
+		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", pathPattern), nil)
 	}
-	m, _ := s.Params[commandParamMethod]
-	method, err := guessMethodByFunctionName(node.Name.Name, m)
+	method, err := guessMethodByFunctionName(node.Name.Name, keyvalue.GetStringOr(params, commandParamMethod, "GET"))
 	if err != nil {
 		return nil, s.GenError(err, nil)
 	}	
 	spec.Method = method
 	spec.FuncName = node.Name.Name
-	spec.PathPattern = s.Params[commandParamPath]
+	spec.PathPattern = pathPattern
 
 	// parse arguments to verify arguments' parameters mach with "path" parameter
 	// arguments must be (context.Context, pathparam1, pathparam2, ..., string, (query +body struct))
@@ -186,7 +186,7 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		var err error
 		var parameter *StructuredParameter
 		arg := arguments[len(pathParamNames)+1]
-		if format, err := api.ParseRequestParameterFormat(s.Params[commandParamFormat]); err != nil {
+		if format, err := api.ParseRequestParameterFormat(keyvalue.GetStringOr(params, commandParamFormat, "FORMAT")); err != nil {
 			parameter, err = getParameterParser(pkg, arg, resolveRequestParameterFormat(spec.Method))
 
 		}else {

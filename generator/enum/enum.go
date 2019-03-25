@@ -16,9 +16,7 @@ import (
 	"github.com/yssk22/go/x/xstrings"
 )
 
-var annotation = generator.NewAnnotation(
-	"enum",
-)
+var annotation = generator.NewAnnotationSymbol("enum")
 
 const (
 	signature = "enum"
@@ -31,8 +29,8 @@ type Generator struct {
 	Specs        []*Spec
 }
 
-// GetAnnotation implements generator.Generator#GetAnnotation
-func (*Generator) GetAnnotation() *generator.Annotation {
+// GetAnnotationSymbol implements generator.Generator#GetAnnotation
+func (*Generator) GetAnnotationSymbol() generator.AnnotationSymbol {
 	return annotation
 }
 
@@ -55,13 +53,14 @@ func (enum *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annota
 		Package:    pkg.Name,
 		Dependency: dep,
 	}
-	err := b.collectSpecs(pkg, nodes)
+	specs, err := CollectSpecs(pkg, nodes)
 	if err != nil {
 		return nil, err
 	}
-	if len(b.Specs) == 0 {
+	if len(specs) == 0 {
 		return nil, nil
 	}
+	b.Specs = specs
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Parse(templateFile))
 	if err = t.Execute(&buff, b); err != nil {
@@ -76,27 +75,33 @@ func (enum *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annota
 	return result, nil
 }
 
-func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) error {
-	specs, err := b.collectEnumDecls(pkg, nodes)
-	if err != nil {
-		return err
+// CollectSpecs returns a spec list of Enum
+func CollectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
+	var enumNodes []*generator.AnnotatedNode
+	for _, n := range nodes {
+		if n.IsAnnotated(annotation) {
+			enumNodes = append(enumNodes, n)
+		}
 	}
-	maps := b.collectConstDelcs(pkg)
+	specs, err := collectEnumDecls(pkg, enumNodes)
+	if err != nil {
+		return nil, err
+	}
+	maps := collectConstDelcs(pkg)
 	for _, spec := range specs {
-		spec.Values, err = b.filterValues(pkg, spec.EnumName, maps)
+		spec.Values, err = filterValues(pkg, spec.EnumName, maps)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	sort.Slice(specs, func(i, j int) bool {
 		a, b := specs[i], specs[j]
 		return strings.Compare(a.EnumName, b.EnumName) < 0
 	})
-	b.Specs = specs
-	return nil
+	return specs, nil
 }
 
-func (b *bindings) collectEnumDecls(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
+func collectEnumDecls(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
 	var specs []*Spec
 	for _, n := range nodes {
 		node, ok := n.Node.(*ast.GenDecl)
@@ -115,7 +120,7 @@ func (b *bindings) collectEnumDecls(pkg *generator.PackageInfo, nodes []*generat
 	return specs, nil
 }
 
-func (b *bindings) collectConstDelcs(pkg *generator.PackageInfo) map[string][]types.Object {
+func collectConstDelcs(pkg *generator.PackageInfo) map[string][]types.Object {
 	decls := make(map[string][]types.Object)
 	for _, f := range pkg.Files {
 		ast.Inspect(f.Ast, func(node ast.Node) bool {
@@ -140,7 +145,7 @@ func (b *bindings) collectConstDelcs(pkg *generator.PackageInfo) map[string][]ty
 	return decls
 }
 
-func (b *bindings) filterValues(pkg *generator.PackageInfo, enumName string, maps map[string][]types.Object) ([]Value, error) {
+func filterValues(pkg *generator.PackageInfo, enumName string, maps map[string][]types.Object) ([]Value, error) {
 	constants, ok := maps[fmt.Sprintf("%s.%s", pkg.Package.Path(), enumName)]
 	if !ok {
 		return nil, fmt.Errorf("@enum no constant is defined for %s", enumName)

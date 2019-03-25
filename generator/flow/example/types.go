@@ -22,6 +22,8 @@ type Example struct {
 	InnerVal  Inner      `json:"inner_val"`
 	InnerPtr  *Inner     `json:"inner_ptr"`
 	Imported  types.RGB  `json:"rgb"`
+	EnumVal   MyEnum     `json:"enum_value"`
+	EnumPtr   *MyEnum    `json:"enum_ptr"`
 }
 
 // Inner to test inner object
@@ -38,3 +40,13 @@ type Inner struct {
 	TimeVal   time.Time  `json:"time_val"`
 	TimePtr   *time.Time `json:"time_ptr"`
 }
+
+// MyEnum is an example of enum
+// @enum
+// @flow
+type MyEnum int
+
+const (
+	MyEnumA MyEnum = iota
+	MyEnumB
+)

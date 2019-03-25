@@ -23,16 +23,14 @@ const (
 	commandParamKind = "kind"
 )
 
-var annotation = generator.NewAnnotation(
-	"datastore",
-)
+var annotation = generator.NewAnnotationSymbol("datastore")
 
 // Generator is a generator for datastore types
 type Generator struct {
 }
 
-// GetAnnotation implements generator.Generator#GetAnnotation
-func (*Generator) GetAnnotation() *generator.Annotation {
+// GetAnnotationSymbol implements generator.Generator#GetAnnotationSymbol
+func (*Generator) GetAnnotationSymbol() generator.AnnotationSymbol {
 	return annotation
 }
 
@@ -113,8 +111,9 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 	typeSpec := node.Specs[0].(*ast.TypeSpec)
 	t := pkg.TypeInfo.Defs[typeSpec.Name]
 	spec.StructName = t.Name()
-	if k, ok := n.Params[commandParamKind]; ok {
-		spec.KindName = k
+	params := n.GetParamsBy(annotation)
+	if k, err := params.Get(commandParamKind); err == nil {
+		spec.KindName = k.(string)
 	} else {
 		spec.KindName = spec.StructName
 	}

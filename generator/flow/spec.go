@@ -3,6 +3,8 @@ package flow
 import (
 	"fmt"
 	"strings"
+
+	"github.com/yssk22/go/generator/enum"
 )
 
 // Spec represents type specification
@@ -81,7 +83,7 @@ type FlowTypeObjectField struct {
 	OmitEmpty bool
 }
 
-// Other Named object
+// FlowTypeNamed is to represent other named object
 type FlowTypeNamed struct {
 	Name       string
 	ImportPath string
@@ -93,4 +95,17 @@ func (f *FlowTypeNamed) GetExpr() string {
 		return fmt.Sprintf("%s.%s", f.ImportName, f.Name)
 	}
 	return f.Name
+}
+
+// FlowTypeEnum is to represent enum types.
+type FlowTypeEnum struct {
+	spec *enum.Spec
+}
+
+func (f *FlowTypeEnum) GetExpr() string {
+	var values []string
+	for _, val := range f.spec.Values {
+		values = append(values, fmt.Sprintf("%q", val.StrValue))
+	}
+	return strings.Join(values, " | ")
 }
