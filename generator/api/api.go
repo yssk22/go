@@ -127,7 +127,7 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	if err != nil {
 		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", pathPattern), nil)
 	}
-	method, err := guessMethodByFunctionName(node.Name.Name, keyvalue.GetStringOr(params, commandParamMethod, "GET"))
+	method, err := guessMethodByFunctionName(node.Name.Name, keyvalue.GetStringOr(params, commandParamMethod, ""))
 	if err != nil {
 		return nil, s.GenError(err, nil)
 	}	
