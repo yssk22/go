@@ -42,7 +42,7 @@ func main() {
 	}
 	anns := xstrings.SplitAndTrim(*annotation, ",")
 	generators = slice.Filter(generators, func(i int, g interface{}) bool{
-		gena := g.(generator.Generator).GetAnnotation()
+		gena := g.(generator.Generator).GetAnnotationSymbol()
 		if *annotation == "" {
 			log.Printf("%s: yes\n", gena)
 			return false
