@@ -18,6 +18,7 @@ var TaskIDContextKey = xcontext.NewKey("taskid")
 
 // Status is a value to represent the task status
 // @enum
+// @flow
 type Status int
 
 // Available values of Status

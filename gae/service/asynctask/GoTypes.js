@@ -6,6 +6,7 @@ export type Progress = {
     current: number,
     message?: string,
 };
+export type Status = 'unknown' | 'ready' | 'running' | 'success' | 'failure';
 export type TaskStatus = {
     id: string,
     status: Status,
