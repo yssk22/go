@@ -83,7 +83,7 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 	}
 	maps := b.collectConstDelcs(pkg)
 	for _, spec := range specs {
-		spec.Values, err = filterValues(spec.EnumName, maps)
+		spec.Values, err = b.filterValues(pkg, spec.EnumName, maps)
 		if err != nil {
 			return err
 		}
@@ -140,8 +140,8 @@ func (b *bindings) collectConstDelcs(pkg *generator.PackageInfo) map[string][]ty
 	return decls
 }
 
-func filterValues(enumName string, maps map[string][]types.Object) ([]Value, error) {
-	constants, ok := maps[".."+enumName]
+func (b *bindings) filterValues(pkg *generator.PackageInfo, enumName string, maps map[string][]types.Object) ([]Value, error) {
+	constants, ok := maps[fmt.Sprintf("%s.%s", pkg.Package.Path(), enumName)]
 	if !ok {
 		return nil, fmt.Errorf("@enum no constant is defined for %s", enumName)
 	}
