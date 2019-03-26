@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/yssk22/go/gae/service/apierrors"
 	"github.com/yssk22/go/gae/service/asynctask"
-	"github.com/yssk22/go/uuid"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/response"
 	"github.com/yssk22/go/x/xerrors"
@@ -18,19 +16,26 @@ import (
 // @flow
 type Task struct {
 	Path        string `json:"path"`
-	Key         string `json:"key"`
 	Description string `json:"description"`
 	Schedule    string `json:"schedule"`
 	config      *asynctask.Config
 }
 
 // AsyncTask defines endpoints for asynctask execution
-func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
-	if !strings.HasSuffix(path, "/") {
-		panic(fmt.Errorf("AsyncTask path must ends with '/' (got %q)", path))
-	}
+func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 	fullPath := s.Path(path)
-	s.Get(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	instancePathTemplate := fmt.Sprintf("%s:taskid.json", path)
+	taskConfig := asynctask.NewConfig(fullPath, options...)
+
+	// Create a new task instasnce
+	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		status, err := taskConfig.Prepare(req.Context(), req.Request.URL.Query())
+		xerrors.MustNil(err)
+		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
+	}))
+
+	// Get the instance status
+	s.Get(instancePathTemplate, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		status := taskConfig.GetStatus(req.Context(), req.Params.GetStringOr("taskid", ""))
 		if status == nil {
 			return nil
@@ -39,7 +44,8 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 	}))
 
 	const TaskQueueHeader = "X-AppEngine-TaskName"
-	s.Post(fmt.Sprintf("%s:taskid.json", path), web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+	// Run a task instance
+	s.Post(instancePathTemplate, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		if req.Header.Get(TaskQueueHeader) == "" {
 			return apierrors.Forbidden.ToResponse()
 		}
@@ -61,13 +67,7 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 		return response.NewJSON(progress.Next)
 	}))
 
-	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		taskID := uuid.New().String()
-		status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), req.Request.URL.Query())
-		xerrors.MustNil(err)
-		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
-	}))
-
+	// Get Recent Tasks
 	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		return response.NewJSON(taskConfig.GetRecentTasks(req.Context(), req.Query.GetIntOr("n", 5)))
 	}))
@@ -78,17 +78,15 @@ func (s *Service) AsyncTask(path string, taskConfig *asynctask.Config) {
 			if req.Header.Get(CronHeader) == "" {
 				return apierrors.Forbidden.ToResponse()
 			}
-			taskID := uuid.New().String()
 			params := req.Request.URL.Query()
 			params.Set("cron", "true")
-			status, err := taskConfig.Prepare(req.Context(), taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), params)
+			status, err := taskConfig.Prepare(req.Context(), params)
 			xerrors.MustNil(err)
 			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
 		}))
 	}
 	s.tasks = append(s.tasks, &Task{
 		Path:        s.Path(path),
-		Key:         taskConfig.GetKey(),
 		Description: taskConfig.GetDescription(),
 		Schedule:    taskConfig.GetSchedule(),
 		config:      taskConfig,
@@ -100,16 +98,16 @@ func (s *Service) GetTasks() []*Task {
 	return s.tasks
 }
 
+// RunTask runs the task specified by the path adhocly
 func (s *Service) RunTask(ctx context.Context, path string, params url.Values) (*asynctask.TaskStatus, error) {
 	fullPath := s.Path(path)
 	for _, t := range s.tasks {
 		if t.Path == fullPath {
-			taskID := uuid.New().String()
 			if params == nil {
 				params = url.Values{}
 			}
 			params.Set("__run_task", "true")
-			return t.config.Prepare(ctx, taskID, fmt.Sprintf("%s%s.json", fullPath, taskID), params)
+			return t.config.Prepare(ctx, params)
 		}
 	}
 	return nil, fmt.Errorf("no task path found at %s", fullPath)
