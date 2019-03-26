@@ -40,6 +40,11 @@ type PushQueue struct {
 	Target                string
 }
 
+// DefaultPushQueue is a default push queue
+var DefaultPushQueue = &PushQueue{
+	Name: "default",
+}
+
 // ToYAML generates the string for the queue
 func (queue *PushQueue) ToYAML() string {
 	var buff bytes.Buffer
