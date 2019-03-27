@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/yssk22/go/x/xcontext"
+	"github.com/yssk22/go/x/xtime"
 )
 
 // LoggerKey is a xlog key for this package
@@ -28,6 +29,7 @@ const (
 	StatusRunning
 	StatusSuccess
 	StatusFailure
+	StatusTimeout
 )
 
 // TaskStore is a type alias for []byte
@@ -102,21 +104,38 @@ func (t *AsyncTask) LastProgress() *Progress {
 }
 
 // GetStatus returns a new *TaskStatus exposed to clients.
-func (t *AsyncTask) GetStatus() *TaskStatus {
+func (t *AsyncTask) GetStatus(timeout time.Duration) *TaskStatus {
 	st := &TaskStatus{
 		ID:     t.ID,
 		Status: t.Status,
 	}
 	if !t.StartAt.IsZero() {
-		st.StartAt = &(t.StartAt)
+		z := t.StartAt
+		st.StartAt = &(z)
 	}
 	if !t.FinishAt.IsZero() {
-		st.FinishAt = &(t.FinishAt)
+		z := t.StartAt
+		st.FinishAt = &z
 	}
 	if t.Error != "" {
-		st.Error = &(t.Error)
+		s := t.Error
+		st.Error = &s
+	}
+	if t.Params != "" {
+		s := t.Params
+		st.Params = &s
 	}
 	st.Progress = t.LastProgress()
+	if t.Status < StatusSuccess && timeout > 0 {
+		elapsed := xtime.Now().Sub(t.UpdatedAt)
+		if elapsed > timeout {
+			st.Status = StatusTimeout
+			if st.Error != nil {
+				s := "timeout"
+				st.Error = &s
+			}
+		}
+	}
 	return st
 }
 
@@ -136,6 +155,7 @@ type TaskStatus struct {
 	Status   Status     `json:"status"`
 	StartAt  *time.Time `json:"start_at,omitempty"`
 	FinishAt *time.Time `json:"finish_at,omitempty"`
+	Params   *string    `json:"params,omitempty"`
 	Error    *string    `json:"error,omitempty"`
 	Progress *Progress  `json:"progress,omitempty"`
 }

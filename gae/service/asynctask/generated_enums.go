@@ -14,6 +14,7 @@ var (
 		StatusRunning: "running",
 		StatusSuccess: "success",
 		StatusFailure: "failure",
+		StatusTimeout: "timeout",
 	}
 	_StatusStringToValue = map[string]Status{
 		"unknown": StatusUnknown,
@@ -21,6 +22,7 @@ var (
 		"running": StatusRunning,
 		"success": StatusSuccess,
 		"failure": StatusFailure,
+		"timeout": StatusTimeout,
 	}
 )
 

@@ -3,7 +3,6 @@
 
 export type Task = {
     path: string,
-    key: string,
     description: string,
     schedule: string,
 };

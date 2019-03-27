@@ -33,14 +33,17 @@ type Config struct {
 	logic       Logic
 	schedule    string
 	description string
+	timeout     time.Duration
 }
+
+const defaultTimeout = 10 * time.Minute
 
 // NewConfig creats a new task configuration
 func NewConfig(path string, options ...Option) *Config {
 	if !strings.HasSuffix(path, "/") {
 		panic(fmt.Errorf("AsyncTask path must ends with '/' (got %q)", path))
 	}
-	caller := xruntime.CaptureCaller()
+	caller := xruntime.CaptureStack(3)[2]
 	desc := fmt.Sprintf("defined in %s:%d", caller.FullFilePath, caller.LineNumber)
 	c := &Config{
 		path:        path,
@@ -48,6 +51,7 @@ func NewConfig(path string, options ...Option) *Config {
 		description: desc,
 		schedule:    "",
 		queue:       taskqueue.DefaultPushQueue,
+		timeout:     defaultTimeout,
 	}
 	for _, opts := range options {
 		c, _ = opts(c)
@@ -98,6 +102,14 @@ func Schedule(sched string) Option {
 	}
 }
 
+// Timeout sets the task timeout
+func (c *Config) Timeout(timeout time.Duration) Option {
+	return func(c *Config) (*Config, error) {
+		c.timeout = timeout
+		return c, nil
+	}
+}
+
 // GetDescription returns the descripiton for the async task
 func (c *Config) GetDescription() string {
 	return c.description
@@ -114,7 +126,10 @@ func (c *Config) GetStatus(ctx context.Context, taskID string) *TaskStatus {
 	if t == nil {
 		return nil
 	}
-	return t.GetStatus()
+	if t.ConfigKey != c.path {
+		return nil
+	}
+	return t.GetStatus(c.timeout)
 }
 
 // GetRecentTasks returns a list of recent tasks ordered by StartAt
@@ -127,7 +142,7 @@ func (c *Config) GetRecentTasks(ctx context.Context, n int) []*TaskStatus {
 	_, tasks := NewAsyncTaskQuery().EqConfigKey(c.path).DescStartAt().Limit(n).MustGetAll(ctx)
 	list := make([]*TaskStatus, len(tasks))
 	for i, t := range tasks {
-		list[i] = t.GetStatus()
+		list[i] = t.GetStatus(c.timeout)
 	}
 	return list
 }
@@ -234,7 +249,7 @@ func (c *Config) Prepare(ctx context.Context, params url.Values) (*TaskStatus, e
 		return nil, ErrPushTaskFailed
 	}
 	logger.Infof("Prepared")
-	return t.GetStatus(), nil
+	return t.GetStatus(c.timeout), nil
 }
 
 func (c *Config) pushTask(ctx context.Context, instancePath string, params url.Values) error {

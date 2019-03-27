@@ -6,12 +6,19 @@ export type Progress = {
     current: number,
     message?: string,
 };
-export type Status = 'unknown' | 'ready' | 'running' | 'success' | 'failure';
+export type Status =
+    | 'unknown'
+    | 'ready'
+    | 'running'
+    | 'success'
+    | 'failure'
+    | 'timeout';
 export type TaskStatus = {
     id: string,
     status: Status,
     start_at?: ?Date,
     finish_at?: ?Date,
+    params?: ?string,
     error?: ?string,
     progress?: ?Progress,
 };
