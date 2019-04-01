@@ -29,18 +29,21 @@ type PackageInfo struct {
 func resolveGoImportPath(dir string) (string, error) {
 	absPath, err := filepath.Abs(dir)
 	if err != nil {
-		return "", err
+		return "", xerrors.Wrap(err, "filepath.Abs(%q) returns an error", build.Default.GOPATH)
 	}
-	absGoPath, err := filepath.Abs(build.Default.GOPATH)
-	if idx := strings.Index(absPath, absGoPath); idx >= 0 {
-		// absPath is $GOPATH/my/package/path/dir
-		// so the import path should be my/package/path/dir
-		return absGoPath[idx : len(absGoPath)-idx], nil
-	}
-	// go module
 	absModuleRootPath, moduleName := findGoModInfo(absPath)
 	if absModuleRootPath == "" {
-		return "", fmt.Errorf("could not find go.mod in %s", dir)
+		// go.mod not found
+		absGoPath, err := filepath.Abs(build.Default.GOPATH)
+		if err != nil {
+			return "", xerrors.Wrap(err, "filepath.Abs(%q) returns an error", build.Default.GOPATH)
+		}
+		absGoPath = filepath.Join(absGoPath, "src")
+		if !strings.HasPrefix(absPath, absGoPath) {
+			return "", fmt.Errorf("not in $GOPATH/src (%s)", absGoPath)
+		}
+		offset := len(absGoPath) + 1
+		return absPath[offset:], nil
 	}
 
 	// absPath is ${absModuleRootPath}/my/package/path/dir
