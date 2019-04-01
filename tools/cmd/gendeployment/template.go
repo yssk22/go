@@ -85,7 +85,7 @@ type appTemplateVars struct {
 	Services    []*Service
 }
 
-var goAppTemplate = template.Must(template.New("gendeployment.goapp").Parse(`package {{.PackageName}}
+var goAppTemplate = template.Must(template.New("gendeployment.goapp").Parse(`package main
 
 import (
 	"github.com/yssk22/go/gae/service"
@@ -96,9 +96,10 @@ import (
 	"{{.PackagePath}}"
 	{{end -}}
 	{{end}}
+	"google.golang.org/appengine"
 )
 
-func init(){
+func main(){
 	service.NewDispatcher(
 	{{range .Services -}}
 	{{if .PackageAlias -}}
@@ -108,5 +109,6 @@ func init(){
 	{{end -}}
 	{{end }}
 	).Run()
+	appengine.Main()
 }
 `))

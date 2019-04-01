@@ -11,7 +11,7 @@ import (
 type Example struct {
 	BoolVal   bool       `json:"bool_val"`
 	BoolPtr   *bool      `json:"bool_ptr"`
-	IntVaL    int        `json:"int_var"`
+	IntVaL    int        `json:"int_val"`
 	IntPtr    *int       `json:"int_ptr"`
 	FloatVal  float64    `json:"float_val"`
 	FloatPtr  *float64   `json:"float_ptr"`
@@ -19,9 +19,11 @@ type Example struct {
 	StringPtr *string    `json:"string_ptr"`
 	TimeVal   time.Time  `json:"time_val"`
 	TimePtr   *time.Time `json:"time_ptr"`
-	InnerVal  *Inner     `json:"inner_val"`
+	InnerVal  Inner      `json:"inner_val"`
 	InnerPtr  *Inner     `json:"inner_ptr"`
 	Imported  types.RGB  `json:"rgb"`
+	EnumVal   MyEnum     `json:"enum_value"`
+	EnumPtr   *MyEnum    `json:"enum_ptr"`
 }
 
 // Inner to test inner object
@@ -29,7 +31,7 @@ type Example struct {
 type Inner struct {
 	BoolVal   bool       `json:"bool_val"`
 	BoolPtr   *bool      `json:"bool_ptr"`
-	IntVaL    int        `json:"int_var"`
+	IntVaL    int        `json:"int_val"`
 	IntPtr    *int       `json:"int_ptr"`
 	FloatVal  float64    `json:"float_val"`
 	FloatPtr  *float64   `json:"float_ptr"`
@@ -38,3 +40,13 @@ type Inner struct {
 	TimeVal   time.Time  `json:"time_val"`
 	TimePtr   *time.Time `json:"time_ptr"`
 }
+
+// MyEnum is an example of enum
+// @enum
+// @flow
+type MyEnum int
+
+const (
+	MyEnumA MyEnum = iota
+	MyEnumB
+)

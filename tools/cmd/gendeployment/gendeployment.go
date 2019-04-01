@@ -18,6 +18,7 @@ var (
 	appName       = flag.String("application", "", "gae application name")
 	packagePrefix = flag.String("package", "", "package prefix for each module")
 	servicesDir   = flag.String("services", "./services", "the root directory of services")
+	staticDir     = flag.String("static", "./static", "the root directory of static assets")
 	deploymentDir = flag.String("deployment", "./deployment", "deployment directory")
 	fallback      = flag.String("fallback", "default", "fallback service name")
 	singleService = flag.Bool("single", false, "set to have a single module rather than per-service modules")
@@ -54,6 +55,10 @@ func main() {
 		// dispatch.yaml
 		log.Printf("Creating dispath.yaml\n")
 		createDispatch(*deploymentDir, fallbackService, nonFallbackServices)
+	}
+	if *staticDir != "" {
+		log.Printf("Copy the static contents to %q deployment (fallback)\n", fallbackService.Name)
+		copyStaticDir(*staticDir, *deploymentDir, fallbackService)
 	}
 
 	if *startLocal {
@@ -140,6 +145,12 @@ func createDispatch(deploymentDir string, main *Service, services []*Service) {
 	}
 	dispatchFile.WriteString("  - url: \"*/*\"\n")
 	dispatchFile.WriteString(fmt.Sprintf("    module: %s\n", main.Name))
+}
+
+func copyStaticDir(staticDir string, deploymentDir string, s *Service) {
+	// TODO: this doesn't work in Windows
+	err := exec.Command("cp", "-r", staticDir, filepath.Join(deploymentDir, s.Name, "static")).Run()
+	xerrors.MustNil(err)
 }
 
 func cp(dst, src string) error {

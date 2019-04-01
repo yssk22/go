@@ -29,15 +29,14 @@ func TestLogic(t *testing.T) {
 	processed = false
 	queryValue = ""
 	queue := s.AddPushQueue("myqueue")
-	s.AsyncTask("/async/task/", asynctask.NewConfig(
-		"async-task",
-		s.AddPushQueue("myqueue"),
+	s.AsyncTask("/async/task/",
+		asynctask.Queue(queue),
 		asynctask.Func(func(ctx context.Context, params *keyvalue.GetProxy, t *asynctask.AsyncTask) (*asynctask.Progress, error) {
 			processed = true
 			queryValue = params.GetStringOr("q", "")
 			return nil, nil
 		}),
-	))
+	)
 
 	runner := NewAsyncTaskRunner(t, s)
 	task := runner.Run(gaetest.NewContext(), "/foo/async/task/", nil, queue.Name)
@@ -56,9 +55,8 @@ func TestTaskStore(t *testing.T) {
 	}
 	var v V
 	var queryValue = ""
-	s.AsyncTask("/async/task/", asynctask.NewConfig(
-		"async-task",
-		s.AddPushQueue("myqueue"),
+	s.AsyncTask(
+		"/async/task/",
 		asynctask.Func(func(ctx context.Context, params *keyvalue.GetProxy, t *asynctask.AsyncTask) (*asynctask.Progress, error) {
 			if t.IsStoreEmpty() {
 				t.SaveStore(&V{
@@ -74,7 +72,7 @@ func TestTaskStore(t *testing.T) {
 			queryValue = params.GetStringOr("q", "")
 			return nil, nil
 		}),
-	))
+	)
 
 	runner := NewAsyncTaskRunner(t, s)
 	task := runner.Run(gaetest.NewContext(), "/foo/async/task/", nil, queue.Name)

@@ -20,5 +20,6 @@ func newAdminReactApp(s *service.Service, title string) *reactapp.Page {
 		appName,
 		reactapp.Title(title),
 		reactapp.AppData("urlprefix", s.Path("/")),
+		reactapp.ReactAppPath("/static/hatachi.js"),
 	))
 }

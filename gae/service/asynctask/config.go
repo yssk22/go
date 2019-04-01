@@ -1,65 +1,113 @@
 package asynctask
 
 import (
-	"fmt"
-
-	"net/url"
-
-	"time"
-
 	"context"
+	"fmt"
+	"net/url"
+	"strings"
+	"time"
 
 	"github.com/yssk22/go/gae/taskqueue"
 	"github.com/yssk22/go/keyvalue"
+	"github.com/yssk22/go/uuid"
 	"github.com/yssk22/go/x/xlog"
 	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xtime"
 )
 
+var defaultLogic = LogicFunc(func(ctx context.Context, params *keyvalue.GetProxy, t *AsyncTask) (*Progress, error) {
+	_, logger := xlog.WithContextAndKey(ctx, t.GetLogPrefix(), LoggerKey)
+	logger.Warnf("no task logic is implemented")
+	return nil, nil
+})
+
 // Config is an configuration object to define AsyncTask endpoints
 type Config struct {
-	key         string
+	path        string // task base path.
 	queue       *taskqueue.PushQueue
 	logic       Logic
 	schedule    string
 	description string
+	timeout     time.Duration
 }
 
-// NewConfig returns a new *Config named by `key`` to execute the async logic on top of the queue.
-func NewConfig(key string, queue *taskqueue.PushQueue, logic Logic) *Config {
-	caller := xruntime.CaptureCaller()
+const defaultTimeout = 10 * time.Minute
+
+// NewConfig creats a new task configuration
+func NewConfig(path string, options ...Option) *Config {
+	if !strings.HasSuffix(path, "/") {
+		panic(fmt.Errorf("AsyncTask path must ends with '/' (got %q)", path))
+	}
+	caller := xruntime.CaptureStack(3)[2]
 	desc := fmt.Sprintf("defined in %s:%d", caller.FullFilePath, caller.LineNumber)
-	if key == "" {
-		panic(fmt.Errorf("asynctask.Config key must not be empty"))
-	}
-	return &Config{
-		key:         key,
-		queue:       queue,
-		logic:       logic,
+	c := &Config{
+		path:        path,
+		logic:       defaultLogic,
 		description: desc,
+		schedule:    "",
+		queue:       taskqueue.DefaultPushQueue,
+		timeout:     defaultTimeout,
+	}
+	for _, opts := range options {
+		c, _ = opts(c)
+	}
+	return c
+}
+
+// Option is a func struct to configure
+type Option func(c *Config) (*Config, error)
+
+// Queue configures the queue which the task use
+func Queue(q *taskqueue.PushQueue) Option {
+	return func(c *Config) (*Config, error) {
+		c.queue = q
+		return c, nil
 	}
 }
 
-// GetKey returns a key string for the async task
-func (c *Config) GetKey() string {
-	return c.key
+// Description sets the description
+func Description(desc string) Option {
+	return func(c *Config) (*Config, error) {
+		c.description = desc
+		return c, nil
+	}
 }
 
-// WithDescription sets the description for the async task
-func (c *Config) WithDescription(description string) *Config {
-	c.description = description
-	return c
+// Implement sets the logic implementation
+func Implement(l Logic) Option {
+	return func(c *Config) (*Config, error) {
+		c.logic = l
+		return c, nil
+	}
+}
+
+// Func sets the logic implementation with a func. This is a shorthand for asynctask.Implement(asyntask.LogicFunc(f))
+func Func(f func(context.Context, *keyvalue.GetProxy, *AsyncTask) (*Progress, error)) Option {
+	return func(c *Config) (*Config, error) {
+		c.logic = LogicFunc(f)
+		return c, nil
+	}
+}
+
+// Schedule sets the task schedule
+func Schedule(sched string) Option {
+	return func(c *Config) (*Config, error) {
+		c.schedule = sched
+		return c, nil
+	}
+}
+
+// Timeout sets the task timeout
+func (c *Config) Timeout(timeout time.Duration) Option {
+	return func(c *Config) (*Config, error) {
+		c.timeout = timeout
+		return c, nil
+	}
 }
 
 // GetDescription returns the descripiton for the async task
 func (c *Config) GetDescription() string {
 	return c.description
-}
-
-// WithSchedule sets the (gae cron formatted) schedule for the async task
-func (c *Config) WithSchedule(schedule string) *Config {
-	c.schedule = schedule
-	return c
 }
 
 // GetSchedule returns the (gae cron formatted) schedule string for the async task
@@ -73,7 +121,10 @@ func (c *Config) GetStatus(ctx context.Context, taskID string) *TaskStatus {
 	if t == nil {
 		return nil
 	}
-	return t.GetStatus()
+	if t.ConfigKey != c.path {
+		return nil
+	}
+	return t.GetStatus(c.timeout)
 }
 
 // GetRecentTasks returns a list of recent tasks ordered by StartAt
@@ -83,10 +134,10 @@ func (c *Config) GetRecentTasks(ctx context.Context, n int) []*TaskStatus {
 	if n <= 0 || n > maxNum {
 		n = defaultNum
 	}
-	_, tasks := NewAsyncTaskQuery().EqConfigKey(c.key).DescStartAt().Limit(n).MustGetAll(ctx)
+	_, tasks := NewAsyncTaskQuery().EqConfigKey(c.path).DescStartAt().Limit(n).MustGetAll(ctx)
 	list := make([]*TaskStatus, len(tasks))
 	for i, t := range tasks {
-		list[i] = t.GetStatus()
+		list[i] = t.GetStatus(c.timeout)
 	}
 	return list
 }
@@ -173,14 +224,13 @@ func (c *Config) Process(ctx context.Context, taskID string, instancePath string
 }
 
 // Prepare prepares a AsyncTask record and returns the associated task id.
-func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string, params url.Values) (*TaskStatus, error) {
-	if c.GetStatus(ctx, taskID) != nil {
-		return nil, ErrAlreadyExists
-	}
+func (c *Config) Prepare(ctx context.Context, params url.Values) (*TaskStatus, error) {
+	taskID := uuid.New().String()
+	instancePath := fmt.Sprintf("%s%s.json", c.path, taskID)
 	kind := NewAsyncTaskKind()
 	t := &AsyncTask{}
 	t.ID = taskID
-	t.ConfigKey = c.key
+	t.ConfigKey = c.path
 	if params != nil {
 		t.Params = params.Encode()
 	}
@@ -194,7 +244,7 @@ func (c *Config) Prepare(ctx context.Context, taskID string, instancePath string
 		return nil, ErrPushTaskFailed
 	}
 	logger.Infof("Prepared")
-	return t.GetStatus(), nil
+	return t.GetStatus(c.timeout), nil
 }
 
 func (c *Config) pushTask(ctx context.Context, instancePath string, params url.Values) error {

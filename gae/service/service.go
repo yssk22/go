@@ -55,8 +55,6 @@ type Service struct {
 	router    web.Router // service router
 
 	// app.yaml configurations
-
-	APIVerison        APIVersion
 	DefaultExpiration string
 	handlerOptions    []*HandlerOption
 }
@@ -103,6 +101,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		InitContext: func(r *http.Request) context.Context {
 			return appengine.NewContext(r)
 		},
+		OnDebugRequest: web.DefaultOption.OnDebugRequest,
 	}
 	s := &Service{
 		key:       key,
@@ -113,8 +112,6 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		APIConfig: &BuiltInAPIConfig{
 			AuthNamespace: "",
 		},
-
-		APIVerison:        APIVersion18,
 		DefaultExpiration: DefaultExpirationValue,
 		handlerOptions:    make([]*HandlerOption, 0),
 	}

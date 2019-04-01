@@ -18,9 +18,7 @@ import (
 	"github.com/yssk22/go/x/xstrings"
 )
 
-var annotation = generator.NewAnnotation(
-	"api",
-)
+var annotation = generator.NewAnnotationSymbol("api")
 
 const (
 	signature          = "api"
@@ -33,8 +31,8 @@ const (
 type Generator struct {
 }
 
-// GetAnnotation implements generator.Generator#GetAnnotation
-func (*Generator) GetAnnotation() *generator.Annotation {
+// GetAnnotationSymbol implements generator.Generator#GetAnnotationSymbol
+func (*Generator) GetAnnotationSymbol() generator.AnnotationSymbol {
 	return annotation
 }
 
@@ -55,7 +53,7 @@ func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotat
 	dep.Add("github.com/yssk22/go/web/response")
 	dep.Add("github.com/yssk22/go/web/api")
 	b := &bindings{
-		Package: pkg.Name,
+		Package:    pkg.Name,
 		Dependency: dep,
 	}
 	specs, err := b.collectSpecs(pkg, nodes)
@@ -122,20 +120,22 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	if !ok {
 		return nil, s.GenError(fmt.Errorf("@api is used on non func"), nil)
 	}
+	params := s.GetParamsBy(annotation)
+
 	// check "path" parameter
 	declaredParams := node.Type.Params
-	pattern, err := web.CompilePathPattern(s.Params[commandParamPath])
+	pathPattern := keyvalue.GetStringOr(params, commandParamPath, "[undefined]")
+	pattern, err := web.CompilePathPattern(pathPattern)
 	if err != nil {
-		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", s.Params[commandParamPath]), nil)
+		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", pathPattern), nil)
 	}
-	m, _ := s.Params[commandParamMethod]
-	method, err := guessMethodByFunctionName(node.Name.Name, m)
+	method, err := guessMethodByFunctionName(node.Name.Name, keyvalue.GetStringOr(params, commandParamMethod, ""))
 	if err != nil {
 		return nil, s.GenError(err, nil)
-	}	
+	}
 	spec.Method = method
 	spec.FuncName = node.Name.Name
-	spec.PathPattern = s.Params[commandParamPath]
+	spec.PathPattern = pathPattern
 
 	// parse arguments to verify arguments' parameters mach with "path" parameter
 	// arguments must be (context.Context, pathparam1, pathparam2, ..., string, (query +body struct))
@@ -188,11 +188,11 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		var err error
 		var parameter *StructuredParameter
 		arg := arguments[len(pathParamNames)+1]
-		if format, err := api.ParseRequestParameterFormat(s.Params[commandParamFormat]); err != nil {
-			parameter, err = getParameterParser(arg, resolveRequestParameterFormat(spec.Method))
+		if format, err := api.ParseRequestParameterFormat(keyvalue.GetStringOr(params, commandParamFormat, "FORMAT")); err != nil {
+			parameter, err = getParameterParser(pkg, arg, resolveRequestParameterFormat(spec.Method))
 
-		}else {
-			parameter, err = getParameterParser(arg, format)
+		} else {
+			parameter, err = getParameterParser(pkg, arg, format)
 		}
 		if err != nil {
 			return nil, s.GenError(xerrors.Wrap(err, "could not build parameter parser"), nil)
@@ -202,7 +202,7 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	return &spec, nil
 }
 
-func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*StructuredParameter, error) {
+func getParameterParser(pkg *generator.PackageInfo, arg types.Object, format api.RequestParameterFormat) (*StructuredParameter, error) {
 	p, ok := arg.Type().(*types.Pointer)
 	if !ok {
 		return nil, fmt.Errorf("%s must be a pointer of named struct but %s", arg.Name(), arg.Type().String())
@@ -213,7 +213,7 @@ func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*S
 	}
 	obj := n.Obj()
 	pkgPath := obj.Pkg().Path()
-	if pkgPath == "." {
+	if pkgPath == pkg.Package.Path() {
 		pkgPath = ""
 	}
 	var s = StructuredParameter{
@@ -240,7 +240,7 @@ func getParameterParser(arg types.Object, format api.RequestParameterFormat) (*S
 func guessMethodByFunctionName(funcName string, m string) (requestMethod, error) {
 	mm := strings.ToLower(m)
 	if mm != "" {
-		switch(mm){
+		switch mm {
 		case "get":
 			return requestMethodGet, nil
 		case "post":
@@ -249,7 +249,7 @@ func guessMethodByFunctionName(funcName string, m string) (requestMethod, error)
 			return requestMethodPut, nil
 		case "delete":
 			return requestMethodDelete, nil
-		}	
+		}
 		return requestMethodUnknown, fmt.Errorf("unknown method parameter value %q", mm)
 	}
 
@@ -271,7 +271,7 @@ func guessMethodByFunctionName(funcName string, m string) (requestMethod, error)
 	return requestMethodUnknown, fmt.Errorf("invalid function name %q to resolve the HTTP method", funcName)
 }
 
-func resolveRequestParameterFormat( m requestMethod) api.RequestParameterFormat {
+func resolveRequestParameterFormat(m requestMethod) api.RequestParameterFormat {
 	switch m {
 	case requestMethodGet:
 		return api.RequestParameterFormatQuery

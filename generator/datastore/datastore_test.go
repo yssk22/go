@@ -7,7 +7,7 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-func TestFlow(t *testing.T) {
+func TestDatastore(t *testing.T) {
 	a := assert.New(t)
 	runner := generator.NewRunner(
 		NewGenerator(),

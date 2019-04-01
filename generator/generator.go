@@ -16,7 +16,7 @@ import (
 // Generator is an interface to implement generator command
 type Generator interface {
 	Run(*PackageInfo, []*AnnotatedNode) ([]*Result, error)
-	GetAnnotation() *Annotation
+	GetAnnotationSymbol() AnnotationSymbol
 	GetFormatter() Formatter
 }
 
@@ -51,24 +51,36 @@ func NewRunner(generators ...Generator) *Runner {
 
 // Run executes Generator#run for all generators.
 func (r *Runner) Run(dir string) error {
-	hasAnnotated, err := r.hasAnnotated(dir)
+	hasAnnotations, err := r.hasAnnotations(dir)
 	if err != nil {
 		return err
 	}
-	if !hasAnnotated {
+	if !hasAnnotations {
 		return nil
 	}
+
 	log.Printf("INFO: parsing %s", dir)
 	pkg, err := parsePackage(dir)
 	if err != nil {
 		absPath, _ := filepath.Abs(dir)
 		return xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
+	annotatedNodes := CollectAnnotatedNodes(pkg)
 	for _, g := range r.generators {
-		nodes := g.GetAnnotation().Collect(pkg)
+		var nodes []*AnnotatedNode
+		symbol := g.GetAnnotationSymbol()
+		for _, n := range annotatedNodes {
+			if n.IsAnnotated(symbol) {
+				nodes = append(nodes, n)
+			}
+		}
+		if len(nodes) == 0 {
+			continue
+		}
 		generated, err := g.Run(pkg, nodes)
 		if err != nil {
-			return err
+			log.Printf("ERROR: %s (by %s)", err, symbol)
+			continue
 		}
 		for _, result := range generated {
 			result.Source, err = g.GetFormatter().Format(result.Source)
@@ -79,13 +91,13 @@ func (r *Runner) Run(dir string) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("INFO: Generated: %s", ansi.Blue.Sprintf(filename))
+			log.Printf("INFO: Generated: %s (by %s)", ansi.Blue.Sprintf(filename), symbol)
 		}
 	}
 	return nil
 }
 
-func (r *Runner) hasAnnotated(dir string) (bool, error) {
+func (r *Runner) hasAnnotations(dir string) (bool, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return false, err
@@ -97,7 +109,7 @@ func (r *Runner) hasAnnotated(dir string) (bool, error) {
 				return false, err
 			}
 			for _, g := range r.generators {
-				if g.GetAnnotation().MaybeMarkedIn(buff) {
+				if g.GetAnnotationSymbol().MaybeMarkedIn(buff) {
 					return true, nil
 				}
 			}

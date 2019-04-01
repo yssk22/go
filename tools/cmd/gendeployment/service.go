@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/yssk22/go/x/xerrors"
 )
+
+var serviceNameRe = regexp.MustCompile("^[a-z][a-z0-9_]*$")
 
 // Service is a definition of service
 type Service struct {
@@ -19,13 +23,25 @@ type Service struct {
 	PackagePath  string
 }
 
+func isValidServiceDirectory(d os.FileInfo) error {
+	if !d.IsDir() {
+		return fmt.Errorf("not a directory")
+	}
+	name := d.Name()
+	if !serviceNameRe.MatchString(name) {
+		return fmt.Errorf("invalid name")
+	}
+	return nil
+}
+
 func collectServices(servicesDir string, packagePrefix string, fallback string) (*Service, []*Service) {
 	dirs, err := ioutil.ReadDir(servicesDir)
 	xerrors.MustNil(err)
 	var list []*Service
 	for _, d := range dirs {
-		if !d.IsDir() {
-			panic(fmt.Errorf("%s is not a directory", d.Name()))
+		if err := isValidServiceDirectory(d); err != nil {
+			log.Printf("ignore %s: %v", d.Name(), err)
+			continue
 		}
 		name := d.Name()
 		s := &Service{
