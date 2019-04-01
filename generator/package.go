@@ -105,7 +105,6 @@ func parsePackage(dir string) (*PackageInfo, error) {
 		if err != nil {
 			return nil, xerrors.Wrap(err, "io error: %s", path)
 		}
-
 		parsedFile := pkg.Syntax[i]
 		// log.Println("File", path, parsedFile.Pos(), parsedFile.End(), offset, parsedFile.End()-parsedFile.Pos(), len(src))
 		files = append(files, &FileInfo{

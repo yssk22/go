@@ -53,7 +53,7 @@ func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotat
 	dep.Add("github.com/yssk22/go/web/response")
 	dep.Add("github.com/yssk22/go/web/api")
 	b := &bindings{
-		Package: pkg.Name,
+		Package:    pkg.Name,
 		Dependency: dep,
 	}
 	specs, err := b.collectSpecs(pkg, nodes)
@@ -102,6 +102,8 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 		}
 		return strings.Compare(string(a.Method), string(b.Method)) < 0
 	})
+
+	// resolve dependencies
 	for _, s := range specs {
 		if s.StructuredParameter != nil {
 			b.Dependency.Add("encoding/json")
@@ -123,14 +125,14 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	// check "path" parameter
 	declaredParams := node.Type.Params
 	pathPattern := keyvalue.GetStringOr(params, commandParamPath, "[undefined]")
-	pattern, err := web.CompilePathPattern(pathPattern) 
+	pattern, err := web.CompilePathPattern(pathPattern)
 	if err != nil {
 		return nil, s.GenError(xerrors.Wrap(err, "invalid path parameter %q", pathPattern), nil)
 	}
 	method, err := guessMethodByFunctionName(node.Name.Name, keyvalue.GetStringOr(params, commandParamMethod, ""))
 	if err != nil {
 		return nil, s.GenError(err, nil)
-	}	
+	}
 	spec.Method = method
 	spec.FuncName = node.Name.Name
 	spec.PathPattern = pathPattern
@@ -189,7 +191,7 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		if format, err := api.ParseRequestParameterFormat(keyvalue.GetStringOr(params, commandParamFormat, "FORMAT")); err != nil {
 			parameter, err = getParameterParser(pkg, arg, resolveRequestParameterFormat(spec.Method))
 
-		}else {
+		} else {
 			parameter, err = getParameterParser(pkg, arg, format)
 		}
 		if err != nil {
@@ -238,7 +240,7 @@ func getParameterParser(pkg *generator.PackageInfo, arg types.Object, format api
 func guessMethodByFunctionName(funcName string, m string) (requestMethod, error) {
 	mm := strings.ToLower(m)
 	if mm != "" {
-		switch(mm){
+		switch mm {
 		case "get":
 			return requestMethodGet, nil
 		case "post":
@@ -247,7 +249,7 @@ func guessMethodByFunctionName(funcName string, m string) (requestMethod, error)
 			return requestMethodPut, nil
 		case "delete":
 			return requestMethodDelete, nil
-		}	
+		}
 		return requestMethodUnknown, fmt.Errorf("unknown method parameter value %q", mm)
 	}
 
@@ -269,7 +271,7 @@ func guessMethodByFunctionName(funcName string, m string) (requestMethod, error)
 	return requestMethodUnknown, fmt.Errorf("invalid function name %q to resolve the HTTP method", funcName)
 }
 
-func resolveRequestParameterFormat( m requestMethod) api.RequestParameterFormat {
+func resolveRequestParameterFormat(m requestMethod) api.RequestParameterFormat {
 	switch m {
 	case requestMethodGet:
 		return api.RequestParameterFormatQuery

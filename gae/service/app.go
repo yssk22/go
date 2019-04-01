@@ -78,7 +78,7 @@ func (s *Service) EnableRemoteAPI() {
 // EnableStaticDir enables static directory
 func (s *Service) EnableStaticDir(url string, dir string) {
 	s.handlerOptions = append(s.handlerOptions, &HandlerOption{
-		URL:    url,
+		URL:       url,
 		StaticDir: dir,
 	})
 }
