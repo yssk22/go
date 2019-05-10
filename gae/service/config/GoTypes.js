@@ -2,6 +2,7 @@
 // eslint-edisable
 
 export type ServiceConfig = {
+    id: string,
     key: string,
     value: string,
     updated_at: Date,
