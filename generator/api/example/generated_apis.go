@@ -34,7 +34,7 @@ func SetupAPI(r web.Router) {
 	}))
 	var _createExampleParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"form"}`),
+		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"json"}`),
 		&_createExampleParameterParser,
 	)
 	r.Post("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -55,7 +55,7 @@ func SetupAPI(r web.Router) {
 	}))
 	var _updateExampleParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"form"}`),
+		[]byte(`{"specs":{"id":{"type":"string","required":false}},"format":"json"}`),
 		&_updateExampleParameterParser,
 	)
 	r.Put("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {

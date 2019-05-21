@@ -278,9 +278,9 @@ func resolveRequestParameterFormat(m requestMethod) api.RequestParameterFormat {
 	case requestMethodDelete:
 		return api.RequestParameterFormatQuery
 	case requestMethodPut:
-		return api.RequestParameterFormatForm
+		return api.RequestParameterFormatJSON
 	case requestMethodPost:
-		return api.RequestParameterFormatForm
+		return api.RequestParameterFormatJSON
 	}
 	return api.RequestParameterFormatQuery
 }

@@ -34,7 +34,7 @@ func SetupAPI(r web.Router) {
 	}))
 	var _updateConfigParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"default_value":{"type":"string","required":false},"description":{"type":"string","required":false},"global_value":{"type":"string","required":false},"is_global":{"type":"bool","required":false},"key":{"type":"string","required":false},"updated_at":{"type":"time","required":false},"value":{"type":"string","required":false}},"format":"form"}`),
+		[]byte(`{"specs":{"default_value":{"type":"string","required":false},"description":{"type":"string","required":false},"global_value":{"type":"string","required":false},"id":{"type":"string","required":false},"is_global":{"type":"bool","required":false},"key":{"type":"string","required":false},"updated_at":{"type":"time","required":false},"value":{"type":"string","required":false}},"format":"json"}`),
 		&_updateConfigParameterParser,
 	)
 	r.Put("/admin/api/configs/:key.json", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -65,7 +65,7 @@ func SetupAPI(r web.Router) {
 	}))
 	var _createFacebookAuthParameterParser api.ParameterParser
 	json.Unmarshal(
-		[]byte(`{"specs":{"access_token":{"type":"string","required":false}},"format":"form"}`),
+		[]byte(`{"specs":{"access_token":{"type":"string","required":false}},"format":"json"}`),
 		&_createFacebookAuthParameterParser,
 	)
 	r.Post("/auth/login/facebook/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
