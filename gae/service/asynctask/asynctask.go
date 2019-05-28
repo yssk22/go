@@ -114,7 +114,7 @@ func (t *AsyncTask) GetStatus(timeout time.Duration) *TaskStatus {
 		st.StartAt = &(z)
 	}
 	if !t.FinishAt.IsZero() {
-		z := t.StartAt
+		z := t.FinishAt
 		st.FinishAt = &z
 	}
 	if t.Error != "" {
