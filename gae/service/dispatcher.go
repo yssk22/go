@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -13,6 +14,11 @@ type Dispatcher struct {
 	rules       map[string]*Service
 	prefixes    []string
 	numServices int
+}
+
+type dispatchAPIResponse struct {
+	ID     string `json:"id"`
+	Prefix string `json:"prefix"`
 }
 
 // NewDispatcher returns a new *Dispacher object
@@ -36,11 +42,27 @@ func NewDispatcher(services ...*Service) *Dispatcher {
 }
 
 func (d *Dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.EscapedPath()
+	if strings.HasPrefix(path, "/__services/") {
+		var list []*dispatchAPIResponse
+		for _, p := range d.prefixes {
+			s := d.rules[p]
+			list = append(list, &dispatchAPIResponse{
+				ID:     s.Key(),
+				Prefix: fmt.Sprintf("/%s", s.URLPrefix()),
+			})
+		}
+		buff, _ := json.Marshal(list)
+		w.WriteHeader(200)
+		w.Write(buff)
+		return
+	}
+
 	// check prefixes in the reverse order.
 	// TODO: can be optimized not to check all but some.
 	for i := d.numServices; i > 0; i-- {
 		prefix := d.prefixes[i-1]
-		if strings.HasPrefix(r.URL.EscapedPath(), prefix) {
+		if strings.HasPrefix(path, prefix) {
 			d.rules[prefix].ServeHTTP(w, r)
 			return
 		}
