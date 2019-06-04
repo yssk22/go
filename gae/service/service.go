@@ -27,6 +27,7 @@ import (
 	"github.com/yssk22/go/gae/service/config"
 	xtaskqueue "github.com/yssk22/go/gae/taskqueue"
 	"github.com/yssk22/go/web"
+	"github.com/yssk22/go/web/middleware/cors"
 	"github.com/yssk22/go/web/middleware/session"
 	"github.com/yssk22/go/web/response"
 	"github.com/yssk22/go/web/response/view"
@@ -115,6 +116,7 @@ func NewWithURLAndNamespace(key string, url string, namespace string) *Service {
 		DefaultExpiration: DefaultExpirationValue,
 		handlerOptions:    make([]*HandlerOption, 0),
 	}
+	s.Use(cors.NewMiddleware("*"))
 	s.Use(namespaceMiddleware(s))
 	s.Use(errorMiddleware)
 	s.Use(initMiddleware)
