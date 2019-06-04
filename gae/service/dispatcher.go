@@ -43,7 +43,7 @@ func NewDispatcher(services ...*Service) *Dispatcher {
 
 func (d *Dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.EscapedPath()
-	if strings.HasPrefix(path, "/__services/") {
+	if strings.HasPrefix(path, "/api/__services/") {
 		var list []*dispatchAPIResponse
 		for _, p := range d.prefixes {
 			s := d.rules[p]
@@ -54,6 +54,7 @@ func (d *Dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		buff, _ := json.Marshal(list)
 		w.WriteHeader(200)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Write(buff)
 		return
 	}
