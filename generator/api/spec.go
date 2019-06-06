@@ -25,6 +25,7 @@ type Spec struct {
 	StructuredParameter *StructuredParameter
 	FuncName            string
 	Method              requestMethod
+	CanReturnError      bool
 }
 
 // ParameterType represents the type information for a parameter

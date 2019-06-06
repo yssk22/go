@@ -51,7 +51,6 @@ func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotat
 	dep := generator.NewDependency()
 	dep.Add("github.com/yssk22/go/web")
 	dep.Add("github.com/yssk22/go/web/response")
-	dep.Add("github.com/yssk22/go/web/api")
 	b := &bindings{
 		Package:    pkg.Name,
 		Dependency: dep,
@@ -106,8 +105,11 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 	// resolve dependencies
 	for _, s := range specs {
 		if s.StructuredParameter != nil {
+			b.Dependency.Add("github.com/yssk22/go/web/api")
 			b.Dependency.Add("encoding/json")
 			s.StructuredParameter.Type.ResolveAlias(b.Dependency)
+		} else if s.CanReturnError {
+			b.Dependency.Add("github.com/yssk22/go/web/api")
 		}
 	}
 
@@ -149,14 +151,22 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		arguments = append(arguments, pkg.TypeInfo.Defs[paramTypeNode.Names[0]])
 	}
 	var hasStructuredParam = false
-	if len(arguments) < (len(pathParamNames) + 1) {
+	var numPathParamNames = len(pathParamNames)
+	var numArguments = len(arguments)
+	if numArguments == 0 {
 		return nil, s.GenError(fmt.Errorf(
-			"func %q has %d parameters, but there are only %d path parameters in the annotation",
+			"func %q must have context.Context parameter in the first argument",
 			node.Name.Name,
-			len(arguments),
+		), nil)
+	}
+	if numPathParamNames > 0 && numArguments < (numPathParamNames+1) {
+		return nil, s.GenError(fmt.Errorf(
+			"func %q has %d arguments, but there are only %d path parameters in the annotation",
+			node.Name.Name,
+			numArguments,
 			len(pathParamNames),
 		), nil)
-	} else if len(arguments) > (len(pathParamNames) + 1) {
+	} else if numArguments > (numPathParamNames + 1) {
 		hasStructuredParam = true
 	}
 	if arguments[0].Type().String() != "context.Context" {
@@ -198,6 +208,20 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 			return nil, s.GenError(xerrors.Wrap(err, "could not build parameter parser"), nil)
 		}
 		spec.StructuredParameter = parameter
+	}
+
+	// check return types
+	declaredResults := node.Type.Results
+	spec.CanReturnError = false
+	if declaredResults.NumFields() == 2 {
+		t := fmt.Sprintf("%s", declaredResults.List[1].Type)
+		if t != "error" {
+			return nil, s.GenError(fmt.Errorf(
+				"the 2nd return value must be error but %s",
+				t,
+			), node)
+		}
+		spec.CanReturnError = true
 	}
 	return &spec, nil
 }
@@ -253,19 +277,19 @@ func guessMethodByFunctionName(funcName string, m string) (requestMethod, error)
 		return requestMethodUnknown, fmt.Errorf("unknown method parameter value %q", mm)
 	}
 
-	if strings.HasPrefix(funcName, "get") {
+	if strings.HasPrefix(funcName, "get") || strings.HasPrefix(funcName, "Get") {
 		return requestMethodGet, nil
 	}
-	if strings.HasPrefix(funcName, "list") {
+	if strings.HasPrefix(funcName, "list") || strings.HasPrefix(funcName, "List") {
 		return requestMethodGet, nil
 	}
-	if strings.HasPrefix(funcName, "update") {
+	if strings.HasPrefix(funcName, "update") || strings.HasPrefix(funcName, "Update") {
 		return requestMethodPut, nil
 	}
-	if strings.HasPrefix(funcName, "create") {
+	if strings.HasPrefix(funcName, "create") || strings.HasPrefix(funcName, "Create") {
 		return requestMethodPost, nil
 	}
-	if strings.HasPrefix(funcName, "delete") {
+	if strings.HasPrefix(funcName, "delete") || strings.HasPrefix(funcName, "Delete") {
 		return requestMethodDelete, nil
 	}
 	return requestMethodUnknown, fmt.Errorf("invalid function name %q to resolve the HTTP method", funcName)
