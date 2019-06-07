@@ -10,6 +10,7 @@ type Cache interface {
 	SetMulti(ctx context.Context, keys []string, values interface{}) error
 	GetMulti(ctx context.Context, keys []string, dst interface{}) error
 	DeleteMulti(ctx context.Context, keys []string) error
+	Clear(ctx context.Context) error
 }
 
 // ErrCacheKeyNotFound is an error alias

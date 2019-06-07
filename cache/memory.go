@@ -12,7 +12,16 @@ import (
 
 // MemoryCache is an example type that implements Cache in a single process environment.
 type MemoryCache struct {
-	m sync.Map
+	mu sync.Mutex
+	m  sync.Map
+}
+
+// Clear clears the cache
+func (mc *MemoryCache) Clear(ctx context.Context) error {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+	mc.m = sync.Map{}
+	return nil
 }
 
 // SetMulti implements Cache#GetMulti
@@ -24,7 +33,9 @@ func (mc *MemoryCache) SetMulti(ctx context.Context, keys []string, values inter
 }
 
 var (
-	ErrInvalidDstType   = errors.New("datastore: dst has invalid type")
+	// ErrInvalidDstType is an error returned when dst type doesn't match with the stored one.
+	ErrInvalidDstType = errors.New("datastore: dst has invalid type")
+	// ErrInvalidDstLength is an error returned when dst type doesn't match with the stored one.
 	ErrInvalidDstLength = errors.New("datastore: key and dst slices have different length")
 )
 
@@ -82,7 +93,7 @@ func (mc *MemoryCache) GetMulti(ctx context.Context, keys []string, dst interfac
 
 // DeleteMulti implements Cache#DeleteMulti
 func (mc *MemoryCache) DeleteMulti(ctx context.Context, keys []string) error {
-	for k, _ := range keys {
+	for k := range keys {
 		mc.m.Delete(k)
 	}
 	return nil
