@@ -79,6 +79,7 @@ func (a *Assert) NotNil(v interface{}, msgContext ...interface{}) {
 
 // Zero for Zero value assertion
 func (a *Assert) Zero(v interface{}, msgContext ...interface{}) {
+	a.Helper()
 	if !xreflect.IsZero(v) {
 		a.Failure("<zero>", v, msgContext...)
 	}
@@ -86,6 +87,7 @@ func (a *Assert) Zero(v interface{}, msgContext ...interface{}) {
 
 // NotZero for non Zero assertion
 func (a *Assert) NotZero(v interface{}, msgContext ...interface{}) {
+	a.Helper()
 	if xreflect.IsZero(v) {
 		a.Failure("<not-zero>", v, msgContext...)
 	}
