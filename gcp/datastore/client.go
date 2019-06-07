@@ -201,29 +201,17 @@ func (c *Client) DeleteMulti(ctx context.Context, keys []*datastore.Key, options
 
 // GetAll fills the query result into dst and returns corresponding *datastore.Key
 func (c *Client) GetAll(ctx context.Context, q *Query, dst interface{}) ([]*datastore.Key, error) {
-	prepared, err := q.prepare(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.inner.GetAll(ctx, prepared, dst)
+	return c.inner.GetAll(ctx, q.inner, dst)
 }
 
 // Run runs a query and returns *datastore.Iterator
 func (c *Client) Run(ctx context.Context, q *Query) (*datastore.Iterator, error) {
-	prepared, err := q.prepare(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.inner.Run(ctx, prepared), nil
+	return c.inner.Run(ctx, q.inner), nil
 }
 
 // Count returns a count
 func (c *Client) Count(ctx context.Context, q *Query) (int, error) {
-	prepared, err := q.prepare(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return c.inner.Count(ctx, prepared)
+	return c.inner.Count(ctx, q.inner)
 }
 
 // DeleteAll deletes the all `kind` entities stored in datastore

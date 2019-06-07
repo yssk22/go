@@ -10,12 +10,13 @@ import (
 )
 
 func TestClient(t *testing.T) {
+	ctx := context.Background()
+	c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
+
 	t.Run("GetMulti", func(t *testing.T) {
 		a := assert.New(t)
 		a.Nil(testEnvironment.Reset())
 		a.Nil(testEnvironment.LoadFixture("./fixtures/TestGetMulti.json"))
-		ctx := context.Background()
-		c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
 
 		tt := make([]*Example, 2, 2)
 		keys := []*datastore.Key{
@@ -90,13 +91,12 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("Query", func(t *testing.T) {
+		a := assert.New(t)
+		a.Nil(testEnvironment.Reset())
+		a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
+
 		t.Run("KeysOnly", func(t *testing.T) {
 			a := assert.New(t)
-			a.Nil(testEnvironment.Reset())
-			a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
-			ctx := context.Background()
-			c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
-
 			q := NewQuery("Example").Eq("ID", "example-1").KeysOnly()
 			keys, err := c.GetAll(ctx, q, nil)
 			a.Nil(err)
@@ -105,11 +105,6 @@ func TestClient(t *testing.T) {
 
 		t.Run("Filter", func(t *testing.T) {
 			a := assert.New(t)
-			a.Nil(testEnvironment.Reset())
-			a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
-			ctx := context.Background()
-			c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
-
 			var result []Example
 			q := NewQuery("Example").Eq("ID", "example-1")
 			_, err := c.GetAll(ctx, q, &result)
@@ -119,11 +114,6 @@ func TestClient(t *testing.T) {
 
 		t.Run("Order", func(t *testing.T) {
 			a := assert.New(t)
-			a.Nil(testEnvironment.Reset())
-			a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
-			ctx := context.Background()
-			c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
-
 			var result []Example
 			q := NewQuery("Example").Desc("ID")
 			_, err := c.GetAll(ctx, q, &result)
@@ -134,13 +124,11 @@ func TestClient(t *testing.T) {
 			}
 		})
 
+		t.Run("ViaKeys", func(t *testing.T) {
+
+		})
 		t.Run("Limit", func(t *testing.T) {
 			a := assert.New(t)
-			a.Nil(testEnvironment.Reset())
-			a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
-			ctx := context.Background()
-			c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
-
 			var result []Example
 			q := NewQuery("Example").Desc("ID").Limit(1)
 			_, err := c.GetAll(ctx, q, &result)
