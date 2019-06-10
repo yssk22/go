@@ -10,9 +10,8 @@ import (
 
 	"github.com/yssk22/go/generator"
 	"github.com/yssk22/go/generator/enum"
-	"github.com/yssk22/go/generator/flow"
 	"github.com/yssk22/go/generator/api"
-	"github.com/yssk22/go/generator/datastore"
+	"github.com/yssk22/go/gcp/datastore/typed"
 	"github.com/yssk22/go/iterator/slice"
 	"github.com/yssk22/go/x/xstrings"
 )
@@ -32,13 +31,10 @@ func main() {
 	}
 	log.Println("gensource", args)
 
-	flowOptions := flow.NewOptions()
-	flowOptions.RootDir, _ = os.Getwd()
 	generators := []generator.Generator{
 		api.NewGenerator(),
 		enum.NewGenerator(),
-		datastore.NewGenerator(),
-		flow.NewGenerator(flowOptions),		
+		typed.NewGenerator(),
 	}
 	anns := xstrings.SplitAndTrim(*annotation, ",")
 	generators = slice.Filter(generators, func(i int, g interface{}) bool{
