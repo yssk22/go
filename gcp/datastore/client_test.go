@@ -29,7 +29,7 @@ func TestClient(t *testing.T) {
 
 		e1 := make([]*Example, 1)
 		err := testEnvironment.memcache.GetMulti(ctx, []string{
-			getCacheKey(keys[0]),
+			GetCacheKey(keys[0]),
 		}, e1)
 		a.Nil(err)
 		a.EqStr("example-1", e1[0].ID)
@@ -62,7 +62,7 @@ func TestClient(t *testing.T) {
 		a.Nil(err)
 
 		caches := make([]*Example, 1, 1)
-		a.NotNil(testEnvironment.memcache.GetMulti(ctx, []string{getCacheKey(keys[0])}, caches))
+		a.NotNil(testEnvironment.memcache.GetMulti(ctx, []string{GetCacheKey(keys[0])}, caches))
 		stored := make([]*Example, 1, 1)
 		a.Nil(testEnvironment.client.GetMulti(ctx, keys, stored))
 		a.NotNil(stored[0])

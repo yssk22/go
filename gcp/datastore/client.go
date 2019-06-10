@@ -94,7 +94,7 @@ func (c *Client) GetMulti(ctx context.Context, keys []*datastore.Key, entities i
 	if c.config.Cache != nil {
 		memKeys = make([]string, size, size)
 		for i := range keys {
-			memKeys[i] = getCacheKey(keys[i])
+			memKeys[i] = GetCacheKey(keys[i])
 		}
 		err = c.config.Cache.GetMulti(ctx, memKeys, entities)
 		if err == nil {
@@ -159,7 +159,7 @@ func (c *Client) PutMulti(ctx context.Context, keys []*datastore.Key, ent interf
 	if c.config.Cache != nil {
 		memKeys := make([]string, size, size)
 		for i := range memKeys {
-			memKeys[i] = getCacheKey(keys[i])
+			memKeys[i] = GetCacheKey(keys[i])
 		}
 		if err = c.config.Cache.DeleteMulti(ctx, memKeys); err != nil {
 			_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("datastore.%s.%s", keys[0].Namespace, keys[0].Kind), datastoreLoggerKey)
@@ -189,7 +189,7 @@ func (c *Client) DeleteMulti(ctx context.Context, keys []*datastore.Key, options
 	if c.config.Cache != nil {
 		memKeys := make([]string, size, size)
 		for i := range memKeys {
-			memKeys[i] = getCacheKey(keys[i])
+			memKeys[i] = GetCacheKey(keys[i])
 		}
 		if err = c.config.Cache.DeleteMulti(ctx, memKeys); err != nil {
 			_, logger := xlog.WithContextAndKey(ctx, fmt.Sprintf("datastore.%s.%s", keys[0].Namespace, keys[0].Kind), datastoreLoggerKey)

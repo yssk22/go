@@ -7,6 +7,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/favclip/testerator v0.0.0-20181109065310-c967692c9c65
 	github.com/sergi/go-diff v1.0.0
+	github.com/stretchr/testify v1.3.0 // indirect
 	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/text v0.3.2

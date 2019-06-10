@@ -27,7 +27,8 @@ func NewKey(kind string, k interface{}) *datastore.Key {
 	}
 }
 
-func getCacheKey(k *datastore.Key) string {
+// GetCacheKey returns a string representation for the cache key
+func GetCacheKey(k *datastore.Key) string {
 	return fmt.Sprintf("datastore.%s", k.Encode())
 }
 

@@ -1,4 +1,4 @@
-package datastore
+package typed
 
 import (
 	"bytes"
@@ -46,8 +46,9 @@ func NewGenerator() *Generator {
 func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*generator.Result, error) {
 	dep := generator.NewDependency()
 	dep.Add("context")
-	dep.Add("google.golang.org/appengine/datastore")
-	dep.AddAs("github.com/yssk22/go/gae/datastore", "ds")
+	dep.Add("cloud.google.com/go/datastore")
+	dep.AddAs("github.com/yssk22/go/gcp/datastore", "ds")
+	dep.Add("google.golang.org/api/iterator")
 	dep.Add("github.com/yssk22/go/x/xerrors")
 	dep.Add("github.com/yssk22/go/x/xtime")
 	b := &bindings{
@@ -165,6 +166,7 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 func (b *bindings) getFieldSpec(pkg *generator.PackageInfo, field *types.Var, tags keyvalue.Getter) (*FieldSpec, error) {
 	var f FieldSpec
 	f.Name = field.Name()
+	// TODO: when we support more complex logic defined by filed tags
 	if v, err := tags.Get(fieldTagName); err == nil {
 		values := xstrings.SplitAndTrim(v.(string), ",")
 		for _, v := range values {

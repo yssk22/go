@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -39,6 +40,7 @@ type emulator struct {
 }
 
 func startEmulator() (*emulator, error) {
+	log.Println("Start Emulator")
 	port, err := xnet.GetEphemeralPort()
 	if err != nil {
 		return nil, xerrors.Wrap(err, "cannot start an emulator")
@@ -154,6 +156,11 @@ func MustNewTestEnviornment() *TestEnviornment {
 // GetClient returns *datastore.Client that sends requests to the test environment emulator
 func (te *TestEnviornment) GetClient() *Client {
 	return NewClientFromClient(context.Background(), te.client, Cache(te.memcache))
+}
+
+// GetCache returns a cache client
+func (te *TestEnviornment) GetCache() cache.Cache {
+	return te.memcache
 }
 
 // Shutdown shuts down the environment

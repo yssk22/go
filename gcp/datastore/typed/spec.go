@@ -1,4 +1,4 @@
-package datastore
+package typed
 
 // Spec is a specificaiton for datastore entity
 type Spec struct {
