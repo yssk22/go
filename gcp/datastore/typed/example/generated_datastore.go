@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Entity) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey("Entity", s.ID)
+	return ds.NewKey(ctx, "Entity", s.ID)
 }
 
 type EntityReplacer interface {

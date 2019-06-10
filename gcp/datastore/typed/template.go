@@ -16,7 +16,7 @@ package {{.Package}}
 {{range .Specs -}}
 
 func (s *{{.StructName}}) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey("{{.KindName}}", s.{{.KeyField}})
+	return ds.NewKey(ctx, "{{.KindName}}", s.{{.KeyField}})
 }
 
 type {{.StructName}}Replacer interface {

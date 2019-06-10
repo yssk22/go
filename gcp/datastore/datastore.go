@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/datastore"
+	"github.com/yssk22/go/gcp"
 )
 
 // LoggerKey is a key for logger in this package
@@ -14,17 +15,20 @@ const LoggerKey = "gae.datastore"
 // NewKey returns a new *datastore.Key for `kind`.
 // if k is *datastore.Key, it returns the same object.
 // if k is not a string nor an int, k is converted by fmt.Sprintf("%s").
-func NewKey(kind string, k interface{}) *datastore.Key {
+func NewKey(ctx context.Context, kind string, k interface{}) *datastore.Key {
+	var key *datastore.Key
 	switch k.(type) {
 	case string:
-		return datastore.NameKey(kind, k.(string), nil)
+		key = datastore.NameKey(kind, k.(string), nil)
 	case []byte:
-		return datastore.NameKey(kind, string(k.([]byte)), nil)
+		key = datastore.NameKey(kind, string(k.([]byte)), nil)
 	case *datastore.Key:
-		return k.(*datastore.Key)
+		key = k.(*datastore.Key)
 	default:
-		return datastore.NameKey(kind, fmt.Sprintf("%s", k), nil)
+		key = datastore.NameKey(kind, fmt.Sprintf("%s", k), nil)
 	}
+	key.Namespace = gcp.CurrentNamespace(ctx)
+	return key
 }
 
 // GetCacheKey returns a string representation for the cache key
@@ -57,13 +61,13 @@ func NormalizeKeys(ctx context.Context, kind string, keys interface{}) ([]*datas
 		tmp := keys.([]string)
 		dsKeys = make([]*datastore.Key, len(tmp))
 		for i, s := range tmp {
-			dsKeys[i] = NewKey(kind, s)
+			dsKeys[i] = NewKey(ctx, kind, s)
 		}
 	case []interface{}:
 		tmp := keys.([]interface{})
 		dsKeys = make([]*datastore.Key, len(tmp))
 		for i, s := range tmp {
-			dsKeys[i] = NewKey(kind, s)
+			dsKeys[i] = NewKey(ctx, kind, s)
 		}
 	case []*datastore.Key:
 		dsKeys = keys.([]*datastore.Key)
