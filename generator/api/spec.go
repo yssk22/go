@@ -18,6 +18,15 @@ const (
 	requestMethodUnknown = "Unknown"
 )
 
+type returnType string
+
+const (
+	returnTypeNone           = "none"
+	returnTypeError          = "error"
+	returnTypeObject         = "object"
+	returnTypeObjectAndError = "object_and_error"
+)
+
 // Spec represents API specification
 type Spec struct {
 	PathPattern         string
@@ -25,7 +34,7 @@ type Spec struct {
 	StructuredParameter *StructuredParameter
 	FuncName            string
 	Method              requestMethod
-	CanReturnError      bool
+	ReturnType          returnType
 }
 
 // ParameterType represents the type information for a parameter

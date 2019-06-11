@@ -108,7 +108,8 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 			b.Dependency.Add("github.com/yssk22/go/web/api")
 			b.Dependency.Add("encoding/json")
 			s.StructuredParameter.Type.ResolveAlias(b.Dependency)
-		} else if s.CanReturnError {
+		} else if s.ReturnType != returnTypeObject {
+			// use api library when return an error or api.ResponseOK
 			b.Dependency.Add("github.com/yssk22/go/web/api")
 		}
 	}
@@ -212,8 +213,19 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 
 	// check return types
 	declaredResults := node.Type.Results
-	spec.CanReturnError = false
-	if declaredResults.NumFields() == 2 {
+	numReturns := declaredResults.NumFields()
+	switch numReturns {
+	case 0:
+		spec.ReturnType = returnTypeNone
+		break // always {"ok":true}
+	case 1: // Struct or error
+		if fmt.Sprintf("%s", declaredResults.List[0].Type) == "error" {
+			spec.ReturnType = returnTypeObject
+		} else {
+			spec.ReturnType = returnTypeError
+		}
+		break
+	case 2: // (Struct, error)
 		t := fmt.Sprintf("%s", declaredResults.List[1].Type)
 		if t != "error" {
 			return nil, s.GenError(fmt.Errorf(
@@ -221,7 +233,17 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 				t,
 			), node)
 		}
-		spec.CanReturnError = true
+		spec.ReturnType = returnTypeObjectAndError
+		break
+	default:
+		var types []string
+		for _, t := range declaredResults.List {
+			types = append(types, fmt.Sprintf("%s", t.Type))
+		}
+		return nil, s.GenError(fmt.Errorf(
+			"return type must be one of [empty, Struct, error, or (Struct, error) but (%s) types",
+			types,
+		), node)
 	}
 	return &spec, nil
 }

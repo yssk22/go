@@ -29,32 +29,7 @@ func SetupAPI(r web.Router) {
 				return err.ToResponse()
 			}
 			{{end -}}
-			ctx := req.Context()
-			{{if .CanReturnError -}}
-			obj, err := {{.FuncName}}(
-				ctx,
-				{{range .PathParameters -}}
-				req.Params.GetStringOr("{{.}}", ""),
-				{{end -}}
-				{{with .StructuredParameter -}}
-				&sp,
-				{{end -}}
-				);
-			if err != nil {
-				return api.NewErrorResponse(err)
-			}
-			{{else -}}
-			obj := {{.FuncName}}(
-				ctx,
-				{{range .PathParameters -}}
-				req.Params.GetStringOr("{{.}}", ""),
-				{{end -}}
-				{{with .StructuredParameter -}}
-				&sp,
-				{{end -}}
-				);
-			{{end -}}
-			return response.NewJSON(obj)
+			{{genExecMethodAndReturn .}}
 		}))
 	{{end -}}
 }

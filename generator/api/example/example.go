@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"errors"
 
 	"github.com/yssk22/go/generator/api/example/types"
 )
@@ -46,4 +47,13 @@ func updateExample(ctx context.Context, param string, e *Example) (*types.Respon
 func deleteExample(ctx context.Context, param string, query *types.RequestParams) (*types.ResponseData, error) {
 	a := &types.ResponseData{}
 	return a, nil
+}
+
+// @api path=/path/to/example/:param/:param2/always_ok/
+func getExampleAlwaysOK(ctx context.Context, param string, param2 string) {
+}
+
+// @api path=/path/to/example/:param/:param2/only_error/
+func getExampleOnlyError(ctx context.Context, param string, param2 string) error {
+	return errors.New("OnlyError")
 }
