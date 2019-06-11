@@ -29,7 +29,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 	var _createExampleParameterParser api.ParameterParser
@@ -50,7 +49,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 	var _updateExampleParameterParser api.ParameterParser
@@ -71,7 +69,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 	var _getExampleWithExtraParamParameterParser api.ParameterParser
@@ -92,7 +89,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 	r.Get("/path/to/example/:param/:param2/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -104,7 +100,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 	r.Get("/path/to/example/:param/:param2/always_ok/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
@@ -113,16 +108,20 @@ func SetupAPI(r web.Router) {
 			req.Params.GetStringOr("param", ""),
 			req.Params.GetStringOr("param2", ""),
 		)
-
 		return api.OK
 
 	}))
 	r.Get("/path/to/example/:param/:param2/only_error/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		return response.NewJSON(getExampleOnlyError(
+		err := getExampleOnlyError(
 			req.Context(),
 			req.Params.GetStringOr("param", ""),
 			req.Params.GetStringOr("param2", ""),
-		))
+		)
+		if err != nil {
+			return api.NewErrorResponse(err)
+		}
+		return api.OK
+
 	}))
 	var _createExample2ParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -142,7 +141,6 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-
 		return response.NewJSON(obj)
 	}))
 }

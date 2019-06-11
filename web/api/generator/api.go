@@ -220,9 +220,9 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		break // always {"ok":true}
 	case 1: // Struct or error
 		if fmt.Sprintf("%s", declaredResults.List[0].Type) == "error" {
-			spec.ReturnType = returnTypeObject
-		} else {
 			spec.ReturnType = returnTypeError
+		} else {
+			spec.ReturnType = returnTypeObject
 		}
 		break
 	case 2: // (Struct, error)
