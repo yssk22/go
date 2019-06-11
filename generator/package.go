@@ -93,7 +93,7 @@ func parsePackage(dir string) (*PackageInfo, error) {
 	}
 	pkg := pkgs[0]
 	if len(pkg.Errors) > 0 {
-		return nil, xerrors.Wrap(pkg.Errors[0], "could not load the package in %s", dir)
+		// return nil, xerrors.Wrap(pkg.Errors[0], "could not load the package in %s", dir)
 	}
 	if len(pkg.GoFiles) == 0 {
 		return nil, fmt.Errorf("no go file is parsed in %s", dir)
