@@ -11,12 +11,12 @@ import (
 
 func TestClient(t *testing.T) {
 	ctx := context.Background()
-	c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
+	c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 
 	t.Run("GetMulti", func(t *testing.T) {
 		a := assert.New(t)
-		a.Nil(testEnvironment.Reset())
-		a.Nil(testEnvironment.LoadFixture("./fixtures/TestGetMulti.json"))
+		a.Nil(testEnv.Reset())
+		a.Nil(testEnv.LoadFixture("./fixtures/TestGetMulti.json"))
 
 		tt := make([]*Example, 2, 2)
 		keys := []*datastore.Key{
@@ -28,7 +28,7 @@ func TestClient(t *testing.T) {
 		a.Nil(tt[1])
 
 		e1 := make([]*Example, 1)
-		err := testEnvironment.memcache.GetMulti(ctx, []string{
+		err := testEnv.memcache.GetMulti(ctx, []string{
 			GetCacheKey(keys[0]),
 		}, e1)
 		a.Nil(err)
@@ -48,9 +48,9 @@ func TestClient(t *testing.T) {
 
 	t.Run("PutMulti", func(t *testing.T) {
 		a := assert.New(t)
-		a.Nil(testEnvironment.Reset())
+		a.Nil(testEnv.Reset())
 		ctx := context.Background()
-		c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
+		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 		keys := []*datastore.Key{
 			NewKey(ctx, "Example", "example-a"),
 		}
@@ -62,20 +62,20 @@ func TestClient(t *testing.T) {
 		a.Nil(err)
 
 		caches := make([]*Example, 1, 1)
-		a.NotNil(testEnvironment.memcache.GetMulti(ctx, []string{GetCacheKey(keys[0])}, caches))
+		a.NotNil(testEnv.memcache.GetMulti(ctx, []string{GetCacheKey(keys[0])}, caches))
 		stored := make([]*Example, 1, 1)
-		a.Nil(testEnvironment.client.GetMulti(ctx, keys, stored))
+		a.Nil(testEnv.client.GetMulti(ctx, keys, stored))
 		a.NotNil(stored[0])
 		a.EqStr("example-a", stored[0].ID)
 	})
 
 	t.Run("DeleteMulti", func(t *testing.T) {
 		a := assert.New(t)
-		a.Nil(testEnvironment.Reset())
-		a.Nil(testEnvironment.LoadFixture("./fixtures/TestGetMulti.json"))
+		a.Nil(testEnv.Reset())
+		a.Nil(testEnv.LoadFixture("./fixtures/TestGetMulti.json"))
 
 		ctx := context.Background()
-		c := NewClientFromClient(ctx, testEnvironment.client, Cache(testEnvironment.memcache))
+		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 
 		keys := []*datastore.Key{
 			NewKey(ctx, "Example", "example-1"),
@@ -92,8 +92,8 @@ func TestClient(t *testing.T) {
 
 	t.Run("Query", func(t *testing.T) {
 		a := assert.New(t)
-		a.Nil(testEnvironment.Reset())
-		a.Nil(testEnvironment.LoadFixture("./fixtures/TestQuery.json"))
+		a.Nil(testEnv.Reset())
+		a.Nil(testEnv.LoadFixture("./fixtures/TestQuery.json"))
 
 		t.Run("KeysOnly", func(t *testing.T) {
 			a := assert.New(t)

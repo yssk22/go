@@ -115,16 +115,16 @@ func (e *emulator) Shutdown() error {
 	return nil
 }
 
-// TestEnviornment is a struct to provide a helper
-type TestEnviornment struct {
+// TestEnv is a struct to provide a helper
+type TestEnv struct {
 	context  context.Context
 	memcache cache.Cache
 	emulator *emulator
 	client   *datastore.Client
 }
 
-// NewTestEnviornment returns a new TestEnviornment instance
-func NewTestEnviornment() (*TestEnviornment, error) {
+// NewTestEnv returns a new TestEnv instance
+func NewTestEnv() (*TestEnv, error) {
 	ctx := context.Background()
 	emulator, err := startEmulator()
 	if err != nil {
@@ -138,7 +138,7 @@ func NewTestEnviornment() (*TestEnviornment, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &TestEnviornment{
+	return &TestEnv{
 		context:  ctx,
 		memcache: &cache.MemoryCache{},
 		emulator: emulator,
@@ -146,30 +146,30 @@ func NewTestEnviornment() (*TestEnviornment, error) {
 	}, nil
 }
 
-// MustNewTestEnviornment is like MustNewTestEnviornment, but panic if an error occurs
-func MustNewTestEnviornment() *TestEnviornment {
-	te, err := NewTestEnviornment()
+// MustNewTestEnv is like MustNewTestEnv, but panic if an error occurs
+func MustNewTestEnv() *TestEnv {
+	te, err := NewTestEnv()
 	xerrors.MustNil(err)
 	return te
 }
 
 // GetClient returns *datastore.Client that sends requests to the test environment emulator
-func (te *TestEnviornment) GetClient() *Client {
+func (te *TestEnv) GetClient() *Client {
 	return NewClientFromClient(context.Background(), te.client, Cache(te.memcache))
 }
 
 // GetCache returns a cache client
-func (te *TestEnviornment) GetCache() cache.Cache {
+func (te *TestEnv) GetCache() cache.Cache {
 	return te.memcache
 }
 
 // Shutdown shuts down the environment
-func (te *TestEnviornment) Shutdown() error {
+func (te *TestEnv) Shutdown() error {
 	return te.emulator.Shutdown()
 }
 
 // Reset resets the environment
-func (te *TestEnviornment) Reset() error {
+func (te *TestEnv) Reset() error {
 	ctx := context.Background()
 	te.memcache.Clear(ctx)
 	// datastore cleanup
@@ -200,7 +200,7 @@ func (te *TestEnviornment) Reset() error {
 }
 
 // LoadFixture loads the fixture data from `path`
-func (te *TestEnviornment) LoadFixture(path string) error {
+func (te *TestEnv) LoadFixture(path string) error {
 	buff, err := ioutil.ReadFile(path)
 	if err != nil {
 		return xerrors.Wrap(err, "could not load fixture file from %s", path)
@@ -218,7 +218,7 @@ func (te *TestEnviornment) LoadFixture(path string) error {
 }
 
 // MustLoadFixture is like LoadFixture but panic if an error occurs
-func (te *TestEnviornment) MustLoadFixture(path string) {
+func (te *TestEnv) MustLoadFixture(path string) {
 	xerrors.MustNil(te.LoadFixture(path))
 }
 
@@ -334,7 +334,7 @@ func json2Properties(k string, v interface{}) []datastore.Property {
 	return propertyList
 }
 
-func (te *TestEnviornment) json2Datastore(pkey *datastore.Key, data map[string]interface{}) error {
+func (te *TestEnv) json2Datastore(pkey *datastore.Key, data map[string]interface{}) error {
 	ctx, logger := xlog.WithContextAndKey(te.context, "", fixtureLoggerKey)
 	var kind string
 	var keyval interface{}

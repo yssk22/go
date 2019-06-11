@@ -6,12 +6,12 @@ import (
 	"testing"
 )
 
-var testEnvironment *TestEnviornment
+var testEnv *TestEnv
 
 func TestMain(m *testing.M) {
-	testEnvironment = MustNewTestEnviornment()
+	testEnv = MustNewTestEnv()
 	state := m.Run()
-	err := testEnvironment.Shutdown()
+	err := testEnv.Shutdown()
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)

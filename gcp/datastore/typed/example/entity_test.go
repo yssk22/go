@@ -13,15 +13,15 @@ import (
 	"github.com/yssk22/go/x/xtime"
 )
 
-var testEnvironment *datastore.TestEnviornment
+var testEnv *datastore.TestEnv
 var testClient *EntityKindClient
 
 func TestMain(m *testing.M) {
-	testEnvironment = datastore.MustNewTestEnviornment()
-	testClient = NewEntityKindClient(testEnvironment.GetClient())
+	testEnv = datastore.MustNewTestEnv()
+	testClient = NewEntityKindClient(testEnv.GetClient())
 
 	state := m.Run()
-	err := testEnvironment.Shutdown()
+	err := testEnv.Shutdown()
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 func newEntityTestRunner(t *testing.T) *xtesting.Runner {
 	r := xtesting.NewRunner(t)
 	r.Setup = func(a *assert.Assert) {
-		a.Nil(testEnvironment.Reset())
+		a.Nil(testEnv.Reset())
 	}
 	return r
 }
@@ -42,7 +42,7 @@ func TestEntityKindClient(t *testing.T) {
 	r := newEntityTestRunner(t)
 
 	r.Run("Get", func(a *assert.Assert) {
-		a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_Get.json"))
+		a.Nil(testEnv.LoadFixture("./fixture/TestEntity_Get.json"))
 		_, value, err := testClient.Get(ctx, "entity-1")
 		a.Nil(err)
 		a.NotNil(value)
@@ -50,7 +50,7 @@ func TestEntityKindClient(t *testing.T) {
 	})
 
 	r.Run("GetMulti", func(a *assert.Assert) {
-		a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_GetMulti.json"))
+		a.Nil(testEnv.LoadFixture("./fixture/TestEntity_GetMulti.json"))
 
 		keys, values, err := testClient.GetMulti(ctx, []string{"entity-1", "entity-2"})
 		a.Nil(err)
@@ -96,7 +96,7 @@ func TestEntityKindClient(t *testing.T) {
 	})
 
 	r.Run("DeleteMulti", func(a *assert.Assert) {
-		a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_DeleteMulti.json"))
+		a.Nil(testEnv.LoadFixture("./fixture/TestEntity_DeleteMulti.json"))
 
 		keys, err := testClient.DeleteMulti(ctx, []string{"entity-1", "entity-2"})
 		a.Nil(err)
@@ -108,7 +108,7 @@ func TestEntityKindClient(t *testing.T) {
 	})
 
 	r.Run("ReplaceMulti", func(a *assert.Assert) {
-		a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_ReplaceMulti.json"))
+		a.Nil(testEnv.LoadFixture("./fixture/TestEntity_ReplaceMulti.json"))
 		replacer := EntityReplacerFunc(func(e1 *Entity, e2 *Entity) *Entity {
 			if e2.Desc != "" {
 				e1.Desc = e2.Desc
@@ -146,7 +146,7 @@ func TestEntityKindClient(t *testing.T) {
 	t.Run("Query", func(t *testing.T) {
 		r := newEntityTestRunner(t)
 		r.Run("GetAll", func(a *assert.Assert) {
-			a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_GetAll.json"))
+			a.Nil(testEnv.LoadFixture("./fixture/TestEntity_GetAll.json"))
 
 			keys, values, err := testClient.GetAll(ctx, NewEntityQuery().EqID("entity-2"))
 			a.Nil(err)
@@ -161,7 +161,7 @@ func TestEntityKindClient(t *testing.T) {
 			a.EqStr("entity-2 description", values[0].Desc)
 
 			var cached = make([]*Entity, 1, 1)
-			err = testEnvironment.GetCache().GetMulti(ctx, []string{
+			err = testEnv.GetCache().GetMulti(ctx, []string{
 				datastore.GetCacheKey(keys[0]),
 			}, cached)
 			a.Nil(err)
@@ -170,7 +170,7 @@ func TestEntityKindClient(t *testing.T) {
 		})
 
 		r.Run("Run", func(a *assert.Assert) {
-			a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_GetAll.json"))
+			a.Nil(testEnv.LoadFixture("./fixture/TestEntity_GetAll.json"))
 			iter, err := testClient.Run(ctx, NewEntityQuery().EqID("entity-2"))
 			a.Nil(err)
 			_, value := iter.MustNext()
@@ -188,7 +188,7 @@ func TestEntityKindClient(t *testing.T) {
 			a.EqStr("entity-2 description", value.Desc)
 
 			var cached = make([]*Entity, 1, 1)
-			err = testEnvironment.GetCache().GetMulti(ctx, []string{
+			err = testEnv.GetCache().GetMulti(ctx, []string{
 				datastore.GetCacheKey(key),
 			}, cached)
 			a.Nil(err)
@@ -197,7 +197,7 @@ func TestEntityKindClient(t *testing.T) {
 		})
 
 		r.Run("RunAll", func(a *assert.Assert) {
-			a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_GetAll.json"))
+			a.Nil(testEnv.LoadFixture("./fixture/TestEntity_GetAll.json"))
 
 			_, values, next := testClient.MustRunAll(ctx, NewEntityQuery().EqID("entity-2").ViaKeys())
 			a.EqInt(1, len(values))
@@ -207,7 +207,7 @@ func TestEntityKindClient(t *testing.T) {
 		})
 
 		r.Run("DeleteMatched", func(a *assert.Assert) {
-			a.Nil(testEnvironment.LoadFixture("./fixture/TestEntity_DeleteMatched.json"))
+			a.Nil(testEnv.LoadFixture("./fixture/TestEntity_DeleteMatched.json"))
 
 			a.EqInt(4, testClient.MustCount(ctx, NewEntityQuery()))
 			q := NewEntityQuery().LeDigit(2)

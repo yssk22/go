@@ -36,25 +36,25 @@ type FixtureKindStruct struct {
 	Foo string
 }
 
-func TestTestEnvironment(t *testing.T) {
+func TestTestEnv(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 	key := datastore.NameKey("MyKind", "foo", nil)
-	a.Nil(testEnvironment.memcache.SetMulti(ctx, []string{"foo"}, []string{"bar"}))
-	_, err := testEnvironment.client.Put(ctx, key, &Example{ID: "bar"})
+	a.Nil(testEnv.memcache.SetMulti(ctx, []string{"foo"}, []string{"bar"}))
+	_, err := testEnv.client.Put(ctx, key, &Example{ID: "bar"})
 	a.Nil(err)
 
 	var e Example
 	s := make([]string, 1, 1)
-	a.Nil(testEnvironment.memcache.GetMulti(ctx, []string{"foo"}, s))
-	a.Nil(testEnvironment.client.Get(ctx, key, &e))
+	a.Nil(testEnv.memcache.GetMulti(ctx, []string{"foo"}, s))
+	a.Nil(testEnv.client.Get(ctx, key, &e))
 
 	a.EqStr(s[0], "bar")
 	a.EqStr(e.ID, "bar")
-	a.Nil(testEnvironment.Reset())
+	a.Nil(testEnv.Reset())
 
-	a.NotNil(testEnvironment.memcache.GetMulti(ctx, []string{"foo"}, s))
-	c, err := testEnvironment.client.Count(ctx, datastore.NewQuery("MyKind"))
+	a.NotNil(testEnv.memcache.GetMulti(ctx, []string{"foo"}, s))
+	c, err := testEnv.client.Count(ctx, datastore.NewQuery("MyKind"))
 	a.Nil(err)
 	a.EqInt(0, c)
 }
@@ -82,11 +82,11 @@ func TestDatastoreFixture(t *testing.T) {
   }
 ]`)
 	a := assert.New(t)
-	a.Nil(testEnvironment.LoadFixture(filepath))
+	a.Nil(testEnv.LoadFixture(filepath))
 
 	var fk FixtureKind
 	key := datastore.NameKey("FixtureKind", "key1", nil)
-	a.Nil(testEnvironment.client.Get(context.Background(), key, &fk), "client.Get('key1') ")
+	a.Nil(testEnv.client.Get(context.Background(), key, &fk), "client.Get('key1') ")
 
 	a.EqInt(10, fk.IntValue, "IntValue should be 10")
 	a.EqFloat32(2.4, fk.FloatValue, "FloatValue should be 2.4")
@@ -103,6 +103,6 @@ func TestDatastoreFixture(t *testing.T) {
 	// namespace
 	key = datastore.NameKey("FixtureKind", "key1", nil)
 	key.Namespace = "ns1"
-	a.Nil(testEnvironment.client.Get(context.Background(), key, &fk), "client.Get('ns1.key1') ")
+	a.Nil(testEnv.client.Get(context.Background(), key, &fk), "client.Get('ns1.key1') ")
 	a.EqStr("withns1", fk.StringValue, "StringValue should be 'withns1'")
 }
