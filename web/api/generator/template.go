@@ -1,4 +1,4 @@
-package api
+package generator
 
 import "github.com/yssk22/go/generator"
 

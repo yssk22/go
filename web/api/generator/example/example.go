@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/yssk22/go/generator/api/example/types"
+	"github.com/yssk22/go/web/api/generator/example/types"
 )
 
 // Example struct

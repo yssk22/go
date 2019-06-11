@@ -3,7 +3,7 @@ package example
 import (
 	"testing"
 
-	"github.com/yssk22/go/generator/api/example/types"
+	"github.com/yssk22/go/web/api/generator/example/types"
 	tt "github.com/yssk22/go/types"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/api"

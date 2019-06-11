@@ -10,7 +10,7 @@ import (
 
 	"github.com/yssk22/go/generator"
 	"github.com/yssk22/go/generator/enum"
-	"github.com/yssk22/go/generator/api"
+	api "github.com/yssk22/go/web/api/generator"
 	"github.com/yssk22/go/gcp/datastore/typed"
 	"github.com/yssk22/go/iterator/slice"
 	"github.com/yssk22/go/x/xstrings"

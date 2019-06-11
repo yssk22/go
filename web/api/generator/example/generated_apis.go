@@ -4,9 +4,9 @@ package example
 
 import (
 	"encoding/json"
-	"github.com/yssk22/go/generator/api/example/types"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/api"
+	"github.com/yssk22/go/web/api/generator/example/types"
 	"github.com/yssk22/go/web/response"
 )
 
