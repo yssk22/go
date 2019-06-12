@@ -3,10 +3,10 @@ package example
 import (
 	"testing"
 
-	"github.com/yssk22/go/web/api/generator/example/types"
 	tt "github.com/yssk22/go/types"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/api"
+	"github.com/yssk22/go/web/api/generator/example/types"
 	"github.com/yssk22/go/web/httptest"
 	"github.com/yssk22/go/web/response"
 )
@@ -55,7 +55,7 @@ func Test_getExampleWithExtraParam(t *testing.T) {
 	// test default
 	resp := recorder.TestGet("/path/to/example/p1/2/?str_val_required=rfoo&str_ptr_required=rbar")
 	a.Status(response.HTTPStatusOK, resp)
-	var data types.RequestParams
+	var data types.QueryParams
 	a.JSON(&data, resp)
 	a.EqStr("rfoo", data.StrValRequired)
 	a.EqStr("foo", data.StrValDefault)
@@ -95,6 +95,22 @@ func Test_getExampleWithExtraParamWithValidation(t *testing.T) {
 	a.EqInt(1, len(fieldErrors))
 	a.EqInt(1, len(fieldErrors["int_val"]))
 	a.EqStr("must be more than or equal to 0", fieldErrors["int_val"][0])
+}
+
+func Test_StructAPI(t *testing.T) {
+	a := httptest.NewAssert(t)
+	router := web.NewRouter(web.DefaultOption)
+	s := &StructExample{
+		response: "hello",
+	}
+	s.SetupAPI(router)
+
+	recorder := httptest.NewRecorder(router)
+	// test default
+	var msg string
+	resp := recorder.TestGet("/path/to/struct_example/world/")
+	a.JSON(&msg, resp)
+	a.EqStr("hello world", msg)
 }
 
 // func Test_getExampleWithExtraParam_400(t *testing.T) {

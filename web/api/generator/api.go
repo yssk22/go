@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"log"
 	"sort"
 	"strings"
 	"text/template"
@@ -55,14 +56,14 @@ func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotat
 		Package:    pkg.Name,
 		Dependency: dep,
 	}
-	specs, err := b.collectSpecs(pkg, nodes)
+	groups, err := b.collectSpecs(pkg, nodes)
 	if err != nil {
 		return nil, err
 	}
-	if len(specs) == 0 {
+	if len(groups) == 0 {
 		return nil, nil
 	}
-	b.Specs = specs
+	b.Groups = groups
 	var buff bytes.Buffer
 	t := template.Must(template.New("template").Funcs(templateHelper).Parse(templateFile))
 	if err = t.Execute(&buff, b); err != nil {
@@ -77,7 +78,7 @@ func (api *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotat
 	return result, nil
 }
 
-func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*Spec, error) {
+func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.AnnotatedNode) ([]*SpecGroup, error) {
 	var specs []*Spec
 	var errors []error
 	for _, n := range nodes {
@@ -102,8 +103,8 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 		return strings.Compare(string(a.Method), string(b.Method)) < 0
 	})
 
-	// resolve dependencies
 	for _, s := range specs {
+		// resolve dependencies
 		if s.StructuredParameter != nil {
 			b.Dependency.Add("github.com/yssk22/go/web/api")
 			b.Dependency.Add("encoding/json")
@@ -114,7 +115,38 @@ func (b *bindings) collectSpecs(pkg *generator.PackageInfo, nodes []*generator.A
 		}
 	}
 
-	return specs, nil
+	return groupByReceiverTypeName(specs), nil
+}
+
+func groupByReceiverTypeName(specs []*Spec) []*SpecGroup {
+	m := make(map[string]*SpecGroup)
+	for _, s := range specs {
+		// and grouping
+		if group, ok := m[s.ReceiverTypeName]; ok {
+			group.Specs = append(group.Specs, s)
+		} else {
+			m[s.ReceiverTypeName] = &SpecGroup{
+				ReceiverName:     s.ReceiverName,
+				ReceiverTypeName: s.ReceiverTypeName,
+				Specs:            []*Spec{s},
+			}
+		}
+	}
+	var groups []*SpecGroup
+	for _, g := range m {
+		// normalize ReceiverName
+		for _, s := range g.Specs {
+			s.ReceiverName = g.ReceiverName
+		}
+		groups = append(groups, g)
+	}
+
+	// sort
+	sort.Slice(groups, func(i, j int) bool {
+		a, b := groups[i], groups[j]
+		return strings.Compare(a.ReceiverTypeName, b.ReceiverTypeName) < 0
+	})
+	return groups
 }
 
 func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*Spec, error) {
@@ -122,6 +154,14 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 	node, ok := s.Node.(*ast.FuncDecl)
 	if !ok {
 		return nil, s.GenError(fmt.Errorf("@api is used on non func"), nil)
+	}
+	if node.Recv != nil {
+		var err error
+		spec.ReceiverName, spec.ReceiverTypeName, err = getReceiverVarAndType(pkg.TypeInfo.Defs[node.Recv.List[0].Names[0]])
+		if err != nil {
+			return nil, s.GenError(err, node)
+		}
+		log.Println(spec.ReceiverName, spec.ReceiverTypeName)
 	}
 	params := s.GetParamsBy(annotation)
 
@@ -246,6 +286,19 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		), node)
 	}
 	return &spec, nil
+}
+
+func getReceiverVarAndType(arg types.Object) (string, string, error) {
+	p, ok := arg.Type().(*types.Pointer)
+	if !ok {
+		return "", "", fmt.Errorf("Receiver %s must be a pointer of named struct but %s", arg.Name(), arg.Type().String())
+	}
+	n, ok := p.Elem().(*types.Named)
+	if !ok {
+		return "", "", fmt.Errorf("%s must be a pointer of named struct but %s", arg.Name(), p.Elem().String())
+	}
+	obj := n.Obj()
+	return arg.Name(), fmt.Sprintf("*%s", obj.Name()), nil
 }
 
 func getParameterParser(pkg *generator.PackageInfo, arg types.Object, format api.RequestParameterFormat) (*StructuredParameter, error) {

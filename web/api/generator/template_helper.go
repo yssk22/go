@@ -27,7 +27,11 @@ var templateHelper = template.FuncMap(map[string]interface{}{
 
 	"genExecMethodAndReturn": func(v *Spec) string {
 		var buff bytes.Buffer
-		buff.WriteString(v.FuncName)
+		if v.ReceiverName != "" {
+			buff.WriteString(fmt.Sprintf("%s.%s", v.ReceiverName, v.FuncName))
+		} else {
+			buff.WriteString(v.FuncName)
+		}
 		buff.WriteString("(\n")
 		buff.WriteString("req.Context(),\n")
 		for _, p := range v.PathParameters {

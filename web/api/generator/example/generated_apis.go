@@ -17,7 +17,7 @@ func SetupAPI(r web.Router) {
 		&_deleteExampleParameterParser,
 	)
 	r.Delete("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp types.RequestParams
+		var sp types.QueryParams
 		if err := _deleteExampleParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
@@ -37,7 +37,7 @@ func SetupAPI(r web.Router) {
 		&_createExampleParameterParser,
 	)
 	r.Post("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp Example
+		var sp types.BodyParams
 		if err := _createExampleParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
@@ -57,7 +57,7 @@ func SetupAPI(r web.Router) {
 		&_updateExampleParameterParser,
 	)
 	r.Put("/path/to/example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp Example
+		var sp types.BodyParams
 		if err := _updateExampleParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
@@ -77,7 +77,7 @@ func SetupAPI(r web.Router) {
 		&_getExampleWithExtraParamParameterParser,
 	)
 	r.Get("/path/to/example/:param/2/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp types.RequestParams
+		var sp types.QueryParams
 		if err := _getExampleWithExtraParamParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
@@ -109,7 +109,6 @@ func SetupAPI(r web.Router) {
 			req.Params.GetStringOr("param2", ""),
 		)
 		return api.OK
-
 	}))
 	r.Get("/path/to/example/:param/:param2/only_error/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		err := getExampleOnlyError(
@@ -121,7 +120,6 @@ func SetupAPI(r web.Router) {
 			return api.NewErrorResponse(err)
 		}
 		return api.OK
-
 	}))
 	var _createExample2ParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -129,7 +127,7 @@ func SetupAPI(r web.Router) {
 		&_createExample2ParameterParser,
 	)
 	r.Post("/path/to/example2/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		var sp types.ComplexRequestParams
+		var sp types.ComplexQueryParams
 		if err := _createExample2ParameterParser.Parse(req.Request, &sp); err != nil {
 			return err.ToResponse()
 		}
@@ -137,6 +135,18 @@ func SetupAPI(r web.Router) {
 			req.Context(),
 			req.Params.GetStringOr("param", ""),
 			&sp,
+		)
+		if err != nil {
+			return api.NewErrorResponse(err)
+		}
+		return response.NewJSON(obj)
+	}))
+}
+func (se *StructExample) SetupAPI(r web.Router) {
+	r.Get("/path/to/struct_example/:param/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
+		obj, err := se.getStructExample(
+			req.Context(),
+			req.Params.GetStringOr("param", ""),
 		)
 		if err != nil {
 			return api.NewErrorResponse(err)

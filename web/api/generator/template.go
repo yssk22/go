@@ -5,7 +5,7 @@ import "github.com/yssk22/go/generator"
 type bindings struct {
 	Package    string
 	Dependency *generator.Dependency
-	Specs      []*Spec
+	Groups     []*SpecGroup
 }
 
 const templateFile = `
@@ -13,7 +13,12 @@ package {{.Package}}
 
 {{.Dependency.GenImport}}
 
+{{range .Groups -}}
+{{if eq .ReceiverName "" }}
 func SetupAPI(r web.Router) {
+{{else -}}
+func ({{.ReceiverName}} {{.ReceiverTypeName}}) SetupAPI(r web.Router) {
+{{end -}}
 	{{range .Specs -}}
 	{{if .StructuredParameter -}}
 	var _{{.FuncName}}ParameterParser api.ParameterParser
@@ -29,8 +34,9 @@ func SetupAPI(r web.Router) {
 				return err.ToResponse()
 			}
 			{{end -}}
-			{{genExecMethodAndReturn .}}
+			{{genExecMethodAndReturn . -}}
 		}))
 	{{end -}}
 }
+{{end }}
 `

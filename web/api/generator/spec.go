@@ -27,8 +27,17 @@ const (
 	returnTypeObjectAndError = "object_and_error"
 )
 
+// SpecGroup is a struct to group by ReceiverTypeName
+type SpecGroup struct {
+	ReceiverTypeName string
+	ReceiverName     string
+	Specs            []*Spec
+}
+
 // Spec represents API specification
 type Spec struct {
+	ReceiverTypeName    string
+	ReceiverName        string
 	PathPattern         string
 	PathParameters      []string
 	StructuredParameter *StructuredParameter
