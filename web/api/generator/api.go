@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"log"
 	"sort"
 	"strings"
 	"text/template"
@@ -161,7 +160,6 @@ func parseAnnotation(pkg *generator.PackageInfo, s *generator.AnnotatedNode) (*S
 		if err != nil {
 			return nil, s.GenError(err, node)
 		}
-		log.Println(spec.ReceiverName, spec.ReceiverTypeName)
 	}
 	params := s.GetParamsBy(annotation)
 

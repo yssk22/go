@@ -3,12 +3,13 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"go/format"
 	"io"
 	"os/exec"
 	"strings"
 
+	"github.com/sqs/goreturns/returns"
 	"github.com/yssk22/go/x/xerrors"
+	"golang.org/x/tools/imports"
 )
 
 type Formatter interface {
@@ -25,11 +26,25 @@ func (f FormatterFunc) Format(s string) (string, error) {
 
 // GoFormatter is a formatter for go.
 var GoFormatter = FormatterFunc(func(src string) (string, error) {
-	formatted, err := format.Source([]byte(src))
+	formatted, err := imports.Process("", []byte(src), &imports.Options{
+		Fragment:  true,
+		Comments:  true,
+		TabIndent: true,
+		TabWidth:  8,
+	})
 	if err != nil {
 		return "", &InvalidSourceError{
 			Source: src,
-			err:    err,
+			err:    xerrors.Wrap(err, "failed to run goimports.Process"),
+		}
+	}
+	formatted, err = returns.Process("", "", formatted, &returns.Options{
+		Fragment: true,
+	})
+	if err != nil {
+		return "", &InvalidSourceError{
+			Source: src,
+			err:    xerrors.Wrap(err, "failed to run goreturns.Process"),
 		}
 	}
 	return strings.Join([]string{
