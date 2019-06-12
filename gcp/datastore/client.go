@@ -18,6 +18,18 @@ type Client struct {
 	config *clientConfig
 }
 
+var contextClientKey = struct{}{}
+
+// WithClient setup a *Client for the current context which can be referred by FromContext
+func WithClient(ctx context.Context, client *Client) context.Context {
+	return context.WithValue(ctx, contextClientKey, client)
+}
+
+// FromContext returns a *Client for the current context
+func FromContext(ctx context.Context) *Client {
+	return ctx.Value(contextClientKey).(*Client)
+}
+
 // NewClient returns a new Client
 func NewClient(ctx context.Context, projectID string, options ...Option) *Client {
 	config := newClientConfig(options...)
