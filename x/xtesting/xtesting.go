@@ -21,8 +21,8 @@ func IsTesting() bool {
 // Runner is a struct to run a test
 type Runner struct {
 	t        *testing.T
-	Setup    func(a *assert.Assert)
-	Teardown func(a *assert.Assert)
+	setup    func(a *assert.Assert)
+	teardown func(a *assert.Assert)
 }
 
 // NewRunner returns a *Runner
@@ -32,27 +32,37 @@ func NewRunner(t *testing.T) *Runner {
 	}
 }
 
+// Setup sets the function to be executed on every test execution
+func (r *Runner) Setup(f func(a *assert.Assert)) {
+	r.setup = f
+}
+
+// Teardown sets the function to be executed on every test execution
+func (r *Runner) Teardown(f func(a *assert.Assert)) {
+	r.teardown = f
+}
+
 // Run runs a test
 func (r *Runner) Run(name string, f func(a *assert.Assert)) {
 	r.t.Run(name, func(t *testing.T) {
 		a := assert.New(t)
 		defer func() {
 			if err := recover(); err != nil {
-				if r.Teardown != nil {
+				if r.teardown != nil {
 					defer func() {
 						if err := recover(); err != nil {
 							t.Errorf("panic detected on Teardown: %v", err)
 						}
 					}()
 					t.Logf("%s:Teardown", t.Name())
-					r.Teardown(a)
+					r.teardown(a)
 					t.Errorf("panic detected on Setup or test itself: %v", err)
 				}
 			}
 		}()
-		if r.Setup != nil {
+		if r.setup != nil {
 			t.Logf("%s:Setup", t.Name())
-			r.Setup(a)
+			r.setup(a)
 		}
 		f(a)
 	})
