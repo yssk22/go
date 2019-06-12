@@ -46,7 +46,6 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 
 	errors := SliceError(make([]error, l))
-	panics := SliceError(make([]error, l))
 	eachSize := l / n
 	a := reflect.ValueOf(SplitByLength(list, eachSize))
 
@@ -60,11 +59,6 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 			for j := 0; j < v.Len(); j++ {
 				idx := i*eachSize + j
 				func() {
-					defer func() {
-						if x := recover(); x != nil {
-							panics[idx] = fmt.Errorf("%v", x)
-						}
-					}()
 					v1 := v.Index(j)
 					if shouldUsePtr {
 						v1 = v1.Addr()
@@ -79,14 +73,6 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	}
 	wg.Wait()
 	any := false
-	for i := 0; i < l; i++ {
-		if panics[i] != nil {
-			any = true
-		}
-	}
-	if any {
-		panic(panics)
-	}
 	for i := 0; i < l; i++ {
 		if errors[i] != nil {
 			any = true

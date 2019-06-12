@@ -76,18 +76,3 @@ func ExampleParallel_withError() {
 	fmt.Println(err)
 	// Output: error at 0 (and 3 other errors)
 }
-
-func ExampleParallel_withPanic() {
-	defer func() {
-		x := recover()
-		fmt.Println(x)
-	}()
-	var a = []int{0, 1, 2, 3, 4}
-	Parallel(a, DefaultParallelOption, func(i int, v int) error {
-		if i%2 == 0 {
-			panic(fmt.Errorf("panic at %d", i))
-		}
-		return nil
-	})
-	// Output: panic at 0 (and 3 other errors)
-}
