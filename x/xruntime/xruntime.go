@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-
-	"github.com/yssk22/go/x/xerrors"
 )
 
 // Frame is a stack frame
@@ -105,7 +103,9 @@ func lookupGoModuleInfoFromFilePath(path string) (string, string) {
 		panic(err)
 	}
 	contents, err := ioutil.ReadFile(gomod)
-	xerrors.MustNil(err)
+	if err != nil {
+		panic(err)
+	}
 	found := moduleDefRe.Copy().FindSubmatch(contents)
 	if len(found) == 0 {
 		panic(fmt.Errorf("could not find module declaration in %s", gomod))
@@ -125,4 +125,18 @@ func getPackageAndFunction(f *runtime.Func) (string, string) {
 		}
 	}
 	return "", fullName
+}
+
+// CollectAllStacksSimple returns a list of stack frame with "{source}:{line}" format
+func CollectAllStacksSimple() []string {
+	var stack []string
+	c := 0
+	for {
+		_, src, line, ok := runtime.Caller(c)
+		if !ok {
+			return stack[1:]
+		}
+		stack = append(stack, fmt.Sprintf("%s:%d", src, line))
+		c++
+	}
 }

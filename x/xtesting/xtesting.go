@@ -2,8 +2,10 @@ package xtesting
 
 import (
 	"flag"
+	"strings"
 	"testing"
 
+	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
@@ -51,17 +53,20 @@ func (r *Runner) Run(name string, f func(a *assert.Assert)) {
 				if r.teardown != nil {
 					defer func() {
 						if err := recover(); err != nil {
-							t.Errorf("panic detected on Teardown: %v", err)
+							stacks := xruntime.CollectAllStacksSimple()
+							t.Errorf("panic: %v\n%s", err, strings.Join(stacks, "\n"))
 						}
 					}()
-					t.Logf("%s:Teardown", t.Name())
 					r.teardown(a)
-					t.Errorf("panic detected on Setup or test itself: %v", err)
+					stacks := xruntime.CollectAllStacksSimple()
+					t.Errorf("panic: %v\n%s", err, strings.Join(stacks, "\n"))
+				} else {
+					stacks := xruntime.CollectAllStacksSimple()
+					t.Errorf("panic: %v\n%s", err, strings.Join(stacks, "\n"))
 				}
 			}
 		}()
 		if r.setup != nil {
-			t.Logf("%s:Setup", t.Name())
 			r.setup(a)
 		}
 		f(a)
