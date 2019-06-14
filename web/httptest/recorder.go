@@ -53,43 +53,43 @@ func NewRecorderWithFactory(handler http.Handler, factory RequestFactory) *Recor
 }
 
 // TestGet make a test GET request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestGet(path string) *ResponseRecorder {
+func (r *Recorder) TestGet(path string, options ...RequestOption) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	req := r.NewRequest("GET", path, nil)
+	req := r.NewRequest("GET", path, nil, options...)
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return &ResponseRecorder{w, req}
 }
 
 // TestPost make a test POST request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestPost(path string, v interface{}) *ResponseRecorder {
+func (r *Recorder) TestPost(path string, v interface{}, options ...RequestOption) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	req := r.NewRequest("POST", path, v)
+	req := r.NewRequest("POST", path, v, options...)
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return &ResponseRecorder{w, req}
 }
 
 // TestPut make a test PUT request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestPut(path string, v interface{}) *ResponseRecorder {
+func (r *Recorder) TestPut(path string, v interface{}, options ...RequestOption) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	req := r.NewRequest("PUT", path, v)
+	req := r.NewRequest("PUT", path, v, options...)
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return &ResponseRecorder{w, req}
 }
 
 // TestDelete make a test DELETE request to the router and returns the response as *http.ResponseRecorder
-func (r *Recorder) TestDelete(path string) *ResponseRecorder {
+func (r *Recorder) TestDelete(path string, options ...RequestOption) *ResponseRecorder {
 	w := httptest.NewRecorder()
-	req := r.NewRequest("DELETE", path, nil)
+	req := r.NewRequest("DELETE", path, nil, options...)
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return &ResponseRecorder{w, req}
 }
 
 // NewRequest returns http.Request with request body given by `v`
-func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request {
+func (r *Recorder) NewRequest(method, path string, v interface{}, options ...RequestOption) *http.Request {
 	var err error
 	var req *http.Request
 	var factory = r.requestFactory
@@ -110,11 +110,14 @@ func (r *Recorder) NewRequest(method, path string, v interface{}) *http.Request 
 			if err != nil {
 				panic(fmt.Errorf("Could not marshal the request body : %v (must be url.Values, io.Reader, or json marhslable.)", v))
 			}
-			req, err = factory.NewRequest("POST", path, bytes.NewReader(buff))
+			req, err = factory.NewRequest(method, path, bytes.NewReader(buff))
 		}
 	}
 	if err != nil {
 		panic(fmt.Errorf("Could not prepare a request: %v", err))
+	}
+	for _, opts := range options {
+		req = opts(req)
 	}
 	for _, c := range r.Cookies {
 		req.AddCookie(c)
@@ -128,4 +131,15 @@ func (r *Recorder) TestRequest(req *http.Request) *ResponseRecorder {
 	r.handler.ServeHTTP(w, req)
 	r.Cookies, _ = xhttptest.GetCookies(w)
 	return &ResponseRecorder{w, req}
+}
+
+// RequestOption is a option function to configure a request
+type RequestOption func(req *http.Request) *http.Request
+
+// Header set the request header for Test functions
+func Header(key string, value string) RequestOption {
+	return func(req *http.Request) *http.Request {
+		req.Header.Set(key, value)
+		return req
+	}
 }
