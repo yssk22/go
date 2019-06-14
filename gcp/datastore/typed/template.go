@@ -272,6 +272,17 @@ func (d *{{.StructName}}KindClient) GetAll(ctx context.Context, q *{{.StructName
 	}
 }
 
+func (d *{{.StructName}}KindClient) GetOne(ctx context.Context, q *{{.StructName}}Query) (*datastore.Key, *{{.StructName}}, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
+}
+
 func (d *{{.StructName}}KindClient) MustGetAll(ctx context.Context, q *{{.StructName}}Query) ([]*datastore.Key, []{{.StructName}}) {
 	keys, ents, err := d.GetAll(ctx, q)
 	xerrors.MustNil(err)
