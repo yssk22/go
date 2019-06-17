@@ -1,8 +1,12 @@
 package gcp
 
-import "context"
+import (
+	"context"
 
-var namespaceContextKey = struct{}{}
+	"github.com/yssk22/go/x/xcontext"
+)
+
+var namespaceContextKey = xcontext.NewKey("namespace")
 
 // WithNamespace sets the namespace for the current context
 // and returns the new context under that namespace

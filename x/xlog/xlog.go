@@ -38,6 +38,8 @@ import (
 	"os"
 
 	"context"
+
+	"github.com/yssk22/x/xcontext"
 )
 
 var defaultOption = &Option{
@@ -79,7 +81,7 @@ func WithKey(name string) *Logger {
 	return defaultLogger.WithKey(name)
 }
 
-var loggerContextKey = struct{}{}
+var loggerContextKey = xcontext.NewKey("logger")
 
 // WithContext returns a shallow copy of global Logger with its context changed to ctx.
 func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) {
