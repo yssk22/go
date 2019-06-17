@@ -14,6 +14,7 @@ import (
 // Router is an interface to set up http router
 type Router interface {
 	Use(...Handler)
+	All(string, ...Handler)
 	Get(string, ...Handler)
 	Post(string, ...Handler)
 	Put(string, ...Handler)
@@ -73,6 +74,14 @@ func (r *defaultRouter) printRoutes(method string, dst io.Writer) {
 // Use adds middleware handlers to process on every request before all handlers are processed.
 func (r *defaultRouter) Use(handlers ...Handler) {
 	r.middleware.Append(handlers...)
+}
+
+// All adds handlers for "GET|PUT|POST|DELETE {pattern}" requests
+func (r *defaultRouter) All(pattern string, handlers ...Handler) {
+	r.addRoute("GET", pattern, handlers...)
+	r.addRoute("PUT", pattern, handlers...)
+	r.addRoute("POST", pattern, handlers...)
+	r.addRoute("DELETE", pattern, handlers...)
 }
 
 // Get adds handlers for "GET {pattern}" requests
