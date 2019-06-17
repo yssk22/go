@@ -41,14 +41,6 @@ func NewRouter(option *Option) Router {
 	}
 
 	r.Get("/__debug__/routes", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
-		var logger = xlog.WithKey("web.router").WithContext(req.Context())
-		if r.option.OnDebugRequest == nil {
-			return nil
-		}
-		if err := r.option.OnDebugRequest(req); err != nil {
-			logger.Infof("OnDebugRequest reject access: %v", err)
-			return nil
-		}
 		var buff bytes.Buffer
 		r.printRoutes("GET", &buff)
 		r.printRoutes("POST", &buff)
