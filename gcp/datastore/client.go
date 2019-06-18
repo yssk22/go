@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/yssk22/go/cache"
 	"github.com/yssk22/go/iterator/slice"
+	"github.com/yssk22/go/x/xcontext"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xlog"
 )
@@ -18,7 +19,7 @@ type Client struct {
 	config *clientConfig
 }
 
-var contextClientKey = struct{}{}
+var contextClientKey = xcontext.NewKey("client")
 
 // WithClient setup a *Client for the current context which can be referred by FromContext
 func WithClient(ctx context.Context, client *Client) context.Context {

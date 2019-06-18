@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/yssk22/go/web/response"
 )
@@ -34,6 +36,7 @@ func NewErrorResponse(e error) *response.Response {
 		return apie.ToResponse()
 	}
 	// TODO: capture stack here
+	log.Println(fmt.Sprintf("internal error occurred - %s", strings.Join(stacks, "\n")))
 	return (&Error{
 		Code:    "internal_server_error",
 		Message: "unexpected server error occurred. please try again later.",
