@@ -20,8 +20,9 @@ func (h HandlerFunc) Process(r *Request, next NextHandler) *response.Response {
 }
 
 type handlerPipeline struct {
-	head *handlerPipelineItem
-	tail *handlerPipelineItem
+	head     *handlerPipelineItem
+	tail     *handlerPipelineItem
+	Handlers []Handler // keep all handlers to concat
 }
 
 func (p *handlerPipeline) Process(req *Request, next NextHandler) *response.Response {
@@ -49,6 +50,7 @@ func (p *handlerPipeline) Append(handlers ...Handler) {
 			p.tail = item
 		}
 	}
+	p.Handlers = append(p.Handlers, handlers...)
 }
 
 type handlerPipelineItem struct {
@@ -59,7 +61,11 @@ type handlerPipelineItem struct {
 func (pi *handlerPipelineItem) Process(req *Request, next NextHandler) *response.Response {
 	return pi.Node.Process(req, func(r *Request) *response.Response {
 		if pi.Next == nil {
-			return next(r)
+			// next can be nil if no more pipeline item is defined
+			if next != nil {
+				return next(r)
+			}
+			return nil
 		}
 		return pi.Next.Process(r, next)
 	})

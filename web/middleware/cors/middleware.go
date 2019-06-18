@@ -47,13 +47,15 @@ func (m *middleware) Process(req *web.Request, next web.NextHandler) *response.R
 	} else {
 		resp = next(req)
 	}
-	if m.all {
-		resp.Header.Add("Access-Control-Allow-Origin", "*")
-	} else {
-		origin := req.Request.Header.Get("Origin")
-		if origin != "" {
-			if _, ok := m.m[origin]; ok {
-				resp.Header.Add("Access-Control-Allow-Origin", origin)
+	if resp != nil {
+		if m.all {
+			resp.Header.Add("Access-Control-Allow-Origin", "*")
+		} else {
+			origin := req.Request.Header.Get("Origin")
+			if origin != "" {
+				if _, ok := m.m[origin]; ok {
+					resp.Header.Add("Access-Control-Allow-Origin", origin)
+				}
 			}
 		}
 	}

@@ -99,3 +99,46 @@ func ExampleRouter_Use() {
 	// Output:
 	// *response.Response: "my-middleware-value"
 }
+
+func ExampleRouter_multipleRoute() {
+	router := NewRouter(nil)
+	router.Get("/:key.html", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+		return next(req.WithValue(
+			"my-middleware-key",
+			req.Params.GetStringOr("key", "default"),
+		))
+	}))
+	router.Get("/a.html",
+		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+			v, _ := req.Get("my-middleware-key")
+			return response.NewText(fmt.Sprintf("a-%s", v))
+		}),
+	)
+	router.Get("/b.html",
+		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+			v, _ := req.Get("my-middleware-key")
+			return response.NewText(fmt.Sprintf("b-%s", v))
+		}),
+	)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/a.html", nil)
+	router.ServeHTTP(w, req)
+	fmt.Printf("*response.Response: %q\n", w.Body)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/b.html", nil)
+	router.ServeHTTP(w, req)
+	fmt.Printf("*response.Response: %q\n", w.Body)
+
+	// not found route even /:key.html handles some
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/c.html", nil)
+	router.ServeHTTP(w, req)
+	fmt.Printf("*response.Response: %q\n", w.Body)
+
+	// Output:
+	// *response.Response: "a-a"
+	// *response.Response: "b-b"
+	// *response.Response: "not found"
+}
