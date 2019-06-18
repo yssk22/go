@@ -43,6 +43,7 @@ func (m *middleware) Process(req *web.Request, next web.NextHandler) *response.R
 	if req.Method == "OPTIONS" {
 		resp = m.preflight.Process(req, next)
 		resp.Header.Add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,HEAD,OPTIONS")
+		resp.Header.Add("Access-Control-Allow-Headers", "Origin,Authorization,Accept,Content-Type")
 	} else {
 		resp = next(req)
 	}
