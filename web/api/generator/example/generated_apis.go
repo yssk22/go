@@ -4,6 +4,7 @@ package example
 
 import (
 	"encoding/json"
+
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/api"
 	"github.com/yssk22/go/web/api/generator/example/types"
@@ -108,7 +109,7 @@ func SetupAPI(r web.Router) {
 			req.Params.GetStringOr("param", ""),
 			req.Params.GetStringOr("param2", ""),
 		)
-		return api.OK
+		return api.OK()
 	}))
 	r.Get("/path/to/example/:param/:param2/only_error/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		err := getExampleOnlyError(
@@ -119,7 +120,7 @@ func SetupAPI(r web.Router) {
 		if err != nil {
 			return api.NewErrorResponse(err)
 		}
-		return api.OK
+		return api.OK()
 	}))
 	var _createExample2ParameterParser api.ParameterParser
 	json.Unmarshal(

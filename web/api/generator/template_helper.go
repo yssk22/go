@@ -9,7 +9,7 @@ import (
 	"github.com/yssk22/go/x/xerrors"
 )
 
-const alwaysOKResponseStatements = `return api.OK
+const alwaysOKResponseStatements = `return api.OK()
 `
 
 const errorResponseStatements = `if err != nil {
