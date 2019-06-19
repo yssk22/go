@@ -149,7 +149,7 @@ func (l *Logger) format(s string, v ...interface{}) string {
 	if l.prefix == "" {
 		return fmt.Sprintf(s, v...)
 	}
-	return fmt.Sprintf("%s%s", l.prefix, fmt.Sprintf(s, v...))
+	return fmt.Sprintf("[%s] %s", l.prefix, fmt.Sprintf(s, v...))
 }
 
 func (l *Logger) write(level Level, data interface{}) {

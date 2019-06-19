@@ -83,7 +83,7 @@ func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) 
 		instance = new(Logger)
 		*instance = *ctxLogger
 		if prefix != "" {
-			instance.prefix = fmt.Sprintf("%s%s", instance.prefix, prefix)
+			instance.prefix = fmt.Sprintf("%s>%s", instance.prefix, prefix)
 		}
 	} else {
 		instance = defaultLogger.WithContext(ctx)
