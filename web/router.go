@@ -149,9 +149,9 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				route := matched[0].Route
 				pathParams := matched[0].Params
 				logger.Debug(func(p *xlog.Printer) {
-					p.Printf("Routing: %s => %s\n", req.URL.Path, route.pattern.source)
+					p.Printf("Routing: %s => %s", req.URL.Path, route.pattern.source)
 					for _, name := range route.pattern.paramNames {
-						p.Printf("\t%s=%s\n", name, pathParams.GetStringOr(name, ""))
+						p.Printf("\n\t%s=%s", name, pathParams.GetStringOr(name, ""))
 					}
 				})
 				request.Params = pathParams

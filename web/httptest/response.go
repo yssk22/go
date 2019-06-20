@@ -58,6 +58,7 @@ func NewAssert(t *testing.T) *Assert {
 
 // Status asserts the http status code
 func (a *Assert) Status(expected response.HTTPStatus, res *ResponseRecorder, msgContext ...interface{}) {
+	a.Helper()
 	if expected != response.HTTPStatus(res.Code) {
 		if len(msgContext) > 0 {
 			a.Failure(expected, res.Code, msgContext...)
@@ -69,16 +70,19 @@ func (a *Assert) Status(expected response.HTTPStatus, res *ResponseRecorder, msg
 
 // Header asserts the header value
 func (a *Assert) Header(expected string, res *ResponseRecorder, fieldName string, msgContext ...interface{}) {
+	a.Helper()
 	a.EqStr(expected, res.Header().Get(fieldName), msgContext...)
 }
 
 // Body asserts the body string
 func (a *Assert) Body(expected string, res *ResponseRecorder, msgContext ...interface{}) {
+	a.Helper()
 	a.EqStr(expected, res.Body.String(), msgContext...)
 }
 
 // Cookie asserts the cookie name and extract it as *http.Cookie
 func (a *Assert) Cookie(res *ResponseRecorder, name string, msgContext ...interface{}) *http.Cookie {
+	a.Helper()
 	rawCookies, ok := res.Header()["Set-Cookie"]
 	if !ok {
 		a.Failure("Set-Cookie header exists", nil, msgContext)
@@ -103,6 +107,7 @@ func (a *Assert) Cookie(res *ResponseRecorder, name string, msgContext ...interf
 
 // JSON asserts the body string as as json and returns the result as interface{}
 func (a *Assert) JSON(v interface{}, res *ResponseRecorder, msgContext ...interface{}) {
+	a.Helper()
 	var body = res.Body.Bytes()
 	err := json.Unmarshal(body, v)
 	if err != nil {
