@@ -41,6 +41,10 @@ func Unwrap(err error) []string {
 			break
 		}
 		w, ok = err.(*wrapped)
+		if !ok {
+			stack = append(stack, fmt.Sprintf("unknown - %s", err))
+			break
+		}
 	}
 	return stack
 }
