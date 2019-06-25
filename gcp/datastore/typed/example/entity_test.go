@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -31,9 +32,9 @@ func TestMain(m *testing.M) {
 
 func newEntityTestRunner(t *testing.T) *xtesting.Runner {
 	r := xtesting.NewRunner(t)
-	r.Setup = func(a *assert.Assert) {
+	r.Setup(func(a *assert.Assert) {
 		a.Nil(testEnv.Reset())
-	}
+	})
 	return r
 }
 
@@ -83,6 +84,7 @@ func TestEntityKindClient(t *testing.T) {
 				a.EqInt(1, len(keys))
 				a.EqStr(e.ID, keys[0].Name)
 				a.EqTime(now, e.UpdatedAt)
+				a.EqStr(fmt.Sprintf("(AfterSave) %s", e.Desc), e.AfterSaveDesc)
 
 				_, ents, err := testClient.GetMulti(ctx, keys)
 				a.Nil(err)
@@ -91,6 +93,8 @@ func TestEntityKindClient(t *testing.T) {
 				a.NotNil(ents[0])
 				a.EqStr(e.ID, ents[0].ID)
 				a.EqStr(e.Desc, ents[0].Desc)
+				a.EqStr(fmt.Sprintf("(BeforeSave) %s", ents[0].Desc), ents[0].BeforeSaveDesc)
+				a.EqStr("", ents[0].AfterSaveDesc)
 			},
 		)
 	})

@@ -3,14 +3,15 @@
 package example
 
 import (
-	"cloud.google.com/go/datastore"
 	"context"
+	"time"
+
+	"cloud.google.com/go/datastore"
 	ds "github.com/yssk22/go/gcp/datastore"
 	"github.com/yssk22/go/types"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xtime"
 	"google.golang.org/api/iterator"
-	"time"
 )
 
 func (s *Entity) NewKey(ctx context.Context) *datastore.Key {
@@ -94,12 +95,34 @@ func (d *EntityKindClient) PutMulti(ctx context.Context, ents []*Entity) ([]*dat
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		ents[i].UpdatedAt = xtime.Now()
 	}
 	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
@@ -258,11 +281,6 @@ func (d *EntityQuery) EqUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) EqBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Eq("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) EqCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Eq("CustomType", v)
 	return d
@@ -275,6 +293,16 @@ func (d *EntityQuery) EqLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) EqLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Eq("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) EqBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Eq("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) EqAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Eq("AfterSaveDesc", v)
 	return d
 }
 
@@ -318,11 +346,6 @@ func (d *EntityQuery) LtUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) LtBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Lt("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) LtCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Lt("CustomType", v)
 	return d
@@ -335,6 +358,16 @@ func (d *EntityQuery) LtLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) LtLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Lt("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) LtBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Lt("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) LtAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Lt("AfterSaveDesc", v)
 	return d
 }
 
@@ -378,11 +411,6 @@ func (d *EntityQuery) LeUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) LeBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Le("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) LeCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Le("CustomType", v)
 	return d
@@ -395,6 +423,16 @@ func (d *EntityQuery) LeLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) LeLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Le("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) LeBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Le("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) LeAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Le("AfterSaveDesc", v)
 	return d
 }
 
@@ -438,11 +476,6 @@ func (d *EntityQuery) GtUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) GtBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Gt("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) GtCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Gt("CustomType", v)
 	return d
@@ -455,6 +488,16 @@ func (d *EntityQuery) GtLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) GtLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Gt("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) GtBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Gt("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) GtAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Gt("AfterSaveDesc", v)
 	return d
 }
 
@@ -498,11 +541,6 @@ func (d *EntityQuery) GeUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) GeBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Ge("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) GeCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Ge("CustomType", v)
 	return d
@@ -515,6 +553,16 @@ func (d *EntityQuery) GeLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) GeLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Ge("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) GeBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Ge("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) GeAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Ge("AfterSaveDesc", v)
 	return d
 }
 
@@ -558,11 +606,6 @@ func (d *EntityQuery) NeUpdatedAt(v time.Time) *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) NeBeforeSaveProcessed(v bool) *EntityQuery {
-	d.query = d.query.Ne("BeforeSaveProcessed", v)
-	return d
-}
-
 func (d *EntityQuery) NeCustomType(v types.RGB) *EntityQuery {
 	d.query = d.query.Ne("CustomType", v)
 	return d
@@ -575,6 +618,16 @@ func (d *EntityQuery) NeLocationLat(v float64) *EntityQuery {
 
 func (d *EntityQuery) NeLocationLng(v float64) *EntityQuery {
 	d.query = d.query.Ne("Location.Lng", v)
+	return d
+}
+
+func (d *EntityQuery) NeBeforeSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Ne("BeforeSaveDesc", v)
+	return d
+}
+
+func (d *EntityQuery) NeAfterSaveDesc(v string) *EntityQuery {
+	d.query = d.query.Ne("AfterSaveDesc", v)
 	return d
 }
 
@@ -618,11 +671,6 @@ func (d *EntityQuery) AscUpdatedAt() *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) AscBeforeSaveProcessed() *EntityQuery {
-	d.query = d.query.Asc("BeforeSaveProcessed")
-	return d
-}
-
 func (d *EntityQuery) AscCustomType() *EntityQuery {
 	d.query = d.query.Asc("CustomType")
 	return d
@@ -635,6 +683,16 @@ func (d *EntityQuery) AscLocationLat() *EntityQuery {
 
 func (d *EntityQuery) AscLocationLng() *EntityQuery {
 	d.query = d.query.Asc("Location.Lng")
+	return d
+}
+
+func (d *EntityQuery) AscBeforeSaveDesc() *EntityQuery {
+	d.query = d.query.Asc("BeforeSaveDesc")
+	return d
+}
+
+func (d *EntityQuery) AscAfterSaveDesc() *EntityQuery {
+	d.query = d.query.Asc("AfterSaveDesc")
 	return d
 }
 
@@ -678,11 +736,6 @@ func (d *EntityQuery) DescUpdatedAt() *EntityQuery {
 	return d
 }
 
-func (d *EntityQuery) DescBeforeSaveProcessed() *EntityQuery {
-	d.query = d.query.Desc("BeforeSaveProcessed")
-	return d
-}
-
 func (d *EntityQuery) DescCustomType() *EntityQuery {
 	d.query = d.query.Desc("CustomType")
 	return d
@@ -695,6 +748,16 @@ func (d *EntityQuery) DescLocationLat() *EntityQuery {
 
 func (d *EntityQuery) DescLocationLng() *EntityQuery {
 	d.query = d.query.Desc("Location.Lng")
+	return d
+}
+
+func (d *EntityQuery) DescBeforeSaveDesc() *EntityQuery {
+	d.query = d.query.Desc("BeforeSaveDesc")
+	return d
+}
+
+func (d *EntityQuery) DescAfterSaveDesc() *EntityQuery {
+	d.query = d.query.Desc("AfterSaveDesc")
 	return d
 }
 
@@ -744,6 +807,17 @@ func (d *EntityKindClient) GetAll(ctx context.Context, q *EntityQuery) ([]*datas
 		}
 		return keys, ent, nil
 	}
+}
+
+func (d *EntityKindClient) GetOne(ctx context.Context, q *EntityQuery) (*datastore.Key, *Entity, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
 }
 
 func (d *EntityKindClient) MustGetAll(ctx context.Context, q *EntityQuery) ([]*datastore.Key, []Entity) {

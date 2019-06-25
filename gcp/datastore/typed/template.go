@@ -96,6 +96,20 @@ func (d *{{.StructName}}KindClient) PutMulti(ctx context.Context, ents []*{{.Str
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		{{with .TimestampField -}}
@@ -104,6 +118,14 @@ func (d *{{.StructName}}KindClient) PutMulti(ctx context.Context, ents []*{{.Str
 	}
 	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
