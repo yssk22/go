@@ -21,7 +21,7 @@ func (funcs StringValidator) Validate(s string) error {
 }
 
 // NonEmpty validates s is not an empty string
-func (funcs StringValidator) NonEmpty(s string) StringValidator {
+func (funcs StringValidator) NonEmpty() StringValidator {
 	funcs = append(funcs, func(v string) error {
 		if len(v) == 0 {
 			return fmt.Errorf("must not be empty")

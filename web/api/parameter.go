@@ -155,11 +155,11 @@ func (pp *ParameterParser) Parse(req *http.Request, v interface{}) *Error {
 	err = json.Unmarshal(jsonBytes, v)
 	xerrors.MustNil(err)
 	if validatable, ok := v.(Validatable); ok {
-		errors := NewFieldErrorCollection()
-		if err = validatable.Validate(req.Context(), errors); err != nil {
+		fieldError, err := RunValidation(req.Context(), validatable)
+		if err != nil {
 			return BadRequest
 		}
-		if err = errors.ToError(); err != nil {
+		if err = fieldError.ToError(); err != nil {
 			return err.(*Error)
 		}
 	}
