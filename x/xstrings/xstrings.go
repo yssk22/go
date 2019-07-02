@@ -4,6 +4,8 @@ package xstrings
 import (
 	"strings"
 	"unicode"
+
+	"golang.org/x/text/width"
 )
 
 // SplitAndTrim is like strings.Split but spaces in each of item are trimmed
@@ -58,4 +60,10 @@ func ToSnakeCase(s string) string {
 	}
 	str = append(str, unicode.ToLower(runes[len(runes)-1]))
 	return string(str)
+}
+
+
+// Fold transforms all runes to their canonical width. unicode string
+func Fold(s string) string {
+	return width.Fold.String(s)
 }
