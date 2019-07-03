@@ -9,5 +9,5 @@ func IsOnDevAppServer() bool {
 
 // IsOnAppEngine returns if an app is running on app engine environment
 func IsOnAppEngine(projectName string) bool {
-	return os.Getenv("GAE_ENV") == "standard"
+	return os.Getenv("GAE_ENV") == "standard" && os.Getenv("GAE_PROJECT") == projectName
 }
