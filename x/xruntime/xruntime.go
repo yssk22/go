@@ -38,7 +38,9 @@ func CaptureStackFrom(skip int, maxDepth int) []*Frame {
 
 // CaptureFrame to capture the current stack frame
 func CaptureFrame() *Frame {
-	return captureFrames(1, 1)[0]
+	counters := make([]uintptr, 1)
+	runtime.Callers(2, counters)
+	return pcToStack(counters)[0]
 }
 
 func (f *Frame) String() string {
@@ -50,8 +52,12 @@ func (f *Frame) String() string {
 
 func captureFrames(skip int, maxDepth int) []*Frame {
 	counters := make([]uintptr, maxDepth)
-	stack := make([]*Frame, maxDepth)
 	runtime.Callers(2+skip, counters)
+	return pcToStack(counters)
+}
+
+func pcToStack(counters []uintptr) []*Frame {
+	stack := make([]*Frame, len(counters))
 	for i, pc := range counters {
 		f := runtime.FuncForPC(pc)
 		if f == nil {
