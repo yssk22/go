@@ -22,15 +22,15 @@ func ExampleWithContext() {
 			defaultLogger = New(
 				NewIOSinkWithFormatter(os.Stdout, formatter),
 			)
-			ctx, logger := WithContext(context.Background(), "[Context1] ")
+			ctx, logger := WithContext(context.Background(), "Context1")
 			logger.Infof("This is a log")
-			ctx, logger = WithContext(ctx, "[Context2] ")
+			ctx, logger = WithContext(ctx, "Context2")
 			logger.Infof("This is a log")
 		},
 	)
 	// Output:
 	// 2016-01-01T12:10:25Z [info] [Context1] This is a log
-	// 2016-01-01T12:10:25Z [info] [Context1] [Context2] This is a log
+	// 2016-01-01T12:10:25Z [info] [Context1>Context2] This is a log
 	//
 }
 
@@ -48,14 +48,14 @@ func ExampleWithContextAndKey() {
 			defaultLogger = New(
 				NewIOSinkWithFormatter(os.Stdout, formatter),
 			)
-			ctx, logger := WithContextAndKey(context.Background(), "[Context1] ", "MyKey1")
+			ctx, logger := WithContextAndKey(context.Background(), "Context1", "MyKey1")
 			logger.Infof("This is a log")
-			ctx, logger = WithContextAndKey(ctx, "[Context2] ", "MyKey2")
+			ctx, logger = WithContextAndKey(ctx, "Context2", "MyKey2")
 			logger.Infof("This is a log")
 		},
 	)
 	// Output:
 	// 2016-01-01T12:10:25Z [MyKey1] [info] [Context1] This is a log
-	// 2016-01-01T12:10:25Z [MyKey2] [info] [Context1] [Context2] This is a log
+	// 2016-01-01T12:10:25Z [MyKey2] [info] [Context1>Context2] This is a log
 	//
 }
