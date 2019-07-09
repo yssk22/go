@@ -8,8 +8,14 @@ import (
 func ExampleWrapAndUnwrap() {
 	rootError := fmt.Errorf("root error")
 	error1st := Wrap(rootError, "1st error")
-	fmt.Println(strings.Join(Unwrap(error1st), "\n"))
+	list := Unwrap(error1st)
+
+	// don't test with source line
+	firstLine := "-" + strings.Split(list[0], "-")[1]
+	lastLine := list[1]
+	fmt.Println(firstLine)
+	fmt.Println(lastLine)
 	// Output:
-	// /Users/yohei/sites/yssk22.dev/goss/x/xerrors/stack_test.go:10 - 1st error
+	// - 1st error
 	// unknown - root error
 }
