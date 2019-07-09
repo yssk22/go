@@ -8,7 +8,6 @@ import (
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/httptest"
 	"github.com/yssk22/go/web/response"
-	"github.com/yssk22/go/x/xlog"
 )
 
 func TestMain(m *testing.M) {
@@ -50,7 +49,6 @@ func TestService_withHyphenInKey(t *testing.T) {
 }
 
 func TestService_emptyURLPrefix(t *testing.T) {
-	xlog.SetKeyFilter(web.RouterLoggerKey, xlog.LevelDebug)
 	a := httptest.NewAssert(t)
 	s := NewWithURLAndNamespace("foo", "", "foo")
 	a.EqStr("/", s.Path("/"))
