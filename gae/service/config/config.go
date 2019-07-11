@@ -38,12 +38,12 @@ func (c *Config) Register(key string, defaultValue string, description string) {
 }
 
 func (c *Config) register(cfg *ServiceConfig) {
-	ok, err := c.defaultMap.Get(cfg.Key)
+	ok, err := c.defaultMap.Get(cfg.ID)
 	if err == nil && ok != nil {
-		panic(fmt.Errorf("key %q is already registred (global=%t)", cfg.Key, (ok.(*ServiceConfig)).isGlobal))
+		panic(fmt.Errorf("key %q is already registred (global=%t)", cfg.ID, (ok.(*ServiceConfig)).isGlobal))
 	}
-	c.defaultMap.Set(cfg.Key, cfg)
-	c.defaultKeys = append(c.defaultKeys, cfg.Key)
+	c.defaultMap.Set(cfg.ID, cfg)
+	c.defaultKeys = append(c.defaultKeys, cfg.ID)
 }
 
 // All returns all *ServiceConfig in app.
@@ -181,18 +181,21 @@ func (c *Config) normalize(s *ServiceConfig, global *ServiceConfig, defaultCfg *
 	if s == nil {
 		if defaultCfg.isGlobal {
 			s = &ServiceConfig{
-				Key:   global.Key,
+				ID:    global.ID,
+				Key:   global.ID,
 				Value: global.Value,
 			}
 		} else {
 			s = &ServiceConfig{
-				Key:   defaultCfg.Key,
+				ID:    defaultCfg.ID,
+				Key:   defaultCfg.ID,
 				Value: defaultCfg.Value,
 			}
 		}
 	} else {
 		s = &ServiceConfig{
-			Key:   s.Key,
+			ID:    s.ID,
+			Key:   s.ID,
 			Value: s.Value,
 		}
 	}

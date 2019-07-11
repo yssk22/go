@@ -10,7 +10,8 @@ import (
 // @flow
 // @datastore
 type ServiceConfig struct {
-	Key       string    `json:"key" ent:"id"`
+	ID        string    `json:"id" ent:"id"`
+	Key       string    `json:"key"` // deprecated
 	Value     string    `json:"value" ent:"form" datastore:",noindex"`
 	UpdatedAt time.Time `json:"updated_at" ent:"timestamp" datastore:",noindex"`
 
@@ -22,6 +23,7 @@ type ServiceConfig struct {
 
 func newServiceConfig(key string, value string, description string) *ServiceConfig {
 	return &ServiceConfig{
+		ID:          key,
 		Key:         key,
 		Value:       value,
 		Description: description,

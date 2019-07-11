@@ -66,7 +66,8 @@ func (r *Runner) Run(dir string) error {
 		return xerrors.Wrap(err, "failed to parse package %q", absPath)
 	}
 	annotatedNodes := CollectAnnotatedNodes(pkg)
-	for _, g := range r.generators {
+	gerrors := xerrors.NewMultiError(len(r.generators))
+	for i, g := range r.generators {
 		var nodes []*AnnotatedNode
 		symbol := g.GetAnnotationSymbol()
 		for _, n := range annotatedNodes {
@@ -79,7 +80,7 @@ func (r *Runner) Run(dir string) error {
 		}
 		generated, err := g.Run(pkg, nodes)
 		if err != nil {
-			log.Printf("ERROR: %s (by %s)", err, symbol)
+			gerrors[i] = err
 			continue
 		}
 		for _, result := range generated {
@@ -93,6 +94,9 @@ func (r *Runner) Run(dir string) error {
 			}
 			log.Printf("INFO: Generated: %s (by %s)", ansi.Blue.Sprintf(filename), symbol)
 		}
+	}
+	if gerrors.HasError() {
+		return gerrors
 	}
 	return nil
 }

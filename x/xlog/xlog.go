@@ -38,6 +38,8 @@ import (
 	"os"
 
 	"context"
+
+	"github.com/yssk22/go/x/xcontext"
 )
 
 var defaultOption = &Option{
@@ -45,13 +47,11 @@ var defaultOption = &Option{
 	StackCaptureDepth: 30,
 }
 
-var defaultKeyFilters = map[interface{}]Level{}
-
 var defaultIOFormatter = NewTextFormatter(
 	`{{formattimestamp .}} [{{.Level}}] {{.Data}}{{formatstack .}}`,
 )
 
-var defaultFilter = KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
+var defaultFilter = LevelFilter(LevelInfo).Pipe(
 	NewIOSinkWithFormatter(
 		os.Stderr, defaultIOFormatter,
 	),
@@ -59,14 +59,9 @@ var defaultFilter = KeyLevelFilter(defaultKeyFilters, LevelInfo).Pipe(
 
 var defaultLogger = New(defaultFilter)
 
-// SetSink sets the default logger sink.
+// SetSink sets the sink for the global logger
 func SetSink(s Sink) {
-	defaultFilter.next = s
-}
-
-// SetKeyFilter sets the specific filter level for `key`.
-func SetKeyFilter(key interface{}, level Level) {
-	defaultKeyFilters[key] = level
+	defaultLogger = New(s)
 }
 
 // SetOption sets the option for the global logger
@@ -79,7 +74,7 @@ func WithKey(name string) *Logger {
 	return defaultLogger.WithKey(name)
 }
 
-var loggerContextKey = struct{}{}
+var loggerContextKey = xcontext.NewKey("logger")
 
 // WithContext returns a shallow copy of global Logger with its context changed to ctx.
 func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) {
@@ -88,7 +83,7 @@ func WithContext(ctx context.Context, prefix string) (context.Context, *Logger) 
 		instance = new(Logger)
 		*instance = *ctxLogger
 		if prefix != "" {
-			instance.prefix = fmt.Sprintf("%s%s", instance.prefix, prefix)
+			instance.prefix = fmt.Sprintf("%s>%s", instance.prefix, prefix)
 		}
 	} else {
 		instance = defaultLogger.WithContext(ctx)

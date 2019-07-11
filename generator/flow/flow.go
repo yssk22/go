@@ -207,7 +207,7 @@ func (b *bindings) getFlowTypeFromBasic(t *types.Basic) (FlowType, error) {
 	case types.String:
 		return FlowTypeString, nil
 	}
-	return nil, fmt.Errorf("unsuppored basic type: %s", b)
+	return nil, fmt.Errorf("unsuppored basic type: %v", b)
 }
 
 func (b *bindings) getFlowTypeFromNamed(n *types.Named) (FlowType, error) {

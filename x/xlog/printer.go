@@ -2,6 +2,7 @@ package xlog
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -26,4 +27,10 @@ func (f printerFunc) String() string {
 	p := &Printer{}
 	f(p)
 	return p.buff.String()
+}
+
+func (f printerFunc) MarshalJSON() ([]byte, error) {
+	p := &Printer{}
+	f(p)
+	return json.Marshal(p.buff.String())
 }

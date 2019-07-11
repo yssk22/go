@@ -11,7 +11,7 @@ import (
 )
 
 func (s *ServiceConfig) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "ServiceConfig", s.Key)
+	return ds.NewKey(ctx, "ServiceConfig", s.ID)
 }
 
 type ServiceConfigReplacer interface {
@@ -211,8 +211,18 @@ func NewServiceConfigQuery() *ServiceConfigQuery {
 	}
 }
 
+func (d *ServiceConfigQuery) EqID(v string) *ServiceConfigQuery {
+	d.query = d.query.Eq("ID", v)
+	return d
+}
+
 func (d *ServiceConfigQuery) EqKey(v string) *ServiceConfigQuery {
 	d.query = d.query.Eq("Key", v)
+	return d
+}
+
+func (d *ServiceConfigQuery) LtID(v string) *ServiceConfigQuery {
+	d.query = d.query.Lt("ID", v)
 	return d
 }
 
@@ -221,8 +231,18 @@ func (d *ServiceConfigQuery) LtKey(v string) *ServiceConfigQuery {
 	return d
 }
 
+func (d *ServiceConfigQuery) LeID(v string) *ServiceConfigQuery {
+	d.query = d.query.Le("ID", v)
+	return d
+}
+
 func (d *ServiceConfigQuery) LeKey(v string) *ServiceConfigQuery {
 	d.query = d.query.Le("Key", v)
+	return d
+}
+
+func (d *ServiceConfigQuery) GtID(v string) *ServiceConfigQuery {
+	d.query = d.query.Gt("ID", v)
 	return d
 }
 
@@ -231,8 +251,18 @@ func (d *ServiceConfigQuery) GtKey(v string) *ServiceConfigQuery {
 	return d
 }
 
+func (d *ServiceConfigQuery) GeID(v string) *ServiceConfigQuery {
+	d.query = d.query.Ge("ID", v)
+	return d
+}
+
 func (d *ServiceConfigQuery) GeKey(v string) *ServiceConfigQuery {
 	d.query = d.query.Ge("Key", v)
+	return d
+}
+
+func (d *ServiceConfigQuery) NeID(v string) *ServiceConfigQuery {
+	d.query = d.query.Ne("ID", v)
 	return d
 }
 
@@ -241,8 +271,18 @@ func (d *ServiceConfigQuery) NeKey(v string) *ServiceConfigQuery {
 	return d
 }
 
+func (d *ServiceConfigQuery) AscID() *ServiceConfigQuery {
+	d.query = d.query.Asc("ID")
+	return d
+}
+
 func (d *ServiceConfigQuery) AscKey() *ServiceConfigQuery {
 	d.query = d.query.Asc("Key")
+	return d
+}
+
+func (d *ServiceConfigQuery) DescID() *ServiceConfigQuery {
+	d.query = d.query.Desc("ID")
 	return d
 }
 

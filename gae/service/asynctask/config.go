@@ -98,7 +98,7 @@ func Schedule(sched string) Option {
 }
 
 // Timeout sets the task timeout
-func (c *Config) Timeout(timeout time.Duration) Option {
+func Timeout(timeout time.Duration) Option {
 	return func(c *Config) (*Config, error) {
 		c.timeout = timeout
 		return c, nil

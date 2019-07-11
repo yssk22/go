@@ -9,7 +9,6 @@ jobs:
             BIN_RESULTS: /tmp/artifacts
             GO111MODULE: 'off'
         steps:
-            - run: echo 'export PATH=${GOPATH}/bin/:${PATH}' >> $BASH_ENV
             - checkout
             - run:
                   name: Install Dependencies

@@ -4,14 +4,11 @@ package xruntime
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
-
-	"github.com/yssk22/go/x/xerrors"
 )
 
 // Frame is a stack frame
@@ -41,7 +38,9 @@ func CaptureStackFrom(skip int, maxDepth int) []*Frame {
 
 // CaptureFrame to capture the current stack frame
 func CaptureFrame() *Frame {
-	return captureFrames(1, 1)[0]
+	counters := make([]uintptr, 1)
+	runtime.Callers(2, counters)
+	return pcToStack(counters)[0]
 }
 
 func (f *Frame) String() string {
@@ -53,8 +52,12 @@ func (f *Frame) String() string {
 
 func captureFrames(skip int, maxDepth int) []*Frame {
 	counters := make([]uintptr, maxDepth)
-	stack := make([]*Frame, maxDepth)
 	runtime.Callers(2+skip, counters)
+	return pcToStack(counters)
+}
+
+func pcToStack(counters []uintptr) []*Frame {
+	stack := make([]*Frame, len(counters))
 	for i, pc := range counters {
 		f := runtime.FuncForPC(pc)
 		if f == nil {
@@ -68,8 +71,6 @@ func captureFrames(skip int, maxDepth int) []*Frame {
 		}
 		frame.FullFilePath, frame.LineNumber = f.FileLine(pc)
 		frame.PackageName, frame.FunctionName = getPackageAndFunction(f)
-		log.Println(frame.FullFilePath)
-		log.Println(frame.PackageName)
 		if idx := strings.LastIndex(frame.FullFilePath, frame.PackageName); idx >= 0 {
 			frame.ShortFilePath = frame.FullFilePath[idx:]
 		} else {
@@ -108,7 +109,9 @@ func lookupGoModuleInfoFromFilePath(path string) (string, string) {
 		panic(err)
 	}
 	contents, err := ioutil.ReadFile(gomod)
-	xerrors.MustNil(err)
+	if err != nil {
+		panic(err)
+	}
 	found := moduleDefRe.Copy().FindSubmatch(contents)
 	if len(found) == 0 {
 		panic(fmt.Errorf("could not find module declaration in %s", gomod))
@@ -128,4 +131,18 @@ func getPackageAndFunction(f *runtime.Func) (string, string) {
 		}
 	}
 	return "", fullName
+}
+
+// CollectAllStacksSimple returns a list of stack frame with "{source}:{line}" format
+func CollectAllStacksSimple() []string {
+	var stack []string
+	c := 0
+	for {
+		_, src, line, ok := runtime.Caller(c)
+		if !ok {
+			return stack[1:]
+		}
+		stack = append(stack, fmt.Sprintf("%s:%d", src, line))
+		c++
+	}
 }

@@ -14,6 +14,7 @@ import (
 // Router is an interface to set up http router
 type Router interface {
 	Use(...Handler)
+	All(string, ...Handler)
 	Get(string, ...Handler)
 	Post(string, ...Handler)
 	Put(string, ...Handler)
@@ -40,14 +41,6 @@ func NewRouter(option *Option) Router {
 	}
 
 	r.Get("/__debug__/routes", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
-		var logger = xlog.WithKey("web.router").WithContext(req.Context())
-		if r.option.OnDebugRequest == nil {
-			return nil
-		}
-		if err := r.option.OnDebugRequest(req); err != nil {
-			logger.Infof("OnDebugRequest reject access: %v", err)
-			return nil
-		}
 		var buff bytes.Buffer
 		r.printRoutes("GET", &buff)
 		r.printRoutes("POST", &buff)
@@ -73,6 +66,14 @@ func (r *defaultRouter) printRoutes(method string, dst io.Writer) {
 // Use adds middleware handlers to process on every request before all handlers are processed.
 func (r *defaultRouter) Use(handlers ...Handler) {
 	r.middleware.Append(handlers...)
+}
+
+// All adds handlers for "GET|PUT|POST|DELETE {pattern}" requests
+func (r *defaultRouter) All(pattern string, handlers ...Handler) {
+	r.addRoute("GET", pattern, handlers...)
+	r.addRoute("PUT", pattern, handlers...)
+	r.addRoute("POST", pattern, handlers...)
+	r.addRoute("DELETE", pattern, handlers...)
 }
 
 // Get adds handlers for "GET {pattern}" requests
@@ -130,9 +131,9 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			// then find a route to dispatch
 			path := req.URL.EscapedPath()
 			method := req.Method
-			route, pathParams := r.findRoute(method, path)
+			matched := r.findRoute(method, path)
 			// bind common fields with request
-			if route == nil {
+			if matched == nil {
 				// Debugging for the route is collectly configured or not.
 				logger.Debug(func(p *xlog.Printer) {
 					p.Printf("No route is found for \"%s %s\":\n", method, path)
@@ -144,14 +145,38 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				})
 				return NotFound
 			}
-			logger.Debug(func(p *xlog.Printer) {
-				p.Printf("Routing: %s => %s\n", req.URL.Path, route.pattern.source)
-				for _, name := range route.pattern.paramNames {
-					p.Printf("\t%s=%s\n", name, pathParams.GetStringOr(name, ""))
-				}
-			})
-			request.Params = pathParams
-			return route.pipeline.Process(request.WithValue(requestContextKey, request), nil)
+			if len(matched) == 1 {
+				route := matched[0].Route
+				pathParams := matched[0].Params
+				logger.Debug(func(p *xlog.Printer) {
+					p.Printf("Routing: %s => %s", req.URL.Path, route.pattern.source)
+					for _, name := range route.pattern.paramNames {
+						p.Printf("\n\t%s=%s", name, pathParams.GetStringOr(name, ""))
+					}
+				})
+				request.Params = pathParams
+				return route.pipeline.Process(request.WithValue(requestContextKey, request), nil)
+			}
+			// dynamic creation of pipeline
+			var handlers []Handler
+			for _, m := range matched {
+				route := m.Route
+				pathParams := m.Params
+				logger.Debug(func(p *xlog.Printer) {
+					p.Printf("Routing: %s => %s\n", req.URL.Path, route.pattern.source)
+					for _, name := range route.pattern.paramNames {
+						p.Printf("\t%s=%s\n", name, pathParams.GetStringOr(name, ""))
+					}
+				})
+				handlers = append(handlers, HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+					req.Params = pathParams
+					return next(req)
+				}))
+				handlers = append(handlers, m.Route.pipeline.Handlers...)
+			}
+			var dynamic = &handlerPipeline{}
+			dynamic.Append(handlers...)
+			return dynamic.Process(request.WithValue(requestContextKey, request), nil)
 		}),
 	)
 	if res == nil {
@@ -162,15 +187,29 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	res.Render(request.Context(), w)
 }
 
-func (r *defaultRouter) findRoute(method string, path string) (*route, *keyvalue.GetProxy) {
+type matchedRoute struct {
+	Route  *route
+	Params *keyvalue.GetProxy
+}
+
+func (r *defaultRouter) findRoute(method string, path string) []*matchedRoute {
 	if methodRoutes, ok := r.routes[method]; ok {
+		var matched []*matchedRoute
+		var found = false
 		for _, route := range methodRoutes {
 			if params, ok := route.pattern.Match(path); ok {
-				return route, params
+				matched = append(matched, &matchedRoute{
+					route,
+					params,
+				})
+				found = true
 			}
 		}
+		if found {
+			return matched
+		}
 	}
-	return nil, nil
+	return nil
 }
 
 type route struct {

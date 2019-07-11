@@ -13,8 +13,8 @@ import (
 )
 
 // Task is a defined task in the service.
-// @flow
 type Task struct {
+	ID          string `json:"id"`
 	Path        string `json:"path"`
 	Description string `json:"description"`
 	Schedule    string `json:"schedule"`
@@ -86,6 +86,7 @@ func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 		}))
 	}
 	s.tasks = append(s.tasks, &Task{
+		ID:          s.Path(path),
 		Path:        s.Path(path),
 		Description: taskConfig.GetDescription(),
 		Schedule:    taskConfig.GetSchedule(),

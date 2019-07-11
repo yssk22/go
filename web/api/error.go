@@ -2,8 +2,11 @@ package api
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/yssk22/go/web/response"
+	"github.com/yssk22/go/x/xerrors"
 )
 
 // Error is an object to represent API error
@@ -33,34 +36,11 @@ func NewErrorResponse(e error) *response.Response {
 	if ok {
 		return apie.ToResponse()
 	}
-	// TODO: capture stack here
+	stacks := xerrors.Unwrap(e)
+	log.Println(fmt.Sprintf("internal error occurred - %s", strings.Join(stacks, "\n")))
 	return (&Error{
 		Code:    "internal_server_error",
 		Message: "unexpected server error occurred. please try again later.",
 		Status:  response.HTTPStatusInternalServerError,
 	}).ToResponse()
 }
-
-// General API errors
-var (
-	BadRequest = &Error{
-		Code:    "bad_request",
-		Message: "we cannot process your request",
-		Status:  response.HTTPStatusForbidden,
-	}
-	Forbidden = &Error{
-		Code:    "forbidden",
-		Message: "you do not have an access to the resource",
-		Status:  response.HTTPStatusForbidden,
-	}
-	NotFound = &Error{
-		Code:    "not_found",
-		Message: "the requested resource is not found on the server",
-		Status:  response.HTTPStatusNotFound,
-	}
-	ServerError = &Error{
-		Code:    "internal_server_error",
-		Message: "unexpected server error occurred. please try again later.",
-		Status:  response.HTTPStatusInternalServerError,
-	}
-)

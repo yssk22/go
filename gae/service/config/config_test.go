@@ -32,7 +32,7 @@ func TestConfig_All(t *testing.T) {
 
 	configMap := make(map[string]*ServiceConfig)
 	for _, cfg := range configs {
-		configMap[cfg.Key] = cfg
+		configMap[cfg.ID] = cfg
 	}
 	a.EqStr("45", configMap["urlfetch_deadline"].Value)
 	a.EqStr("local-app-id", configMap["facebook_app_id"].Value)
