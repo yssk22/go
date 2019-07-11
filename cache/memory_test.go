@@ -8,19 +8,6 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-func TestMemoryCacheAAA(t *testing.T) {
-	mc := &MemoryCache{}
-	mc.m.Store("foo", "val")
-	value, ok := mc.m.Load("foo")
-	t.Log(value, ok)
-
-	mc.m.Delete("foo")
-	value, ok = mc.m.Load("foo")
-	t.Log(value, ok)
-
-	t.Fail()
-}
-
 func TestMemoryCache(t *testing.T) {
 	ctx := context.Background()
 
