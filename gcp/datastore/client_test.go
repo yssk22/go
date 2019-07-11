@@ -54,6 +54,9 @@ func TestClient(t *testing.T) {
 		keys := []*datastore.Key{
 			NewKey(ctx, "Example", "example-a"),
 		}
+		stored := make([]*Example, 1, 1)
+		a.Nil(c.GetMulti(ctx, keys, stored))
+
 		_, err := c.PutMulti(ctx, keys, []*Example{
 			{
 				ID: "example-a",
@@ -63,7 +66,7 @@ func TestClient(t *testing.T) {
 
 		caches := make([]*Example, 1, 1)
 		a.NotNil(testEnv.memcache.GetMulti(ctx, []string{GetCacheKey(keys[0])}, caches))
-		stored := make([]*Example, 1, 1)
+		stored = make([]*Example, 1, 1)
 		a.Nil(testEnv.client.GetMulti(ctx, keys, stored))
 		a.NotNil(stored[0])
 		a.EqStr("example-a", stored[0].ID)
