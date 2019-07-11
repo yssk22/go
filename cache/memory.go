@@ -58,7 +58,7 @@ func (mc *MemoryCache) GetMulti(ctx context.Context, keys []string, dst interfac
 			vsrcType := vsrc.Type()
 			if vdstType == vsrcType {
 				vdst.Set(vsrc)
-				errors = append(errors, nil)
+				errors[i] = nil
 			} else {
 				if vdstType.Kind() == reflect.Ptr {
 					// vdst: *A, vsrc: A
@@ -67,21 +67,21 @@ func (mc *MemoryCache) GetMulti(ctx context.Context, keys []string, dst interfac
 						n.Elem().Set(vsrc)
 						vdst.Set(n)
 					} else {
-						errors = append(errors, ErrInvalidDstType)
+						errors[i] = ErrInvalidDstType
 					}
 				} else {
 					// vdst: A, vsrc: *A
 					vdstAddr := vdst.Addr()
 					if vdstAddr.Type() == vsrcType {
 						vdst.Set(vsrc.Elem())
-						errors = append(errors, nil)
+						errors[i] = nil
 					} else {
-						errors = append(errors, ErrInvalidDstType)
+						errors[i] = ErrInvalidDstType
 					}
 				}
 			}
 		} else {
-			errors = append(errors, ErrCacheKeyNotFound(keys[i]))
+			errors[i] = ErrCacheKeyNotFound(keys[i])
 		}
 		return nil
 	})
@@ -93,8 +93,8 @@ func (mc *MemoryCache) GetMulti(ctx context.Context, keys []string, dst interfac
 
 // DeleteMulti implements Cache#DeleteMulti
 func (mc *MemoryCache) DeleteMulti(ctx context.Context, keys []string) error {
-	for k := range keys {
-		mc.m.Delete(k)
+	for _, v := range keys {
+		mc.m.Delete(v)
 	}
 	return nil
 }
