@@ -3,10 +3,10 @@ package slice
 import "fmt"
 
 func ExampleToMap() {
-	var a = []int{0, 1, 2, 3, 4}
-	var m = ToMap(a, func(i int, v int) string {
-		return fmt.Sprintf("%d", v)
-	})
-	fmt.Println(m.(map[string]int))
-	// Output: map[0:0 1:1 2:2 3:3 4:4]
+	var a = []string{"a", "b", "c", "d", "e"}
+	var m = ToMap(a, func(i int, v string) string {
+		return fmt.Sprintf("%d-%s", i, v)
+	}).(map[string]string)
+	fmt.Println(m["0-a"], m["1-b"], m["2-c"], m["3-d"], m["4-e"])
+	// Output: a b c d e
 }
