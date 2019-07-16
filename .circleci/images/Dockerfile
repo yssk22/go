@@ -1,4 +1,4 @@
-FROM golang:1.11.2 AS go
+FROM golang:1.12.5 AS go
 
 FROM node:8.3 AS node
 
