@@ -1,6 +1,6 @@
-FROM golang:1.11.2 AS go
+FROM golang:1.12.5 AS go
 
-FROM node:8.3 AS node
+FROM node:8.16 AS node
 
 FROM google/cloud-sdk:224.0.0 AS cloud-sdk
 
