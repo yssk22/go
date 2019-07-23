@@ -46,7 +46,8 @@ func startEmulator() (*emulator, error) {
 	}
 	xerrors.MustNil(err)
 	// debug
-	log.Println("check ds dir")
+	pid := os.Getpid()
+	log.Println("check ds dir", pid)
 	const dsdir = "/root/.config/gcloud/emulators/datastore"
 	info, err := os.Stat(dsdir)
 	if err == nil {
@@ -416,4 +417,8 @@ func (te *TestEnv) json2Datastore(pkey *datastore.Key, data map[string]interface
 
 func outputEnvironmentLogs() bool {
 	return os.Getenv("OUTPUT_TEST_ENVIRONMENT_LOG") == "1"
+}
+
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 }
