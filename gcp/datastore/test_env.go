@@ -43,10 +43,10 @@ func startEmulator() (*emulator, error) {
 	log.Println("Start Emulator")
 	port, err := xnet.GetEphemeralPort()
 	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator")
+		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
 	}
 	xerrors.MustNil(err)
-	cmd := exec.Command("gcloud",
+	args := []string{
 		"beta",
 		"emulators",
 		"datastore",
@@ -55,17 +55,19 @@ func startEmulator() (*emulator, error) {
 		"--no-store-on-disk",
 		fmt.Sprintf("--host-port=localhost:%d", port),
 		"--project=testenvironment",
-	)
+	}
+	cmd := exec.Command("gcloud", args...)
 	if outputEnvironmentLogs() {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 	err = cmd.Start()
 	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator")
+		return nil, xerrors.Wrap(err, "cannot start an emulator - failed to start `gcloud %s`", strings.Join(args, " "))
 	}
+	const timeout = 60 * time.Second
 	interval := retry.ConstBackoff(200 * time.Millisecond)
-	until := retry.Until(time.Now().Add(15 * time.Second))
+	until := retry.Until(time.Now().Add(timeout))
 	err = retry.Do(context.Background(), func(_ context.Context) error {
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/", port))
 		defer func() {
@@ -76,7 +78,7 @@ func startEmulator() (*emulator, error) {
 		return err
 	}, interval, until)
 	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator: timedout")
+		return nil, xerrors.Wrap(err, "cannot start an emulator: timedout in %s", timeout)
 	}
 	return &emulator{
 		process: cmd.Process,
