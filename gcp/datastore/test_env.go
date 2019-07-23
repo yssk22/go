@@ -40,7 +40,6 @@ type emulator struct {
 }
 
 func startEmulator() (*emulator, error) {
-	log.Println("Start Emulator")
 	port, err := xnet.GetEphemeralPort()
 	if err != nil {
 		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
@@ -57,6 +56,8 @@ func startEmulator() (*emulator, error) {
 		"--project=testenvironment",
 	}
 	var stdout, stderr *bytes.Buffer
+	cliStr := fmt.Sprintf("gcloud %s", strings.Join(args, " "))
+	log.Printf("start an emulator process at %d (%s)", port, cliStr)
 	cmd := exec.Command("gcloud", args...)
 	if outputEnvironmentLogs() {
 		cmd.Stdout = os.Stdout
@@ -69,7 +70,7 @@ func startEmulator() (*emulator, error) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator - failed to start `gcloud %s`", strings.Join(args, " "))
+		return nil, xerrors.Wrap(err, "cannot start an emulator - failed to start `%s`", cliStr)
 	}
 	const timeout = 60 * time.Second
 	interval := retry.ConstBackoff(200 * time.Millisecond)
