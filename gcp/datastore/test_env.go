@@ -44,6 +44,23 @@ func startEmulator() (*emulator, error) {
 	if err != nil {
 		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
 	}
+	// debug
+	log.Println("check ds dir")
+	const dsdir = "/root/.config/gcloud/emulators/datastore"
+	info, err := os.Stat(dsdir)
+	if err == nil {
+		log.Println("have stat, isDir?", info.IsDir())
+		if info.IsDir() {
+			files, err := ioutil.ReadDir(dsdir)
+			if err == nil {
+				log.Println("files", len(files))
+			} else {
+				log.Println("cannot read dir", err)
+			}
+		}
+	} else {
+		log.Println("no stat", err)
+	}
 	xerrors.MustNil(err)
 	args := []string{
 		"beta",
