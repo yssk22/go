@@ -2,6 +2,7 @@ package xnet
 
 import (
 	"net"
+
 	"github.com/yssk22/go/x/xerrors"
 )
 
@@ -9,7 +10,7 @@ import (
 func GetEphemeralPort() (int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	if err != nil {
-		return 0, err
+		return 0, xerrors.Wrap(err, "cannot get an addr by net.ResolveTCPAddr(\"tcp\", \"localhost:0\")")
 	}
 
 	l, err := net.ListenTCP("tcp", addr)
