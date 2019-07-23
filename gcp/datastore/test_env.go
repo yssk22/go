@@ -56,10 +56,16 @@ func startEmulator() (*emulator, error) {
 		fmt.Sprintf("--host-port=localhost:%d", port),
 		"--project=testenvironment",
 	}
+	var stdout, stderr *bytes.Buffer
 	cmd := exec.Command("gcloud", args...)
 	if outputEnvironmentLogs() {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		stdout = &(bytes.Buffer{})
+		stderr = &(bytes.Buffer{})
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
 	}
 	err = cmd.Start()
 	if err != nil {
@@ -78,6 +84,16 @@ func startEmulator() (*emulator, error) {
 		return err
 	}, interval, until)
 	if err != nil {
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		if !outputEnvironmentLogs() {
+			log.Println("failed to run a datastore emulator")
+			log.Println("[stdout]")
+			log.Println(stdout.String())
+			log.Println("[stderr]")
+			log.Println(stderr.String())
+		}
 		return nil, xerrors.Wrap(err, "cannot start an emulator: timedout in %s", timeout)
 	}
 	return &emulator{
