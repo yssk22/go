@@ -22,6 +22,7 @@ import (
 	"github.com/yssk22/go/retry"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xlog"
+	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xnet"
 	"github.com/yssk22/go/x/xtime"
 
@@ -40,7 +41,7 @@ type emulator struct {
 	port    int
 }
 
-func startEmulator() (*emulator, error) {
+func startEmulator(pkgName string) (*emulator, error) {
 	var err error
 	var port int
 	var dir string
@@ -58,7 +59,13 @@ func startEmulator() (*emulator, error) {
 	}
 	dir, err = ioutil.TempDir("", "gcp-datastore-emulator")
 	if err != nil {
-		err = xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
+		err = xerrors.Wrap(err, "cannot start an emulator - cannot create a tempdir")
+		return nil, err
+	}
+	dir = filepath.Join(dir, pkgName)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		err = xerrors.Wrap(err, "cannot start an emulator - cannot create a package dir")
 		return nil, err
 	}
 	args := []string{
@@ -175,8 +182,16 @@ type TestEnv struct {
 
 // NewTestEnv returns a new TestEnv instance
 func NewTestEnv() (*TestEnv, error) {
+	var pkgName string
+	stack := xruntime.CaptureStack(10)
+	for _, frame := range stack {
+		if frame.FunctionName == "TestMain" {
+			pkgName = frame.PackageName
+			break
+		}
+	}
 	ctx := context.Background()
-	emulator, err := startEmulator()
+	emulator, err := startEmulator(pkgName)
 	if err != nil {
 		return nil, err
 	}
