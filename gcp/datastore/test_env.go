@@ -41,31 +41,25 @@ type emulator struct {
 }
 
 func startEmulator() (*emulator, error) {
-	port, err := xnet.GetEphemeralPort()
-	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
-	}
-	dir, err := ioutil.TempDir("", "gcp-datastore-emulator")
-	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
-	}
-	xerrors.MustNil(err)
-	pid := os.Getpid()
-	log.Println("check ds dir", pid)
-	const dsdir = "/root/.config/gcloud/emulators/datastore"
-	info, err := os.Stat(dsdir)
-	if err == nil {
-		log.Println("have stat, isDir?", info.IsDir())
-		if info.IsDir() {
-			files, err := ioutil.ReadDir(dsdir)
-			if err == nil {
-				log.Println("files", len(files))
-			} else {
-				log.Println("cannot read dir", err)
-			}
+	var err error
+	var port int
+	var dir string
+	defer func() {
+		if err != nil {
+			log.Printf("failed to start an emulator process: %v", err)
+		} else {
+			log.Printf("start an emulator process at %d (%s)", port, dir)
 		}
-	} else {
-		log.Println("no stat", err)
+	}()
+	port, err = xnet.GetEphemeralPort()
+	if err != nil {
+		err = xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
+		return nil, err
+	}
+	dir, err = ioutil.TempDir("", "gcp-datastore-emulator")
+	if err != nil {
+		err = xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
+		return nil, err
 	}
 	args := []string{
 		"beta",
@@ -80,7 +74,6 @@ func startEmulator() (*emulator, error) {
 	}
 	var stdout, stderr *bytes.Buffer
 	cliStr := fmt.Sprintf("gcloud %s", strings.Join(args, " "))
-	log.Printf("start an emulator process at %d (%s)", port, cliStr)
 	cmd := exec.Command("gcloud", args...)
 	if outputEnvironmentLogs() {
 		cmd.Stdout = os.Stdout
@@ -93,7 +86,8 @@ func startEmulator() (*emulator, error) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		return nil, xerrors.Wrap(err, "cannot start an emulator - failed to start `%s`", cliStr)
+		err = xerrors.Wrap(err, "cannot start an emulator - failed to start `%s`", cliStr)
+		return nil, err
 	}
 	const timeout = 60 * time.Second
 	interval := retry.ConstBackoff(200 * time.Millisecond)
@@ -118,7 +112,8 @@ func startEmulator() (*emulator, error) {
 			log.Println("[stderr]")
 			log.Println(stderr.String())
 		}
-		return nil, xerrors.Wrap(err, "cannot start an emulator: timedout in %s", timeout)
+		err = xerrors.Wrap(err, "cannot start an emulator: timedout in %s", timeout)
+		return nil, err
 	}
 	return &emulator{
 		process: cmd.Process,
@@ -128,17 +123,27 @@ func startEmulator() (*emulator, error) {
 }
 
 func (e *emulator) Shutdown() error {
+	var err error
+	defer func() {
+		if err != nil {
+			log.Printf("failed to shutdown an emulator process at %d: %v", e.port, err)
+		} else {
+			log.Printf("shutdown an emulator process at %d (%s)", e.port, e.dir)
+		}
+	}()
 	defer os.RemoveAll(e.dir)
 	proc := e.process
 	if proc == nil {
-		return nil
+		err = fmt.Errorf("no emulator process")
+		return err
 	}
 	errc := make(chan error, 1)
 	go func() {
-		_, err := proc.Wait()
+		_, err = proc.Wait()
 		errc <- err
 	}()
-	resp, err := http.Post(fmt.Sprintf("http://localhost:%d/shutdown", e.port), "text/html", nil)
+	var resp *http.Response
+	resp, err = http.Post(fmt.Sprintf("http://localhost:%d/shutdown", e.port), "text/html", nil)
 	defer func() {
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
@@ -146,17 +151,18 @@ func (e *emulator) Shutdown() error {
 	}()
 	if err != nil {
 		if kerr := proc.Kill(); kerr != nil {
-			return xerrors.Wrap(kerr, "cannot kill the emulator main process")
-		} else {
-			return xerrors.Wrap(err, "failed to request a shutdown")
+			err = xerrors.Wrap(kerr, "cannot kill the emulator main process")
+			return err
 		}
+		err = xerrors.Wrap(err, "failed to request a shutdown")
+		return err
 	}
 	select {
 	case <-time.After(15 * time.Second):
-		return fmt.Errorf("the emulator timed out")
-	case <-errc:
+		err = fmt.Errorf("shutdown timed out")
+	case err = <-errc:
 	}
-	return nil
+	return err
 }
 
 // TestEnv is a struct to provide a helper
