@@ -36,6 +36,7 @@ var _floatRe = regexp.MustCompile("\\.0+$")
 
 type emulator struct {
 	process *os.Process
+	dir     string
 	port    int
 }
 
@@ -44,8 +45,11 @@ func startEmulator() (*emulator, error) {
 	if err != nil {
 		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
 	}
+	dir, err := ioutil.TempDir("", "gcp-datastore-emulator")
+	if err != nil {
+		return nil, xerrors.Wrap(err, "cannot start an emulator - ephemeral port assignment failure")
+	}
 	xerrors.MustNil(err)
-	// debug
 	pid := os.Getpid()
 	log.Println("check ds dir", pid)
 	const dsdir = "/root/.config/gcloud/emulators/datastore"
@@ -69,6 +73,7 @@ func startEmulator() (*emulator, error) {
 		"datastore",
 		"start",
 		"--consistency=1.0",
+		fmt.Sprintf("--data-dir=%s", dir),
 		"--no-store-on-disk",
 		fmt.Sprintf("--host-port=localhost:%d", port),
 		"--project=testenvironment",
@@ -117,11 +122,13 @@ func startEmulator() (*emulator, error) {
 	}
 	return &emulator{
 		process: cmd.Process,
+		dir:     dir,
 		port:    port,
 	}, nil
 }
 
 func (e *emulator) Shutdown() error {
+	defer os.RemoveAll(e.dir)
 	proc := e.process
 	if proc == nil {
 		return nil
