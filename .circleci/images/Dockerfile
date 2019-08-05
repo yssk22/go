@@ -1,6 +1,6 @@
-FROM golang:1.12.5 AS go
+FROM circleci/golang:1.12.5 AS go
 
-FROM node:8.16 AS node
+FROM circleci/node:8.16 AS node
 
 FROM google/cloud-sdk:254.0.0 AS cloud-sdk
 
