@@ -16,6 +16,9 @@ package {{.Package}}
 {{range .Specs -}}
 
 func (s *{{.StructName}}) NewKey(ctx context.Context) *datastore.Key {
+	{{if .Namespace -}}
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
+	{{end -}}
 	return ds.NewKey(ctx, "{{.KindName}}", s.{{.KeyField}})
 }
 
@@ -57,6 +60,7 @@ func (d *{{.StructName}}KindClient) GetMulti(ctx context.Context, keys interface
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*{{.StructName}}
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.KindName}}", keys); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
@@ -102,6 +106,7 @@ func (d *{{.StructName}}KindClient) PutMulti(ctx context.Context, ents []*{{.Str
 	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
 	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
 
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	if hasBeforeSave {
 		for i := range ents {
 			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
@@ -153,6 +158,7 @@ func (d *{{.StructName}}KindClient) MustDelete(ctx context.Context, key interfac
 func (d *{{.StructName}}KindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	if dsKeys, err = ds.NormalizeKeys(ctx, "{{.KindName}}", keys); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
@@ -239,7 +245,7 @@ type {{.StructName}}Query struct {
 
 func New{{.StructName}}Query() *{{.StructName}}Query {
 	return &{{.StructName}}Query{
-		query: ds.NewQuery("{{.KindName}}"),
+		query: ds.NewQuery("{{.KindName}}").Namespace("{{.Namespace}}"),
 		viaKeys: false,
 	}
 }
@@ -267,6 +273,7 @@ func (q *{{.StructName}}Query) ViaKeys() *{{.StructName}}Query {
 }
 
 func (d *{{.StructName}}KindClient) GetAll(ctx context.Context, q *{{.StructName}}Query) ([]*datastore.Key, []{{.StructName}}, error) {
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	if q.viaKeys {
 		keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 		if err != nil {
@@ -312,6 +319,7 @@ func (d *{{.StructName}}KindClient) MustGetAll(ctx context.Context, q *{{.Struct
 }
 
 func (d *{{.StructName}}KindClient) Count(ctx context.Context, q *{{.StructName}}Query) (int, error) {
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	return d.client.Count(ctx, q.query)
 }
 
@@ -322,6 +330,7 @@ func (d *{{.StructName}}KindClient) MustCount(ctx context.Context,  q *{{.Struct
 }
 
 func (d *{{.StructName}}KindClient) Run(ctx context.Context, q *{{.StructName}}Query) (*{{.StructName}}Iterator, error) {
+	ctx = gcp.WithNamespace(ctx, "{{.Namespace}}")
 	iter, err := d.client.Run(ctx, q.query)
 	if err != nil {
 		return nil, err
