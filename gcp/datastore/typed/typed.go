@@ -20,7 +20,8 @@ import (
 const (
 	signature = "datastore"
 
-	commandParamKind = "kind"
+	commandParamKind      = "kind"
+	commandParamNamespace = "ns"
 )
 
 var annotation = generator.NewAnnotationSymbol("datastore")
@@ -47,6 +48,7 @@ func (g *Generator) Run(pkg *generator.PackageInfo, nodes []*generator.Annotated
 	dep := generator.NewDependency()
 	dep.Add("context")
 	dep.Add("cloud.google.com/go/datastore")
+	dep.Add("github.com/yssk22/go/gcp")
 	dep.AddAs("github.com/yssk22/go/gcp/datastore", "ds")
 	dep.Add("google.golang.org/api/iterator")
 	dep.Add("github.com/yssk22/go/x/xerrors")
@@ -118,6 +120,10 @@ func (b *bindings) parseAnnotatedNode(pkg *generator.PackageInfo, n *generator.A
 	} else {
 		spec.KindName = spec.StructName
 	}
+	if k, err := params.Get(commandParamNamespace); err == nil {
+		spec.Namespace = k.(string)
+	}
+
 	st, ok := t.Type().Underlying().(*types.Struct)
 	if !ok {
 		return nil, n.GenError(fmt.Errorf("@datastore is used on non struct type declaration"), nil)

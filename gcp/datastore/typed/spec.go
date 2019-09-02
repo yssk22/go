@@ -3,7 +3,8 @@ package typed
 // Spec is a specificaiton for datastore entity
 type Spec struct {
 	StructName     string // struct name
-	KindName       string // entity kind name (usually same as StructName) but different if as=XX is specfiied
+	KindName       string // entity kind name (usually same as StructName) but different if kind=XX is specfiied
+	Namespace      string // namespace to use (default: "")
 	KeyField       string
 	TimestampField string
 	IsSearchable   bool

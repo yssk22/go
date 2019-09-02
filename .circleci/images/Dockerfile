@@ -15,7 +15,7 @@ RUN go get github.com/jstemmer/go-junit-report
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt-get update && apt-get install -y yarn make wget curl sudo
-RUN yarn global add prettier
+RUN yarn global add prettier expo-cli@3.0.9
 
 ## from https://github.com/circleci/circleci-images/blob/staging/shared/images/Dockerfile-basic.template
 RUN mkdir -p /etc/sudoers.d/
