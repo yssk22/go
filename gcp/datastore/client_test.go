@@ -20,8 +20,8 @@ func TestClient(t *testing.T) {
 
 		tt := make([]*Example, 2, 2)
 		keys := []*datastore.Key{
-			NewKey(ctx, "Example", "example-1"),
-			NewKey(ctx, "Example", "example-3"),
+			NewKey("Example", "example-1"),
+			NewKey("Example", "example-3"),
 		}
 		a.Nil(c.GetMulti(ctx, keys, tt))
 		a.NotNil(tt[0])
@@ -35,9 +35,9 @@ func TestClient(t *testing.T) {
 		a.EqStr("example-1", e1[0].ID)
 
 		keys = []*datastore.Key{
-			NewKey(ctx, "Example", "example-1"),
-			NewKey(ctx, "Example", "example-3"),
-			NewKey(ctx, "Example", "example-2"),
+			NewKey("Example", "example-1"),
+			NewKey("Example", "example-3"),
+			NewKey("Example", "example-2"),
 		}
 		tt = make([]*Example, 3, 3)
 		a.Nil(c.GetMulti(ctx, keys, tt))
@@ -52,7 +52,7 @@ func TestClient(t *testing.T) {
 		ctx := context.Background()
 		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 		keys := []*datastore.Key{
-			NewKey(ctx, "Example", "example-a"),
+			NewKey("Example", "example-a"),
 		}
 		stored := make([]*Example, 1, 1)
 		a.Nil(c.GetMulti(ctx, keys, stored))
@@ -81,8 +81,8 @@ func TestClient(t *testing.T) {
 		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 
 		keys := []*datastore.Key{
-			NewKey(ctx, "Example", "example-1"),
-			NewKey(ctx, "Example", "example-3"),
+			NewKey("Example", "example-1"),
+			NewKey("Example", "example-3"),
 		}
 
 		a.Nil(c.DeleteMulti(ctx, keys))
