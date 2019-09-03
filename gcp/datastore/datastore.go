@@ -50,7 +50,7 @@ func IsDatastoreError(err error) bool {
 }
 
 // NormalizeKeys to normalize keys from []string, []interface{} to []*datastore.Key
-func NormalizeKeys(kind string, keys interface{}) ([]*datastore.Key, error) {
+func NormalizeKeys(keys interface{}, kind string, namespace string) ([]*datastore.Key, error) {
 	var dsKeys []*datastore.Key
 	switch t := keys.(type) {
 	case []string:
@@ -69,6 +69,9 @@ func NormalizeKeys(kind string, keys interface{}) ([]*datastore.Key, error) {
 		dsKeys = keys.([]*datastore.Key)
 	default:
 		return nil, fmt.Errorf("unsupported keys type: %s", t)
+	}
+	for i := range dsKeys {
+		dsKeys[i].Namespace = namespace
 	}
 	return dsKeys, nil
 }
