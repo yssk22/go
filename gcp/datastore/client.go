@@ -74,14 +74,6 @@ func Cache(c cache.Cache) Option {
 	})
 }
 
-// Namespace to set the namespace
-func Namespace(ns string) Option {
-	return Option(func(opts *clientConfig) *clientConfig {
-		opts.Namespace = &ns
-		return opts
-	})
-}
-
 var datastoreLoggerKey = struct{}{}
 
 // CrudEntsLimit is a limit of the number of entities that can be handled in one put or delete transaction
