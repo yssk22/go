@@ -15,7 +15,9 @@ import (
 )
 
 func (s *Entity) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "Entity", s.ID)
+	key := ds.NewKey("Entity", s.ID)
+	key.Namespace = ""
+	return key
 }
 
 type EntityReplacer interface {
@@ -56,7 +58,7 @@ func (d *EntityKindClient) GetMulti(ctx context.Context, keys interface{}) ([]*d
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*Entity
-	if dsKeys, err = ds.NormalizeKeys(ctx, "Entity", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "Entity", ""); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -150,7 +152,7 @@ func (d *EntityKindClient) MustDelete(ctx context.Context, key interface{}) *dat
 func (d *EntityKindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "Entity", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "Entity", ""); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -236,7 +238,7 @@ type EntityQuery struct {
 
 func NewEntityQuery() *EntityQuery {
 	return &EntityQuery{
-		query:   ds.NewQuery("Entity"),
+		query:   ds.NewQuery("Entity").Namespace(""),
 		viaKeys: false,
 	}
 }
