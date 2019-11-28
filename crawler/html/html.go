@@ -9,8 +9,10 @@ import (
 )
 
 type Head struct {
-	Title string     `json:"title"`
-	Meta  url.Values `json:"meta"`
+	Title     string     `json:"title"`
+	Canonical string     `json:"canonical"`
+	Meta      url.Values `json:"meta"`
+	Rel       url.Values `json:"rel"`
 }
 
 // HTMLScraper is a function wrapper for Scraper interface using goquery.
@@ -30,6 +32,17 @@ func (f HTMLScraper) Scrape(r io.Reader) (interface{}, error) {
 		key := s.AttrOr("property", "")
 		if key != "" {
 			head.Meta.Add(key, s.AttrOr("content", ""))
+			return
+		}
+	})
+	doc.Find("head link").Each(func(i int, s *goquery.Selection) {
+		key := s.AttrOr("rel", "")
+		if key != "" {
+			head.Meta.Add(key, s.AttrOr("href", ""))
+			if key == "canonical" {
+				head.Canonical = s.AttrOr("href", "")
+			}
+			return
 		}
 	})
 	return f(doc, head)
