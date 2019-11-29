@@ -8,6 +8,16 @@ import (
 	"golang.org/x/text/width"
 )
 
+// Or returns the first element of string array which is not empty
+func Or(arr ...string) string {
+	for _, s := range arr {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
 // SplitAndTrim is like strings.Split but spaces in each of item are trimmed
 func SplitAndTrim(s string, sep string) []string {
 	var list []string

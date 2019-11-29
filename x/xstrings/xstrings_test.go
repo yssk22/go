@@ -2,6 +2,14 @@ package xstrings
 
 import "fmt"
 
+func ExampleOr() {
+	fmt.Println(Or("a", "b"))
+	fmt.Println(Or("", "b"))
+	// Output:
+	// a
+	// b
+}
+
 func ExampleSplitAndTrim() {
 	fmt.Println(SplitAndTrim("a, b, c ,d,,f,", ","))
 	// Output:
