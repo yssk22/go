@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/yssk22/go/x/xstrings"
 )
 
 type Head struct {
@@ -29,9 +30,10 @@ func (f HTMLScraper) Scrape(r io.Reader) (interface{}, error) {
 	}
 	head.Title = strings.TrimSpace(doc.Find("head title").Text())
 	doc.Find("head meta").Each(func(i int, s *goquery.Selection) {
-		key := s.AttrOr("property", "")
+		key := xstrings.Or(s.AttrOr("name", ""), s.AttrOr("property", ""))
+		value := s.AttrOr("content", "")
 		if key != "" {
-			head.Meta.Add(key, s.AttrOr("content", ""))
+			head.Meta.Add(key, value)
 			return
 		}
 	})
