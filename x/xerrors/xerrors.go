@@ -53,3 +53,11 @@ func (me MultiError) HasError() bool {
 	}
 	return false
 }
+
+// ToReturn returns itself if MultiError has an error, otherwise nil
+func (me MultiError) ToReturn() error {
+	if me.HasError() {
+		return me
+	}
+	return nil
+}
