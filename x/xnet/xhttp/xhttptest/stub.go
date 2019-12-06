@@ -15,6 +15,13 @@ import (
 	"github.com/yssk22/go/x/xerrors"
 )
 
+const stubRequestOriginalURLHeaderKey = "X-HTTPTEST-ORIGINAL-URL"
+
+// GetOriginalURL returns a original URL value for incoming request intercepted by stub
+func GetOriginalURL(req *http.Request) string {
+	return req.Header.Get(stubRequestOriginalURLHeaderKey)
+}
+
 // StubCreator returns *http.Client that creates files for stubs by real accesses if
 // stub file does not exists. The stub files are created(or used) at {basedir}/{domain}/{path}
 // structure.
@@ -176,6 +183,7 @@ func (r *mappingRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
 	if rewriteTo == nil {
 		return nil, fmt.Errorf("forbitten by xhttptest.Stub")
 	}
+	req.Header.Set(stubRequestOriginalURLHeaderKey, req.URL.String())
 	req.URL = rewriteTo
 
 	if r.base != nil {
@@ -200,6 +208,7 @@ type serverRewriter struct {
 
 // RoundTrip implements http.RoundTripper#RoundTrip
 func (r *serverRewriter) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set(stubRequestOriginalURLHeaderKey, req.URL.String())
 	req.URL.Scheme = "http"
 	req.URL.Host = r.server.addr.String()
 	if r.base != nil {
