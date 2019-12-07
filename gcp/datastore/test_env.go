@@ -22,8 +22,8 @@ import (
 	"github.com/yssk22/go/retry"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xlog"
-	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xnet"
+	"github.com/yssk22/go/x/xruntime"
 	"github.com/yssk22/go/x/xtime"
 
 	"cloud.google.com/go/datastore"
@@ -244,7 +244,7 @@ func (te *TestEnv) Reset() error {
 	if err != nil {
 		return xerrors.Wrap(err, "cannot query namespaces")
 	}
-	return slice.Parallel(namespaceKeys, slice.DefaultParallelOption, func(i int, nsKey *datastore.Key) error {
+	return slice.Parallel(namespaceKeys, func(i int, nsKey *datastore.Key) error {
 		q := datastore.NewQuery("__kind__").KeysOnly().Namespace(nsKey.Name)
 		kindKeys, err := client.GetAll(ctx, q, nil)
 		if err != nil {
