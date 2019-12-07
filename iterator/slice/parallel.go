@@ -6,22 +6,23 @@ import (
 	"sync"
 )
 
-// ParallelOption is an option for Parallel* methods
-type ParallelOption struct {
-	MaxConcurrency int // # of goroutines to invoke at max. 0 means the same # of slice length
+type ParallelConfig struct {
+	maxConcurrency int
 }
 
-// DefaultParallelOption is a default ParallelOption value
-var DefaultParallelOption = &ParallelOption{
-	MaxConcurrency: 0,
+type ParallelOption func(*ParallelConfig) *ParallelConfig
+
+// MaxConcurrency to configure max cncurrurency
+func MaxConcurrency(n int) ParallelOption {
+	return func(p *ParallelConfig) *ParallelConfig {
+		p.maxConcurrency = n
+		return p
+	}
 }
 
 // Parallel is spawn `fun` in parallel.
 // `fun` must be type of `func(int, *T) error`, where list is []T or []*T).
-func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
-	if option == nil {
-		option = DefaultParallelOption
-	}
+func Parallel(list interface{}, fun interface{}, options ...ParallelOption) error {
 	a1 := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
 	fType := f.Type()
@@ -37,7 +38,13 @@ func Parallel(list interface{}, option *ParallelOption, fun interface{}) error {
 	if l == 0 {
 		return nil
 	}
-	n := option.MaxConcurrency
+	var config = &ParallelConfig{
+		maxConcurrency: l,
+	}
+	for _, opt := range options {
+		config = opt(config)
+	}
+	n := config.maxConcurrency
 	if l < n {
 		n = l
 	}
