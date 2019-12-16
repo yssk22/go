@@ -6,6 +6,7 @@ import (
 )
 
 // Filter returns a new filtered list
+// when the list is []T, fun must be func(i int, v T) bool, then it returns elements where func(i, v) returns true.
 func Filter(list interface{}, fun interface{}) interface{} {
 	a := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
