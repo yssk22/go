@@ -1,9 +1,9 @@
 package crawler
 
 import (
-	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -36,18 +36,18 @@ func NewHTTPFetcher(url string, client *http.Client) *HTTPFetcher {
 }
 
 // Fetch implements Fetcher#Fetch
-func (f *HTTPFetcher) Fetch() (io.Reader, error) {
+func (f *HTTPFetcher) Fetch() (io.ReadCloser, error) {
 	resp, err := f.client.Get(f.url)
 	if err != nil {
 		return nil, err
 	}
-	var buff bytes.Buffer
-	defer resp.Body.Close()
-	if _, err := io.Copy(&buff, resp.Body); err != nil {
-		return nil, err
-	}
 	if resp.StatusCode != 200 {
-		return nil, &ErrHTTP{Response: resp, Content: buff.Bytes()}
+		defer resp.Body.Close()
+		buff, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, &ErrHTTP{Response: resp, Content: buff}
 	}
-	return &buff, nil
+	return resp.Body, nil
 }

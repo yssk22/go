@@ -10,7 +10,7 @@ import (
 
 // Fetcher is an interface to get a raw resource for crawled targed.
 type Fetcher interface {
-	Fetch() (io.Reader, error)
+	Fetch() (io.ReadCloser, error)
 }
 
 // Scraper is an interface to scrape a content
@@ -46,5 +46,6 @@ func Run(fetcher Fetcher, scraper Scraper) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetch error: %v", err)
 	}
+	defer content.Close()
 	return scraper.Scrape(content)
 }

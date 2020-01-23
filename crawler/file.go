@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"bytes"
 	"io"
 	"os"
 )
@@ -19,13 +18,10 @@ func NewFileFetcher(path string) *FileFetcher {
 }
 
 // Fetch implements Fetcher#Fetch
-func (f *FileFetcher) Fetch() (io.Reader, error) {
+func (f *FileFetcher) Fetch() (io.ReadCloser, error) {
 	file, err := os.Open(f.path)
 	if err != nil {
 		return nil, err
 	}
-	var buff bytes.Buffer
-	defer file.Close()
-	io.Copy(&buff, file)
-	return &buff, nil
+	return file, nil
 }
