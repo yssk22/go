@@ -1,4 +1,4 @@
-package html
+package scraper
 
 import (
 	"io"
@@ -16,11 +16,11 @@ type Head struct {
 	Rel       url.Values `json:"rel"`
 }
 
-// HTMLScraper is a function wrapper for Scraper interface using goquery.
-type HTMLScraper func(*goquery.Document, *Head) (interface{}, error)
+// htmlScraper is a function wrapper for Scraper interface using goquery.
+type htmlScraper func(*goquery.Document, *Head) (interface{}, error)
 
 // Scrape implements Scraper#Scrape
-func (f HTMLScraper) Scrape(r io.Reader) (interface{}, error) {
+func (f htmlScraper) Scrape(r io.Reader) (interface{}, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, err

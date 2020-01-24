@@ -1,4 +1,4 @@
-package html
+package scraper
 
 import (
 	"os"
@@ -9,9 +9,9 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
-func TestHTMLScraper(t *testing.T) {
+func TestHTML(t *testing.T) {
 	a := assert.New(t)
-	s := HTMLScraper(func(doc *goquery.Document, h *Head) (interface{}, error) {
+	s := Html(func(doc *goquery.Document, h *Head) (interface{}, error) {
 		return h, nil
 	})
 	f, err := os.Open("./fixtures/sample.html")

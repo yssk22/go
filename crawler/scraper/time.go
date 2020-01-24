@@ -1,4 +1,4 @@
-package rss
+package scraper
 
 import (
 	"encoding/xml"

@@ -1,4 +1,4 @@
-package crawler
+package fetcher
 
 import (
 	"fmt"
@@ -17,26 +17,26 @@ func (e *ErrHTTP) Error() string {
 	return fmt.Sprintf("HTTPError (status: %s)", e.Response.Status)
 }
 
-// HTTPFetcher is an implementation to fetch a content from an url.
-type HTTPFetcher struct {
+// httpFetcher is an implementation to fetch a content from an url.
+type httpFetcher struct {
 	url    string
 	client *http.Client
 }
 
 // NewHTTPFetcher returns a new *HTTPFetcher for the given url with http.Client.
 // `client`` can be nil, then http.DefaultClient is used.
-func NewHTTPFetcher(url string, client *http.Client) *HTTPFetcher {
+func NewHTTPFetcher(url string, client *http.Client) Fetcher {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &HTTPFetcher{
+	return &httpFetcher{
 		url:    url,
 		client: client,
 	}
 }
 
 // Fetch implements Fetcher#Fetch
-func (f *HTTPFetcher) Fetch() (io.ReadCloser, error) {
+func (f *httpFetcher) Fetch() (io.ReadCloser, error) {
 	resp, err := f.client.Get(f.url)
 	if err != nil {
 		return nil, err

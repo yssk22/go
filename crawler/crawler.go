@@ -6,12 +6,8 @@ import (
 	"io"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/yssk22/go/crawler/fetcher"
 )
-
-// Fetcher is an interface to get a raw resource for crawled targed.
-type Fetcher interface {
-	Fetch() (io.ReadCloser, error)
-}
 
 // Scraper is an interface to scrape a content
 type Scraper interface {
@@ -41,7 +37,7 @@ func (f HTMLScraper) Scrape(r io.Reader) (interface{}, error) {
 }
 
 // Run execute the fetcher and pass the content to the scraper.
-func Run(fetcher Fetcher, scraper Scraper) (interface{}, error) {
+func Run(fetcher fetcher.Fetcher, scraper Scraper) (interface{}, error) {
 	content, err := fetcher.Fetch()
 	if err != nil {
 		return nil, fmt.Errorf("fetch error: %v", err)
