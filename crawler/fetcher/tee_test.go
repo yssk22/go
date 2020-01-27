@@ -8,9 +8,17 @@ import (
 	"github.com/yssk22/go/x/xtesting/assert"
 )
 
+type buffCloser struct {
+	bytes.Buffer
+}
+
+func (bc *buffCloser) Close() error {
+	return nil
+}
+
 func TestTee(t *testing.T) {
 	a := assert.New(t)
-	var buff bytes.Buffer
+	var buff buffCloser
 	fetcher := NewTeeFetcher(NewFileFetcher("./testdata/file.txt"), &buff)
 	r, err := fetcher.Fetch()
 	a.Nil(err)
