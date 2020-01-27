@@ -8,6 +8,7 @@ import (
 )
 
 // Map iterate the slice
+// list must be []T, where fun must be func(i int, v T) (T1, error)
 func Map(list interface{}, fun interface{}) (interface{}, error) {
 	a := reflect.ValueOf(list)
 	f := reflect.ValueOf(fun)
