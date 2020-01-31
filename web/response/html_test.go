@@ -18,11 +18,11 @@ func TestHTML(t *testing.T) {
 	template.Must(tmpl.Parse("Sub: {{template \"sub\" .}}"))
 	template.Must(tmpl.New("sub").Parse("This is sub {{.foo}}"))
 
-	html := NewHTML(tmpl, map[string]string{
+	html := NewHTML(context.Background(), tmpl, map[string]string{
 		"foo": "bar",
 	})
 	w := httptest.NewRecorder()
-	html.Render(context.Background(), w)
+	html.Render(w)
 
 	a.EqStr("Sub: This is sub bar", w.Body.String())
 }

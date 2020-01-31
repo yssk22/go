@@ -16,11 +16,11 @@ func (e *_error) Render(ctx context.Context, w io.Writer) {
 }
 
 // NewError returns a text response
-func NewError(e error) *Response {
-	return NewResponseWithStatus(&_error{e}, HTTPStatusInternalServerError)
+func NewError(ctx context.Context, e error) *Response {
+	return NewResponseWithStatus(ctx, &_error{e}, HTTPStatusInternalServerError)
 }
 
 // NewErrorWithStatus returns an error response with the given status code
-func NewErrorWithStatus(e error, code HTTPStatus) *Response {
-	return NewResponseWithStatus(&_error{e}, code)
+func NewErrorWithStatus(ctx context.Context, e error, code HTTPStatus) *Response {
+	return NewResponseWithStatus(ctx, &_error{e}, code)
 }

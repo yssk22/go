@@ -17,24 +17,27 @@ type Response struct {
 	Header  http.Header
 	Cookies []*http.Cookie
 	Body    Body
+	ctx     context.Context // context when the response is created
 }
 
 // NewResponse retuurns a *Response to write body content
-func NewResponse(body Body) *Response {
+func NewResponse(ctx context.Context, body Body) *Response {
 	return &Response{
 		Status:  HTTPStatusOK,
 		Header:  http.Header(make(map[string][]string)),
 		Cookies: []*http.Cookie{},
 		Body:    body,
+		ctx:     ctx,
 	}
 }
 
 // NewResponseWithStatus retuurns a *Response to write body content with a custom status code.
-func NewResponseWithStatus(body Body, status HTTPStatus) *Response {
+func NewResponseWithStatus(ctx context.Context, body Body, status HTTPStatus) *Response {
 	return &Response{
 		Status: status,
 		Header: http.Header(make(map[string][]string)),
 		Body:   body,
+		ctx:    ctx,
 	}
 }
 
@@ -44,7 +47,7 @@ func (r *Response) SetCookie(c *http.Cookie, hmac *xhmac.Base64) {
 }
 
 // Render renders whole http contnet
-func (r *Response) Render(ctx context.Context, w http.ResponseWriter) {
+func (r *Response) Render(w http.ResponseWriter) {
 	wh := w.Header()
 	for k, v := range r.Header {
 		for _, vv := range v {
@@ -55,7 +58,7 @@ func (r *Response) Render(ctx context.Context, w http.ResponseWriter) {
 		http.SetCookie(w, c)
 	}
 	w.WriteHeader(int(r.Status))
-	r.Body.Render(ctx, w)
+	r.Body.Render(r.ctx, w)
 }
 
 // Content returns the rendered result of the response body
@@ -63,6 +66,11 @@ func (r *Response) Content() string {
 	var buff bytes.Buffer
 	r.Body.Render(context.Background(), &buff)
 	return buff.String()
+}
+
+// Context returns the context when the response is created
+func (r *Response) Context() context.Context {
+	return r.ctx
 }
 
 // Body is an interface to write response

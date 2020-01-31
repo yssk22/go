@@ -16,13 +16,13 @@ func (t *_text) Render(ctx context.Context, w io.Writer) {
 }
 
 // NewText returns a text response
-func NewText(s interface{}) *Response {
-	return NewTextWithStatus(s, HTTPStatusOK)
+func NewText(ctx context.Context, s interface{}) *Response {
+	return NewTextWithStatus(ctx, s, HTTPStatusOK)
 }
 
 // NewTextWithStatus returns a text formatted response with the given status code
-func NewTextWithStatus(s interface{}, code HTTPStatus) *Response {
-	res := NewResponseWithStatus(&_text{s}, code)
+func NewTextWithStatus(ctx context.Context, s interface{}, code HTTPStatus) *Response {
+	res := NewResponseWithStatus(ctx, &_text{s}, code)
 	res.Header.Set(ContentType, "text/plain; charset=utf-8")
 	return res
 }

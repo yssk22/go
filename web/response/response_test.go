@@ -15,7 +15,7 @@ import (
 func TestSetCookie(t *testing.T) {
 	a := assert.New(t)
 	hmac := xhmac.NewBase64([]byte("github.com/yssk22"), nil)
-	text := NewText("Test Test")
+	text := NewText(context.Background(), "Test Test")
 	c := &http.Cookie{
 		Name:  "foo",
 		Value: "bar",
@@ -23,7 +23,7 @@ func TestSetCookie(t *testing.T) {
 	text.SetCookie(c, hmac)
 
 	w := httptest.NewRecorder()
-	text.Render(context.Background(), w)
+	text.Render(w)
 
 	a.EqStr(
 		fmt.Sprintf("foo=%s", hmac.SignString(c.Value)),

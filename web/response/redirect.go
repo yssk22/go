@@ -1,15 +1,17 @@
 package response
 
+import "context"
+
 // NewRedirect returns *Responose for redirect
-func NewRedirect(url string) *Response {
-	return NewRedirectWithStatus(url, HTTPStatusSeeOther)
+func NewRedirect(ctx context.Context, url string) *Response {
+	return NewRedirectWithStatus(ctx, url, HTTPStatusSeeOther)
 }
 
 // NewRedirectWithStatus returns *Responose for redirect
-func NewRedirectWithStatus(url string, status HTTPStatus) *Response {
+func NewRedirectWithStatus(ctx context.Context, url string, status HTTPStatus) *Response {
 	switch status {
 	case HTTPStatusMovedParmanently, HTTPStatusFound, HTTPStatusSeeOther:
-		res := NewResponseWithStatus(NoContent, status)
+		res := NewResponseWithStatus(ctx, NoContent, status)
 		res.Header.Set("Location", url)
 		return res
 	default:

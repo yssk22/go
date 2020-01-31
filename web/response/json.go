@@ -42,13 +42,13 @@ func (j _json) Render(ctx context.Context, w io.Writer) {
 }
 
 // NewJSON returns a JSON response
-func NewJSON(v interface{}) *Response {
-	return NewJSONWithStatus(v, HTTPStatusOK)
+func NewJSON(ctx context.Context, v interface{}) *Response {
+	return NewJSONWithStatus(ctx, v, HTTPStatusOK)
 }
 
 // NewJSONWithStatus returns a JSON formatted response with the given status code
-func NewJSONWithStatus(v interface{}, code HTTPStatus) *Response {
-	res := NewResponseWithStatus(&_json{v}, code)
+func NewJSONWithStatus(ctx context.Context, v interface{}, code HTTPStatus) *Response {
+	res := NewResponseWithStatus(ctx, &_json{v}, code)
 	res.Header.Set(ContentType, "application/json; charset=utf-8")
 	return res
 }
