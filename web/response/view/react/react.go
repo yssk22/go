@@ -172,6 +172,7 @@ func (p *Page) Render(req *web.Request) *response.Response {
 	}
 	data.Merge(d1)
 	return response.NewHTMLWithStatus(
+		req.Context(),
 		p.template,
 		data,
 		data.Status,

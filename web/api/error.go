@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -19,11 +20,11 @@ type Error struct {
 }
 
 // ToResponse returns *response.Response object for this error
-func (err *Error) ToResponse() *response.Response {
+func (err *Error) ToResponse(ctx context.Context) *response.Response {
 	if err.Status == response.HTTPStatus(0) {
-		return response.NewJSONWithStatus(err, response.HTTPStatusBadRequest)
+		return response.NewJSONWithStatus(ctx, err, response.HTTPStatusBadRequest)
 	}
-	return response.NewJSONWithStatus(err, err.Status)
+	return response.NewJSONWithStatus(ctx, err, err.Status)
 }
 
 func (err *Error) Error() string {
@@ -31,10 +32,10 @@ func (err *Error) Error() string {
 }
 
 // NewErrorResponse returns response.Response with the complient format
-func NewErrorResponse(e error) *response.Response {
+func NewErrorResponse(ctx context.Context, e error) *response.Response {
 	apie, ok := e.(*Error)
 	if ok {
-		return apie.ToResponse()
+		return apie.ToResponse(ctx)
 	}
 	stacks := xerrors.Unwrap(e)
 	log.Println(fmt.Sprintf("internal error occurred - %s", strings.Join(stacks, "\n")))
@@ -42,5 +43,5 @@ func NewErrorResponse(e error) *response.Response {
 		Code:    "internal_server_error",
 		Message: "unexpected server error occurred. please try again later.",
 		Status:  response.HTTPStatusInternalServerError,
-	}).ToResponse()
+	}).ToResponse(ctx)
 }

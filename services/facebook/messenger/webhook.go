@@ -18,9 +18,9 @@ func NewVericationHandler(token string) web.Handler {
 	return web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		if req.Query.GetStringOr("hub.mode", "") == "subscribe" &&
 			req.Query.GetStringOr("hub.verify_token", "") == token {
-			return response.NewText(req.Query.GetStringOr("hub.challenge", ""))
+			return response.NewText(req.Context(), req.Query.GetStringOr("hub.challenge", ""))
 		}
-		return response.NewTextWithStatus("invalid request", response.HTTPStatusForbidden)
+		return response.NewTextWithStatus(req.Context(), "invalid request", response.HTTPStatusForbidden)
 	})
 }
 
@@ -47,7 +47,7 @@ func NewWebhookHandler(hook Webhook) web.Handler {
 		buff, err := ioutil.ReadAll(&io.LimitedReader{R: req.Body, N: MaxWebhookPayloadSize})
 		if err != nil {
 			logger.Infof("io error: %v (Content-Length = %s)", err, req.Header.Get("content-length"))
-			return response.NewTextWithStatus("io error", response.HTTPStatusForbidden)
+			return response.NewTextWithStatus(ctx, "io error", response.HTTPStatusForbidden)
 		}
 		messages, err := Parse(bytes.NewBuffer(buff))
 		if err != nil {
@@ -67,6 +67,6 @@ func NewWebhookHandler(hook Webhook) web.Handler {
 				logger.Warnf("%d messages are ignored because of no content, raw json ---> %s", noContentCount, string(buff))
 			}
 		}
-		return response.NewText("OK")
+		return response.NewText(ctx, "OK")
 	})
 }

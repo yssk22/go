@@ -9,11 +9,11 @@ import (
 	"github.com/yssk22/go/x/xerrors"
 )
 
-const alwaysOKResponseStatements = `return api.OK()
+const alwaysOKResponseStatements = `return api.OK(req.Context())
 `
 
 const errorResponseStatements = `if err != nil {
-	return api.NewErrorResponse(err)
+	return api.NewErrorResponse(req.Context(), err)
 }
 `
 
@@ -46,11 +46,11 @@ var templateHelper = template.FuncMap(map[string]interface{}{
 		case returnTypeNone:
 			return fmt.Sprintf("%s\n%s", buff.String(), alwaysOKResponseStatements)
 		case returnTypeObject:
-			return fmt.Sprintf("return response.NewJSON(%s)", buff.String())
+			return fmt.Sprintf("return response.NewJSON(req.Context(), %s)", buff.String())
 		case returnTypeError:
 			return fmt.Sprintf("err := %s\n%s%s", buff.String(), errorResponseStatements, alwaysOKResponseStatements)
 		case returnTypeObjectAndError:
-			return fmt.Sprintf("obj, err := %s\n%sreturn response.NewJSON(obj)", buff.String(), errorResponseStatements)
+			return fmt.Sprintf("obj, err := %s\n%sreturn response.NewJSON(req.Context(), obj)", buff.String(), errorResponseStatements)
 		}
 		return ""
 	},

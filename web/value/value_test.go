@@ -15,7 +15,7 @@ func ExampleNewRequestValue() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(recorder.TestGet("/?foo=bar").Body)
@@ -28,7 +28,7 @@ func ExampleNewQueryIntOr() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(
@@ -45,7 +45,7 @@ func ExampleNewQueryIntInRange() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(
@@ -64,7 +64,7 @@ func ExampleNewQueryIntInList() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(
@@ -81,7 +81,7 @@ func ExampleNewQueryStringOr() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(
@@ -97,7 +97,7 @@ func ExampleNewQueryStringInList() {
 	r := web.NewRouter(nil)
 	r.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		v, _ := val.Eval(req.Context())
-		return response.NewText(v)
+		return response.NewText(req.Context(), v)
 	}))
 	recorder := httptest.NewRecorder(r)
 	fmt.Println(

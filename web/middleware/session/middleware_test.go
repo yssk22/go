@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"context"
 	"github.com/yssk22/go/uuid"
 	"github.com/yssk22/go/web"
 	"github.com/yssk22/go/web/httptest"
 	"github.com/yssk22/go/web/response"
 	"github.com/yssk22/go/x/xnet/xhttp/xhttptest"
 	"github.com/yssk22/go/x/xtime"
-	"context"
 )
 
 func TestMiddleware_NewSession(t *testing.T) {
@@ -102,17 +102,17 @@ func prepareRouter(sessionDataKey, sessionDataValue interface{}, middleware *Mid
 	router.Post("/session", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		session := FromContext(req.Context())
 		session.Set(sessionDataKey, sessionDataValue)
-		return response.NewText(sessionDataKey)
+		return response.NewText(req.Context(), sessionDataKey)
 	}))
 	router.Get("/session", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		session := FromContext(req.Context())
 		if err := session.Get(sessionDataKey, &sessionDataValue); err != nil {
-			return response.NewText(nil)
+			return response.NewText(req.Context(), nil)
 		}
-		return response.NewText(sessionDataValue)
+		return response.NewText(req.Context(), sessionDataValue)
 	}))
 	router.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		return response.NewText("ok")
+		return response.NewText(req.Context(), "ok")
 	}))
 	return router
 }

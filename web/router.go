@@ -143,7 +143,7 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						}
 					}
 				})
-				return NotFound
+				return response.NewTextWithStatus(request.Context(), "not found", response.HTTPStatusNotFound)
 			}
 			if len(matched) == 1 {
 				route := matched[0].Route
@@ -181,7 +181,7 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	)
 	if res == nil {
 		logger.Debugf("No response is generated.")
-		NotFound.Render(w)
+		response.NewTextWithStatus(req.Context(), "not found", response.HTTPStatusNotFound).Render(w)
 		return
 	}
 	res.Render(w)

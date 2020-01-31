@@ -11,12 +11,13 @@ type Func func(*web.Request) (*PageVars, error)
 func (f Func) Render(req *web.Request) *response.Response {
 	v, err := f(req)
 	if err != nil {
-		return response.NewTextWithStatus("internal server error", response.HTTPStatusInternalServerError)
+		return response.NewTextWithStatus(req.Context(), "internal server error", response.HTTPStatusInternalServerError)
 	}
 	if v == nil {
-		return response.NewTextWithStatus("no content", response.HTTPStatusNoContent)
+		return response.NewTextWithStatus(req.Context(), "no content", response.HTTPStatusNoContent)
 	}
 	return response.NewHTMLWithStatus(
+		req.Context(),
 		iaMarkupTemplate,
 		v,
 		response.HTTPStatusOK,

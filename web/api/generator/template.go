@@ -31,7 +31,7 @@ func ({{.ReceiverName}} {{.ReceiverTypeName}}) SetupAPI(r web.Router) {
 			{{if .StructuredParameter -}}
 			var sp {{.StructuredParameter.Type}}
 			if err := _{{.FuncName}}ParameterParser.Parse(req.Request, &sp); err != nil {
-				return err.ToResponse()
+				return err.ToResponse(req.Context())
 			}
 			{{end -}}
 			{{genExecMethodAndReturn . -}}

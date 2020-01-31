@@ -27,7 +27,7 @@ func (s *serveFile) Process(req *web.Request, next web.NextHandler) *response.Re
 	defer f.Close()
 	buff, err := ioutil.ReadAll(f)
 	if err != nil {
-		return response.NewError(err)
+		return response.NewError(req.Context(), err)
 	}
-	return response.NewText(string(buff))
+	return response.NewText(req.Context(), string(buff))
 }

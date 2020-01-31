@@ -105,6 +105,7 @@ func (queue *PushQueue) RequestValidator() web.Handler {
 				_, logger := xlog.WithContextAndKey(req.Context(), "", LoggerKey)
 				logger.Warnf("Task Queue invalidation: %q != %q", queue.Name, name)
 				return response.NewErrorWithStatus(
+					req.Context(),
 					fmt.Errorf("task queue validation failed"),
 					response.HTTPStatusBadRequest,
 				)

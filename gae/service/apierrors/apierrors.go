@@ -1,6 +1,7 @@
 package apierrors
 
 import (
+	"context"
 	"github.com/yssk22/go/web/response"
 )
 
@@ -12,11 +13,11 @@ type Error struct {
 }
 
 // ToResponse returns *response.Response object for this error
-func (err *Error) ToResponse() *response.Response {
+func (err *Error) ToResponse(ctx context.Context) *response.Response {
 	if err.Status == response.HTTPStatus(0) {
-		return response.NewJSONWithStatus(err, response.HTTPStatusBadRequest)
+		return response.NewJSONWithStatus(ctx, err, response.HTTPStatusBadRequest)
 	}
-	return response.NewJSONWithStatus(err, err.Status)
+	return response.NewJSONWithStatus(ctx, err, err.Status)
 }
 
 // General API errors

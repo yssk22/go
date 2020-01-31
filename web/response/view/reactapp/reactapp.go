@@ -170,6 +170,7 @@ func (p *Page) Render(req *web.Request) *response.Response {
 		panic(xerrors.Wrap(err, "genVar error on "))
 	}
 	return response.NewHTMLWithStatus(
+		req.Context(),
 		p.template,
 		data,
 		data.Status,

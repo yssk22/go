@@ -25,7 +25,7 @@ func (m *Middleware) Process(req *web.Request, next web.NextHandler) *response.R
 	err := m.validator.Eval(req.PostForm)
 	if err != nil {
 		return response.NewJSONWithStatus(
-			err, response.HTTPStatusBadRequest,
+			req.Context(), err, response.HTTPStatusBadRequest,
 		)
 	}
 	return next(req)

@@ -2,13 +2,15 @@ package api
 
 import "github.com/yssk22/go/web/response"
 
+import "context"
+
 var _ok = map[string]bool{
 	"OK": true,
 }
 
 // OK returns { "OK": true }
-func OK() *response.Response {
-	return response.NewJSON(_ok)
+func OK(ctx context.Context) *response.Response {
+	return response.NewJSON(ctx, _ok)
 }
 
 // General API errors

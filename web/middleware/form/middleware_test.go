@@ -50,7 +50,7 @@ func prepareRouter(key string) web.Router {
 			v.IntField(key).Required().Min(10)
 		}),
 		web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-			return response.NewText(req.Form.GetStringOr(key, ""))
+			return response.NewText(req.Context(), req.Form.GetStringOr(key, ""))
 		}))
 	return router
 }

@@ -4,15 +4,19 @@ package asynctask
 
 import (
 	"context"
-	ds "github.com/yssk22/go/gae/datastore"
+	"time"
+
+	"cloud.google.com/go/datastore"
+	ds "github.com/yssk22/go/gcp/datastore"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xtime"
-	"google.golang.org/appengine/datastore"
-	"time"
+	"google.golang.org/api/iterator"
 )
 
 func (s *AsyncTask) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "AsyncTask", s.ID)
+	key := ds.NewKey("AsyncTask", s.ID)
+	key.Namespace = ""
+	return key
 }
 
 type AsyncTaskReplacer interface {
@@ -25,31 +29,35 @@ func (f AsyncTaskReplacerFunc) Replace(old *AsyncTask, new *AsyncTask) *AsyncTas
 	return f(old, new)
 }
 
-type AsyncTaskKind struct{}
-
-func NewAsyncTaskKind() *AsyncTaskKind {
-	return asyncTaskKindInstance
+type AsyncTaskKindClient struct {
+	client *ds.Client
 }
 
-func (d *AsyncTaskKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *AsyncTask, error) {
-	keys, ents, err := d.GetMulti(ctx, []interface{}{key}, options...)
+func NewAsyncTaskKindClient(client *ds.Client) *AsyncTaskKindClient {
+	return &AsyncTaskKindClient{
+		client: client,
+	}
+}
+
+func (d *AsyncTaskKindClient) Get(ctx context.Context, key interface{}) (*datastore.Key, *AsyncTask, error) {
+	keys, ents, err := d.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
 	return keys[0], ents[0], nil
 }
 
-func (d *AsyncTaskKind) MustGet(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *AsyncTask) {
-	k, v, e := d.Get(ctx, key, options...)
+func (d *AsyncTaskKindClient) MustGet(ctx context.Context, key interface{}) (*datastore.Key, *AsyncTask) {
+	k, v, e := d.Get(ctx, key)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*AsyncTask, error) {
+func (d *AsyncTaskKindClient) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*AsyncTask, error) {
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*AsyncTask
-	if dsKeys, err = ds.NormalizeKeys(ctx, "AsyncTask", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "AsyncTask", ""); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -57,122 +65,144 @@ func (d *AsyncTaskKind) GetMulti(ctx context.Context, keys interface{}, options 
 		return nil, nil, nil
 	}
 	ents = make([]*AsyncTask, size, size)
-	if err = ds.GetMulti(ctx, dsKeys, ents, options...); err != nil {
+	if err = d.client.GetMulti(ctx, dsKeys, ents); err != nil {
 		return nil, nil, err
 	}
 	return dsKeys, ents, nil
 }
 
-func (d *AsyncTaskKind) MustGetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*AsyncTask) {
-	k, v, e := d.GetMulti(ctx, keys, options...)
+func (d *AsyncTaskKindClient) MustGetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*AsyncTask) {
+	k, v, e := d.GetMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *AsyncTaskKind) Put(ctx context.Context, ent *AsyncTask, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.PutMulti(ctx, []*AsyncTask{ent}, options...)
+func (d *AsyncTaskKindClient) Put(ctx context.Context, ent *AsyncTask) (*datastore.Key, error) {
+	keys, err := d.PutMulti(ctx, []*AsyncTask{ent})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *AsyncTaskKind) MustPut(ctx context.Context, ent *AsyncTask, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Put(ctx, ent, options...)
+func (d *AsyncTaskKindClient) MustPut(ctx context.Context, ent *AsyncTask) *datastore.Key {
+	k, e := d.Put(ctx, ent)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *AsyncTaskKind) PutMulti(ctx context.Context, ents []*AsyncTask, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *AsyncTaskKindClient) PutMulti(ctx context.Context, ents []*AsyncTask) ([]*datastore.Key, error) {
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		ents[i].UpdatedAt = xtime.Now()
 	}
-	if dsKeys, err = ds.PutMulti(ctx, dsKeys, ents); err != nil {
+	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
 
-func (d *AsyncTaskKind) MustPutMulti(ctx context.Context, ents []*AsyncTask, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.PutMulti(ctx, ents, options...)
+func (d *AsyncTaskKindClient) MustPutMulti(ctx context.Context, ents []*AsyncTask) []*datastore.Key {
+	keys, err := d.PutMulti(ctx, ents)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *AsyncTaskKind) Delete(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.DeleteMulti(ctx, []interface{}{key}, options...)
+func (d *AsyncTaskKindClient) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+	keys, err := d.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *AsyncTaskKind) MustDelete(ctx context.Context, key interface{}, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Delete(ctx, key, options...)
+func (d *AsyncTaskKindClient) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
+	k, e := d.Delete(ctx, key)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *AsyncTaskKind) DeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *AsyncTaskKindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "AsyncTask", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "AsyncTask", ""); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	if err = ds.DeleteMulti(ctx, dsKeys); err != nil {
+	if err = d.client.DeleteMulti(ctx, dsKeys); err != nil {
 		return nil, xerrors.Wrap(err, "datastore error")
 	}
 	return dsKeys, nil
 }
 
-func (d *AsyncTaskKind) MustDeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) []*datastore.Key {
-	k, e := d.DeleteMulti(ctx, keys, options...)
+func (d *AsyncTaskKindClient) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	k, e := d.DeleteMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *AsyncTaskKind) DeleteMatched(ctx context.Context, q *AsyncTaskQuery, options ...ds.CRUDOption) ([]*datastore.Key, error) {
-	keys, err := q.query.KeysOnly().GetAll(ctx, nil)
+func (d *AsyncTaskKindClient) DeleteMatched(ctx context.Context, q *AsyncTaskQuery) ([]*datastore.Key, error) {
+	keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.DeleteMulti(ctx, keys, options...)
+	_, err = d.DeleteMulti(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
 	return keys, nil
 }
 
-func (d *AsyncTaskKind) MustDeleteMatched(ctx context.Context, q *AsyncTaskQuery, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.DeleteMatched(ctx, q, options...)
+func (d *AsyncTaskKindClient) MustDeleteMatched(ctx context.Context, q *AsyncTaskQuery) []*datastore.Key {
+	keys, err := d.DeleteMatched(ctx, q)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *AsyncTaskKind) Replace(ctx context.Context, ent *AsyncTask, replacer AsyncTaskReplacer, options ...ds.CRUDOption) (*datastore.Key, *AsyncTask, error) {
-	keys, ents, err := d.ReplaceMulti(ctx, []*AsyncTask{ent}, replacer, options...)
+func (d *AsyncTaskKindClient) Replace(ctx context.Context, ent *AsyncTask, replacer AsyncTaskReplacer) (*datastore.Key, *AsyncTask, error) {
+	keys, ents, err := d.ReplaceMulti(ctx, []*AsyncTask{ent}, replacer)
 	if err != nil {
 		return nil, ents[0], err
 	}
 	return keys[0], ents[0], err
 }
 
-func (d *AsyncTaskKind) MustReplace(ctx context.Context, ent *AsyncTask, replacer AsyncTaskReplacer, options ...ds.CRUDOption) (*datastore.Key, *AsyncTask) {
-	k, v, e := d.Replace(ctx, ent, replacer, options...)
+func (d *AsyncTaskKindClient) MustReplace(ctx context.Context, ent *AsyncTask, replacer AsyncTaskReplacer) (*datastore.Key, *AsyncTask) {
+	k, v, e := d.Replace(ctx, ent, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *AsyncTaskKind) ReplaceMulti(ctx context.Context, ents []*AsyncTask, replacer AsyncTaskReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*AsyncTask, error) {
+func (d *AsyncTaskKindClient) ReplaceMulti(ctx context.Context, ents []*AsyncTask, replacer AsyncTaskReplacer) ([]*datastore.Key, []*AsyncTask, error) {
 	var size = len(ents)
 	var dsKeys = make([]*datastore.Key, size, size)
 	if size == 0 {
@@ -194,8 +224,8 @@ func (d *AsyncTaskKind) ReplaceMulti(ctx context.Context, ents []*AsyncTask, rep
 	return dsKeys, ents, err
 }
 
-func (d *AsyncTaskKind) MustReplaceMulti(ctx context.Context, ents []*AsyncTask, replacer AsyncTaskReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*AsyncTask) {
-	k, v, e := d.ReplaceMulti(ctx, ents, replacer, options...)
+func (d *AsyncTaskKindClient) MustReplaceMulti(ctx context.Context, ents []*AsyncTask, replacer AsyncTaskReplacer) ([]*datastore.Key, []*AsyncTask) {
+	k, v, e := d.ReplaceMulti(ctx, ents, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
@@ -207,7 +237,7 @@ type AsyncTaskQuery struct {
 
 func NewAsyncTaskQuery() *AsyncTaskQuery {
 	return &AsyncTaskQuery{
-		query:   ds.NewQuery("AsyncTask"),
+		query:   ds.NewQuery("AsyncTask").Namespace(""),
 		viaKeys: false,
 	}
 }
@@ -452,86 +482,102 @@ func (d *AsyncTaskQuery) DescUpdatedAt() *AsyncTaskQuery {
 	return d
 }
 
-func (d *AsyncTaskQuery) Start(s string) *AsyncTaskQuery {
-	d.query = d.query.Start(s)
-	return d
+func (q *AsyncTaskQuery) Start(s string) *AsyncTaskQuery {
+	q.query = q.query.Start(s)
+	return q
 }
 
-func (d *AsyncTaskQuery) End(s string) *AsyncTaskQuery {
-	d.query = d.query.End(s)
-	return d
+func (q *AsyncTaskQuery) End(s string) *AsyncTaskQuery {
+	q.query = q.query.End(s)
+	return q
 }
 
-func (d *AsyncTaskQuery) Limit(n int) *AsyncTaskQuery {
-	d.query = d.query.Limit(n)
-	return d
+func (q *AsyncTaskQuery) Limit(n int) *AsyncTaskQuery {
+	q.query = q.query.Limit(n)
+	return q
 }
 
-func (d *AsyncTaskQuery) ViaKeys() *AsyncTaskQuery {
-	d.viaKeys = true
-	return d
+func (q *AsyncTaskQuery) ViaKeys() *AsyncTaskQuery {
+	q.viaKeys = true
+	return q
 }
 
-func (d *AsyncTaskQuery) GetAll(ctx context.Context) ([]*datastore.Key, []AsyncTask, error) {
-	if d.viaKeys {
-		keys, err := d.query.KeysOnly().GetAll(ctx, nil)
+func (d *AsyncTaskKindClient) GetAll(ctx context.Context, q *AsyncTaskQuery) ([]*datastore.Key, []AsyncTask, error) {
+	if q.viaKeys {
+		keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := asyncTaskKindInstance.GetMulti(ctx, keys)
+		ents := make([]*AsyncTask, len(keys))
+		err = d.client.GetMulti(ctx, keys, ents)
 		if err != nil {
 			return nil, nil, err
 		}
-		list := make([]AsyncTask, len(ents))
-		for i, e := range ents {
-			list[i] = *e
+		result := make([]AsyncTask, 0)
+		for _, e := range ents {
+			if e != nil {
+				result = append(result, *e)
+			}
 		}
-		return keys, list, nil
+		return keys, result, nil
+	} else {
+		var ent []AsyncTask
+		keys, err := d.client.GetAll(ctx, q.query, &ent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return keys, ent, nil
 	}
-	var ent []AsyncTask
-	keys, err := d.query.GetAll(ctx, &ent)
+}
+
+func (d *AsyncTaskKindClient) GetOne(ctx context.Context, q *AsyncTaskQuery) (*datastore.Key, *AsyncTask, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
 	if err != nil {
 		return nil, nil, err
 	}
-	return keys, ent, nil
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
 }
 
-func (d *AsyncTaskQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []AsyncTask) {
-	keys, ents, err := d.GetAll(ctx)
+func (d *AsyncTaskKindClient) MustGetAll(ctx context.Context, q *AsyncTaskQuery) ([]*datastore.Key, []AsyncTask) {
+	keys, ents, err := d.GetAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents
 }
 
-func (d *AsyncTaskQuery) Count(ctx context.Context) (int, error) {
-	return d.query.Count(ctx)
+func (d *AsyncTaskKindClient) Count(ctx context.Context, q *AsyncTaskQuery) (int, error) {
+	return d.client.Count(ctx, q.query)
 }
 
-func (d *AsyncTaskQuery) MustCount(ctx context.Context) int {
-	c, err := d.query.Count(ctx)
+func (d *AsyncTaskKindClient) MustCount(ctx context.Context, q *AsyncTaskQuery) int {
+	c, err := d.Count(ctx, q)
 	xerrors.MustNil(err)
 	return c
 }
 
-func (d *AsyncTaskQuery) Run(ctx context.Context) (*AsyncTaskIterator, error) {
-	iter, err := d.query.Run(ctx)
+func (d *AsyncTaskKindClient) Run(ctx context.Context, q *AsyncTaskQuery) (*AsyncTaskIterator, error) {
+	iter, err := d.client.Run(ctx, q.query)
 	if err != nil {
 		return nil, err
 	}
 	return &AsyncTaskIterator{
 		ctx:     ctx,
 		iter:    iter,
-		viaKeys: d.viaKeys,
+		viaKeys: q.viaKeys,
+		client:  d,
 	}, err
 }
 
-func (d *AsyncTaskQuery) MustRun(ctx context.Context) *AsyncTaskIterator {
-	iter, err := d.Run(ctx)
+func (d *AsyncTaskKindClient) MustRun(ctx context.Context, q *AsyncTaskQuery) *AsyncTaskIterator {
+	iter, err := d.Run(ctx, q)
 	xerrors.MustNil(err)
 	return iter
 }
 
-func (d *AsyncTaskQuery) RunAll(ctx context.Context) ([]datastore.Key, []AsyncTask, string, error) {
-	iter, err := d.Run(ctx)
+func (d *AsyncTaskKindClient) RunAll(ctx context.Context, q *AsyncTaskQuery) ([]datastore.Key, []AsyncTask, string, error) {
+	iter, err := d.Run(ctx, q)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -554,8 +600,8 @@ func (d *AsyncTaskQuery) RunAll(ctx context.Context) ([]datastore.Key, []AsyncTa
 	}
 }
 
-func (d *AsyncTaskQuery) MustRunAll(ctx context.Context) ([]datastore.Key, []AsyncTask, string) {
-	keys, ents, next, err := d.RunAll(ctx)
+func (d *AsyncTaskKindClient) MustRunAll(ctx context.Context, q *AsyncTaskQuery) ([]datastore.Key, []AsyncTask, string) {
+	keys, ents, next, err := d.RunAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents, next
 }
@@ -564,6 +610,7 @@ type AsyncTaskIterator struct {
 	ctx     context.Context
 	iter    *datastore.Iterator
 	viaKeys bool
+	client  *AsyncTaskKindClient
 }
 
 func (iter *AsyncTaskIterator) Cursor() (datastore.Cursor, error) {
@@ -580,22 +627,21 @@ func (iter *AsyncTaskIterator) Next() (*datastore.Key, *AsyncTask, error) {
 	if iter.viaKeys {
 		key, err := iter.iter.Next(nil)
 		if err != nil {
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
-		_, ent, err := asyncTaskKindInstance.Get(iter.ctx, key)
+		_, ent, err := iter.client.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
 		return key, ent, nil
-
 	}
 	var ent AsyncTask
 	key, err := iter.iter.Next(&ent)
 	if err != nil {
-		if err == datastore.Done {
+		if err == iterator.Done {
 			return nil, nil, nil
 		}
 		return nil, nil, err
@@ -608,5 +654,3 @@ func (iter *AsyncTaskIterator) MustNext() (*datastore.Key, *AsyncTask) {
 	xerrors.MustNil(err)
 	return key, ent
 }
-
-var asyncTaskKindInstance = &AsyncTaskKind{}

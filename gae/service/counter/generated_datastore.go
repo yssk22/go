@@ -4,15 +4,19 @@ package counter
 
 import (
 	"context"
-	ds "github.com/yssk22/go/gae/datastore"
+	"time"
+
+	"cloud.google.com/go/datastore"
+	ds "github.com/yssk22/go/gcp/datastore"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xtime"
-	"google.golang.org/appengine/datastore"
-	"time"
+	"google.golang.org/api/iterator"
 )
 
 func (s *Config) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "CounterConfig", s.Key)
+	key := ds.NewKey("CounterConfig", s.Key)
+	key.Namespace = ""
+	return key
 }
 
 type ConfigReplacer interface {
@@ -25,31 +29,35 @@ func (f ConfigReplacerFunc) Replace(old *Config, new *Config) *Config {
 	return f(old, new)
 }
 
-type ConfigKind struct{}
-
-func NewConfigKind() *ConfigKind {
-	return configKindInstance
+type ConfigKindClient struct {
+	client *ds.Client
 }
 
-func (d *ConfigKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *Config, error) {
-	keys, ents, err := d.GetMulti(ctx, []interface{}{key}, options...)
+func NewConfigKindClient(client *ds.Client) *ConfigKindClient {
+	return &ConfigKindClient{
+		client: client,
+	}
+}
+
+func (d *ConfigKindClient) Get(ctx context.Context, key interface{}) (*datastore.Key, *Config, error) {
+	keys, ents, err := d.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
 	return keys[0], ents[0], nil
 }
 
-func (d *ConfigKind) MustGet(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *Config) {
-	k, v, e := d.Get(ctx, key, options...)
+func (d *ConfigKindClient) MustGet(ctx context.Context, key interface{}) (*datastore.Key, *Config) {
+	k, v, e := d.Get(ctx, key)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ConfigKind) GetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*Config, error) {
+func (d *ConfigKindClient) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Config, error) {
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*Config
-	if dsKeys, err = ds.NormalizeKeys(ctx, "CounterConfig", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "CounterConfig", ""); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -57,122 +65,144 @@ func (d *ConfigKind) GetMulti(ctx context.Context, keys interface{}, options ...
 		return nil, nil, nil
 	}
 	ents = make([]*Config, size, size)
-	if err = ds.GetMulti(ctx, dsKeys, ents, options...); err != nil {
+	if err = d.client.GetMulti(ctx, dsKeys, ents); err != nil {
 		return nil, nil, err
 	}
 	return dsKeys, ents, nil
 }
 
-func (d *ConfigKind) MustGetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*Config) {
-	k, v, e := d.GetMulti(ctx, keys, options...)
+func (d *ConfigKindClient) MustGetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Config) {
+	k, v, e := d.GetMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ConfigKind) Put(ctx context.Context, ent *Config, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.PutMulti(ctx, []*Config{ent}, options...)
+func (d *ConfigKindClient) Put(ctx context.Context, ent *Config) (*datastore.Key, error) {
+	keys, err := d.PutMulti(ctx, []*Config{ent})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ConfigKind) MustPut(ctx context.Context, ent *Config, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Put(ctx, ent, options...)
+func (d *ConfigKindClient) MustPut(ctx context.Context, ent *Config) *datastore.Key {
+	k, e := d.Put(ctx, ent)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ConfigKind) PutMulti(ctx context.Context, ents []*Config, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ConfigKindClient) PutMulti(ctx context.Context, ents []*Config) ([]*datastore.Key, error) {
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		ents[i].UpdatedAt = xtime.Now()
 	}
-	if dsKeys, err = ds.PutMulti(ctx, dsKeys, ents); err != nil {
+	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
 
-func (d *ConfigKind) MustPutMulti(ctx context.Context, ents []*Config, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.PutMulti(ctx, ents, options...)
+func (d *ConfigKindClient) MustPutMulti(ctx context.Context, ents []*Config) []*datastore.Key {
+	keys, err := d.PutMulti(ctx, ents)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ConfigKind) Delete(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.DeleteMulti(ctx, []interface{}{key}, options...)
+func (d *ConfigKindClient) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+	keys, err := d.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ConfigKind) MustDelete(ctx context.Context, key interface{}, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Delete(ctx, key, options...)
+func (d *ConfigKindClient) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
+	k, e := d.Delete(ctx, key)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ConfigKind) DeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ConfigKindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "CounterConfig", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "CounterConfig", ""); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	if err = ds.DeleteMulti(ctx, dsKeys); err != nil {
+	if err = d.client.DeleteMulti(ctx, dsKeys); err != nil {
 		return nil, xerrors.Wrap(err, "datastore error")
 	}
 	return dsKeys, nil
 }
 
-func (d *ConfigKind) MustDeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) []*datastore.Key {
-	k, e := d.DeleteMulti(ctx, keys, options...)
+func (d *ConfigKindClient) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	k, e := d.DeleteMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ConfigKind) DeleteMatched(ctx context.Context, q *ConfigQuery, options ...ds.CRUDOption) ([]*datastore.Key, error) {
-	keys, err := q.query.KeysOnly().GetAll(ctx, nil)
+func (d *ConfigKindClient) DeleteMatched(ctx context.Context, q *ConfigQuery) ([]*datastore.Key, error) {
+	keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.DeleteMulti(ctx, keys, options...)
+	_, err = d.DeleteMulti(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
 	return keys, nil
 }
 
-func (d *ConfigKind) MustDeleteMatched(ctx context.Context, q *ConfigQuery, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.DeleteMatched(ctx, q, options...)
+func (d *ConfigKindClient) MustDeleteMatched(ctx context.Context, q *ConfigQuery) []*datastore.Key {
+	keys, err := d.DeleteMatched(ctx, q)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ConfigKind) Replace(ctx context.Context, ent *Config, replacer ConfigReplacer, options ...ds.CRUDOption) (*datastore.Key, *Config, error) {
-	keys, ents, err := d.ReplaceMulti(ctx, []*Config{ent}, replacer, options...)
+func (d *ConfigKindClient) Replace(ctx context.Context, ent *Config, replacer ConfigReplacer) (*datastore.Key, *Config, error) {
+	keys, ents, err := d.ReplaceMulti(ctx, []*Config{ent}, replacer)
 	if err != nil {
 		return nil, ents[0], err
 	}
 	return keys[0], ents[0], err
 }
 
-func (d *ConfigKind) MustReplace(ctx context.Context, ent *Config, replacer ConfigReplacer, options ...ds.CRUDOption) (*datastore.Key, *Config) {
-	k, v, e := d.Replace(ctx, ent, replacer, options...)
+func (d *ConfigKindClient) MustReplace(ctx context.Context, ent *Config, replacer ConfigReplacer) (*datastore.Key, *Config) {
+	k, v, e := d.Replace(ctx, ent, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ConfigKind) ReplaceMulti(ctx context.Context, ents []*Config, replacer ConfigReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*Config, error) {
+func (d *ConfigKindClient) ReplaceMulti(ctx context.Context, ents []*Config, replacer ConfigReplacer) ([]*datastore.Key, []*Config, error) {
 	var size = len(ents)
 	var dsKeys = make([]*datastore.Key, size, size)
 	if size == 0 {
@@ -194,8 +224,8 @@ func (d *ConfigKind) ReplaceMulti(ctx context.Context, ents []*Config, replacer 
 	return dsKeys, ents, err
 }
 
-func (d *ConfigKind) MustReplaceMulti(ctx context.Context, ents []*Config, replacer ConfigReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*Config) {
-	k, v, e := d.ReplaceMulti(ctx, ents, replacer, options...)
+func (d *ConfigKindClient) MustReplaceMulti(ctx context.Context, ents []*Config, replacer ConfigReplacer) ([]*datastore.Key, []*Config) {
+	k, v, e := d.ReplaceMulti(ctx, ents, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
@@ -207,7 +237,7 @@ type ConfigQuery struct {
 
 func NewConfigQuery() *ConfigQuery {
 	return &ConfigQuery{
-		query:   ds.NewQuery("CounterConfig"),
+		query:   ds.NewQuery("CounterConfig").Namespace(""),
 		viaKeys: false,
 	}
 }
@@ -332,86 +362,102 @@ func (d *ConfigQuery) DescUpdatedAt() *ConfigQuery {
 	return d
 }
 
-func (d *ConfigQuery) Start(s string) *ConfigQuery {
-	d.query = d.query.Start(s)
-	return d
+func (q *ConfigQuery) Start(s string) *ConfigQuery {
+	q.query = q.query.Start(s)
+	return q
 }
 
-func (d *ConfigQuery) End(s string) *ConfigQuery {
-	d.query = d.query.End(s)
-	return d
+func (q *ConfigQuery) End(s string) *ConfigQuery {
+	q.query = q.query.End(s)
+	return q
 }
 
-func (d *ConfigQuery) Limit(n int) *ConfigQuery {
-	d.query = d.query.Limit(n)
-	return d
+func (q *ConfigQuery) Limit(n int) *ConfigQuery {
+	q.query = q.query.Limit(n)
+	return q
 }
 
-func (d *ConfigQuery) ViaKeys() *ConfigQuery {
-	d.viaKeys = true
-	return d
+func (q *ConfigQuery) ViaKeys() *ConfigQuery {
+	q.viaKeys = true
+	return q
 }
 
-func (d *ConfigQuery) GetAll(ctx context.Context) ([]*datastore.Key, []Config, error) {
-	if d.viaKeys {
-		keys, err := d.query.KeysOnly().GetAll(ctx, nil)
+func (d *ConfigKindClient) GetAll(ctx context.Context, q *ConfigQuery) ([]*datastore.Key, []Config, error) {
+	if q.viaKeys {
+		keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := configKindInstance.GetMulti(ctx, keys)
+		ents := make([]*Config, len(keys))
+		err = d.client.GetMulti(ctx, keys, ents)
 		if err != nil {
 			return nil, nil, err
 		}
-		list := make([]Config, len(ents))
-		for i, e := range ents {
-			list[i] = *e
+		result := make([]Config, 0)
+		for _, e := range ents {
+			if e != nil {
+				result = append(result, *e)
+			}
 		}
-		return keys, list, nil
+		return keys, result, nil
+	} else {
+		var ent []Config
+		keys, err := d.client.GetAll(ctx, q.query, &ent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return keys, ent, nil
 	}
-	var ent []Config
-	keys, err := d.query.GetAll(ctx, &ent)
+}
+
+func (d *ConfigKindClient) GetOne(ctx context.Context, q *ConfigQuery) (*datastore.Key, *Config, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
 	if err != nil {
 		return nil, nil, err
 	}
-	return keys, ent, nil
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
 }
 
-func (d *ConfigQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []Config) {
-	keys, ents, err := d.GetAll(ctx)
+func (d *ConfigKindClient) MustGetAll(ctx context.Context, q *ConfigQuery) ([]*datastore.Key, []Config) {
+	keys, ents, err := d.GetAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents
 }
 
-func (d *ConfigQuery) Count(ctx context.Context) (int, error) {
-	return d.query.Count(ctx)
+func (d *ConfigKindClient) Count(ctx context.Context, q *ConfigQuery) (int, error) {
+	return d.client.Count(ctx, q.query)
 }
 
-func (d *ConfigQuery) MustCount(ctx context.Context) int {
-	c, err := d.query.Count(ctx)
+func (d *ConfigKindClient) MustCount(ctx context.Context, q *ConfigQuery) int {
+	c, err := d.Count(ctx, q)
 	xerrors.MustNil(err)
 	return c
 }
 
-func (d *ConfigQuery) Run(ctx context.Context) (*ConfigIterator, error) {
-	iter, err := d.query.Run(ctx)
+func (d *ConfigKindClient) Run(ctx context.Context, q *ConfigQuery) (*ConfigIterator, error) {
+	iter, err := d.client.Run(ctx, q.query)
 	if err != nil {
 		return nil, err
 	}
 	return &ConfigIterator{
 		ctx:     ctx,
 		iter:    iter,
-		viaKeys: d.viaKeys,
+		viaKeys: q.viaKeys,
+		client:  d,
 	}, err
 }
 
-func (d *ConfigQuery) MustRun(ctx context.Context) *ConfigIterator {
-	iter, err := d.Run(ctx)
+func (d *ConfigKindClient) MustRun(ctx context.Context, q *ConfigQuery) *ConfigIterator {
+	iter, err := d.Run(ctx, q)
 	xerrors.MustNil(err)
 	return iter
 }
 
-func (d *ConfigQuery) RunAll(ctx context.Context) ([]datastore.Key, []Config, string, error) {
-	iter, err := d.Run(ctx)
+func (d *ConfigKindClient) RunAll(ctx context.Context, q *ConfigQuery) ([]datastore.Key, []Config, string, error) {
+	iter, err := d.Run(ctx, q)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -434,8 +480,8 @@ func (d *ConfigQuery) RunAll(ctx context.Context) ([]datastore.Key, []Config, st
 	}
 }
 
-func (d *ConfigQuery) MustRunAll(ctx context.Context) ([]datastore.Key, []Config, string) {
-	keys, ents, next, err := d.RunAll(ctx)
+func (d *ConfigKindClient) MustRunAll(ctx context.Context, q *ConfigQuery) ([]datastore.Key, []Config, string) {
+	keys, ents, next, err := d.RunAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents, next
 }
@@ -444,6 +490,7 @@ type ConfigIterator struct {
 	ctx     context.Context
 	iter    *datastore.Iterator
 	viaKeys bool
+	client  *ConfigKindClient
 }
 
 func (iter *ConfigIterator) Cursor() (datastore.Cursor, error) {
@@ -460,22 +507,21 @@ func (iter *ConfigIterator) Next() (*datastore.Key, *Config, error) {
 	if iter.viaKeys {
 		key, err := iter.iter.Next(nil)
 		if err != nil {
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
-		_, ent, err := configKindInstance.Get(iter.ctx, key)
+		_, ent, err := iter.client.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
 		return key, ent, nil
-
 	}
 	var ent Config
 	key, err := iter.iter.Next(&ent)
 	if err != nil {
-		if err == datastore.Done {
+		if err == iterator.Done {
 			return nil, nil, nil
 		}
 		return nil, nil, err
@@ -489,10 +535,10 @@ func (iter *ConfigIterator) MustNext() (*datastore.Key, *Config) {
 	return key, ent
 }
 
-var configKindInstance = &ConfigKind{}
-
 func (s *Shard) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "CounterShard", s.Key)
+	key := ds.NewKey("CounterShard", s.Key)
+	key.Namespace = ""
+	return key
 }
 
 type ShardReplacer interface {
@@ -505,31 +551,35 @@ func (f ShardReplacerFunc) Replace(old *Shard, new *Shard) *Shard {
 	return f(old, new)
 }
 
-type ShardKind struct{}
-
-func NewShardKind() *ShardKind {
-	return shardKindInstance
+type ShardKindClient struct {
+	client *ds.Client
 }
 
-func (d *ShardKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *Shard, error) {
-	keys, ents, err := d.GetMulti(ctx, []interface{}{key}, options...)
+func NewShardKindClient(client *ds.Client) *ShardKindClient {
+	return &ShardKindClient{
+		client: client,
+	}
+}
+
+func (d *ShardKindClient) Get(ctx context.Context, key interface{}) (*datastore.Key, *Shard, error) {
+	keys, ents, err := d.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
 	return keys[0], ents[0], nil
 }
 
-func (d *ShardKind) MustGet(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *Shard) {
-	k, v, e := d.Get(ctx, key, options...)
+func (d *ShardKindClient) MustGet(ctx context.Context, key interface{}) (*datastore.Key, *Shard) {
+	k, v, e := d.Get(ctx, key)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ShardKind) GetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*Shard, error) {
+func (d *ShardKindClient) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Shard, error) {
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*Shard
-	if dsKeys, err = ds.NormalizeKeys(ctx, "CounterShard", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "CounterShard", ""); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -537,122 +587,144 @@ func (d *ShardKind) GetMulti(ctx context.Context, keys interface{}, options ...d
 		return nil, nil, nil
 	}
 	ents = make([]*Shard, size, size)
-	if err = ds.GetMulti(ctx, dsKeys, ents, options...); err != nil {
+	if err = d.client.GetMulti(ctx, dsKeys, ents); err != nil {
 		return nil, nil, err
 	}
 	return dsKeys, ents, nil
 }
 
-func (d *ShardKind) MustGetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*Shard) {
-	k, v, e := d.GetMulti(ctx, keys, options...)
+func (d *ShardKindClient) MustGetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*Shard) {
+	k, v, e := d.GetMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ShardKind) Put(ctx context.Context, ent *Shard, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.PutMulti(ctx, []*Shard{ent}, options...)
+func (d *ShardKindClient) Put(ctx context.Context, ent *Shard) (*datastore.Key, error) {
+	keys, err := d.PutMulti(ctx, []*Shard{ent})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ShardKind) MustPut(ctx context.Context, ent *Shard, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Put(ctx, ent, options...)
+func (d *ShardKindClient) MustPut(ctx context.Context, ent *Shard) *datastore.Key {
+	k, e := d.Put(ctx, ent)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ShardKind) PutMulti(ctx context.Context, ents []*Shard, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ShardKindClient) PutMulti(ctx context.Context, ents []*Shard) ([]*datastore.Key, error) {
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		ents[i].UpdatedAt = xtime.Now()
 	}
-	if dsKeys, err = ds.PutMulti(ctx, dsKeys, ents); err != nil {
+	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
 
-func (d *ShardKind) MustPutMulti(ctx context.Context, ents []*Shard, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.PutMulti(ctx, ents, options...)
+func (d *ShardKindClient) MustPutMulti(ctx context.Context, ents []*Shard) []*datastore.Key {
+	keys, err := d.PutMulti(ctx, ents)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ShardKind) Delete(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.DeleteMulti(ctx, []interface{}{key}, options...)
+func (d *ShardKindClient) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+	keys, err := d.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ShardKind) MustDelete(ctx context.Context, key interface{}, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Delete(ctx, key, options...)
+func (d *ShardKindClient) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
+	k, e := d.Delete(ctx, key)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ShardKind) DeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ShardKindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "CounterShard", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "CounterShard", ""); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	if err = ds.DeleteMulti(ctx, dsKeys); err != nil {
+	if err = d.client.DeleteMulti(ctx, dsKeys); err != nil {
 		return nil, xerrors.Wrap(err, "datastore error")
 	}
 	return dsKeys, nil
 }
 
-func (d *ShardKind) MustDeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) []*datastore.Key {
-	k, e := d.DeleteMulti(ctx, keys, options...)
+func (d *ShardKindClient) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	k, e := d.DeleteMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ShardKind) DeleteMatched(ctx context.Context, q *ShardQuery, options ...ds.CRUDOption) ([]*datastore.Key, error) {
-	keys, err := q.query.KeysOnly().GetAll(ctx, nil)
+func (d *ShardKindClient) DeleteMatched(ctx context.Context, q *ShardQuery) ([]*datastore.Key, error) {
+	keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.DeleteMulti(ctx, keys, options...)
+	_, err = d.DeleteMulti(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
 	return keys, nil
 }
 
-func (d *ShardKind) MustDeleteMatched(ctx context.Context, q *ShardQuery, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.DeleteMatched(ctx, q, options...)
+func (d *ShardKindClient) MustDeleteMatched(ctx context.Context, q *ShardQuery) []*datastore.Key {
+	keys, err := d.DeleteMatched(ctx, q)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ShardKind) Replace(ctx context.Context, ent *Shard, replacer ShardReplacer, options ...ds.CRUDOption) (*datastore.Key, *Shard, error) {
-	keys, ents, err := d.ReplaceMulti(ctx, []*Shard{ent}, replacer, options...)
+func (d *ShardKindClient) Replace(ctx context.Context, ent *Shard, replacer ShardReplacer) (*datastore.Key, *Shard, error) {
+	keys, ents, err := d.ReplaceMulti(ctx, []*Shard{ent}, replacer)
 	if err != nil {
 		return nil, ents[0], err
 	}
 	return keys[0], ents[0], err
 }
 
-func (d *ShardKind) MustReplace(ctx context.Context, ent *Shard, replacer ShardReplacer, options ...ds.CRUDOption) (*datastore.Key, *Shard) {
-	k, v, e := d.Replace(ctx, ent, replacer, options...)
+func (d *ShardKindClient) MustReplace(ctx context.Context, ent *Shard, replacer ShardReplacer) (*datastore.Key, *Shard) {
+	k, v, e := d.Replace(ctx, ent, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ShardKind) ReplaceMulti(ctx context.Context, ents []*Shard, replacer ShardReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*Shard, error) {
+func (d *ShardKindClient) ReplaceMulti(ctx context.Context, ents []*Shard, replacer ShardReplacer) ([]*datastore.Key, []*Shard, error) {
 	var size = len(ents)
 	var dsKeys = make([]*datastore.Key, size, size)
 	if size == 0 {
@@ -674,8 +746,8 @@ func (d *ShardKind) ReplaceMulti(ctx context.Context, ents []*Shard, replacer Sh
 	return dsKeys, ents, err
 }
 
-func (d *ShardKind) MustReplaceMulti(ctx context.Context, ents []*Shard, replacer ShardReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*Shard) {
-	k, v, e := d.ReplaceMulti(ctx, ents, replacer, options...)
+func (d *ShardKindClient) MustReplaceMulti(ctx context.Context, ents []*Shard, replacer ShardReplacer) ([]*datastore.Key, []*Shard) {
+	k, v, e := d.ReplaceMulti(ctx, ents, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
@@ -687,7 +759,7 @@ type ShardQuery struct {
 
 func NewShardQuery() *ShardQuery {
 	return &ShardQuery{
-		query:   ds.NewQuery("CounterShard"),
+		query:   ds.NewQuery("CounterShard").Namespace(""),
 		viaKeys: false,
 	}
 }
@@ -852,86 +924,102 @@ func (d *ShardQuery) DescUpdatedAt() *ShardQuery {
 	return d
 }
 
-func (d *ShardQuery) Start(s string) *ShardQuery {
-	d.query = d.query.Start(s)
-	return d
+func (q *ShardQuery) Start(s string) *ShardQuery {
+	q.query = q.query.Start(s)
+	return q
 }
 
-func (d *ShardQuery) End(s string) *ShardQuery {
-	d.query = d.query.End(s)
-	return d
+func (q *ShardQuery) End(s string) *ShardQuery {
+	q.query = q.query.End(s)
+	return q
 }
 
-func (d *ShardQuery) Limit(n int) *ShardQuery {
-	d.query = d.query.Limit(n)
-	return d
+func (q *ShardQuery) Limit(n int) *ShardQuery {
+	q.query = q.query.Limit(n)
+	return q
 }
 
-func (d *ShardQuery) ViaKeys() *ShardQuery {
-	d.viaKeys = true
-	return d
+func (q *ShardQuery) ViaKeys() *ShardQuery {
+	q.viaKeys = true
+	return q
 }
 
-func (d *ShardQuery) GetAll(ctx context.Context) ([]*datastore.Key, []Shard, error) {
-	if d.viaKeys {
-		keys, err := d.query.KeysOnly().GetAll(ctx, nil)
+func (d *ShardKindClient) GetAll(ctx context.Context, q *ShardQuery) ([]*datastore.Key, []Shard, error) {
+	if q.viaKeys {
+		keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := shardKindInstance.GetMulti(ctx, keys)
+		ents := make([]*Shard, len(keys))
+		err = d.client.GetMulti(ctx, keys, ents)
 		if err != nil {
 			return nil, nil, err
 		}
-		list := make([]Shard, len(ents))
-		for i, e := range ents {
-			list[i] = *e
+		result := make([]Shard, 0)
+		for _, e := range ents {
+			if e != nil {
+				result = append(result, *e)
+			}
 		}
-		return keys, list, nil
+		return keys, result, nil
+	} else {
+		var ent []Shard
+		keys, err := d.client.GetAll(ctx, q.query, &ent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return keys, ent, nil
 	}
-	var ent []Shard
-	keys, err := d.query.GetAll(ctx, &ent)
+}
+
+func (d *ShardKindClient) GetOne(ctx context.Context, q *ShardQuery) (*datastore.Key, *Shard, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
 	if err != nil {
 		return nil, nil, err
 	}
-	return keys, ent, nil
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
 }
 
-func (d *ShardQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []Shard) {
-	keys, ents, err := d.GetAll(ctx)
+func (d *ShardKindClient) MustGetAll(ctx context.Context, q *ShardQuery) ([]*datastore.Key, []Shard) {
+	keys, ents, err := d.GetAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents
 }
 
-func (d *ShardQuery) Count(ctx context.Context) (int, error) {
-	return d.query.Count(ctx)
+func (d *ShardKindClient) Count(ctx context.Context, q *ShardQuery) (int, error) {
+	return d.client.Count(ctx, q.query)
 }
 
-func (d *ShardQuery) MustCount(ctx context.Context) int {
-	c, err := d.query.Count(ctx)
+func (d *ShardKindClient) MustCount(ctx context.Context, q *ShardQuery) int {
+	c, err := d.Count(ctx, q)
 	xerrors.MustNil(err)
 	return c
 }
 
-func (d *ShardQuery) Run(ctx context.Context) (*ShardIterator, error) {
-	iter, err := d.query.Run(ctx)
+func (d *ShardKindClient) Run(ctx context.Context, q *ShardQuery) (*ShardIterator, error) {
+	iter, err := d.client.Run(ctx, q.query)
 	if err != nil {
 		return nil, err
 	}
 	return &ShardIterator{
 		ctx:     ctx,
 		iter:    iter,
-		viaKeys: d.viaKeys,
+		viaKeys: q.viaKeys,
+		client:  d,
 	}, err
 }
 
-func (d *ShardQuery) MustRun(ctx context.Context) *ShardIterator {
-	iter, err := d.Run(ctx)
+func (d *ShardKindClient) MustRun(ctx context.Context, q *ShardQuery) *ShardIterator {
+	iter, err := d.Run(ctx, q)
 	xerrors.MustNil(err)
 	return iter
 }
 
-func (d *ShardQuery) RunAll(ctx context.Context) ([]datastore.Key, []Shard, string, error) {
-	iter, err := d.Run(ctx)
+func (d *ShardKindClient) RunAll(ctx context.Context, q *ShardQuery) ([]datastore.Key, []Shard, string, error) {
+	iter, err := d.Run(ctx, q)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -954,8 +1042,8 @@ func (d *ShardQuery) RunAll(ctx context.Context) ([]datastore.Key, []Shard, stri
 	}
 }
 
-func (d *ShardQuery) MustRunAll(ctx context.Context) ([]datastore.Key, []Shard, string) {
-	keys, ents, next, err := d.RunAll(ctx)
+func (d *ShardKindClient) MustRunAll(ctx context.Context, q *ShardQuery) ([]datastore.Key, []Shard, string) {
+	keys, ents, next, err := d.RunAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents, next
 }
@@ -964,6 +1052,7 @@ type ShardIterator struct {
 	ctx     context.Context
 	iter    *datastore.Iterator
 	viaKeys bool
+	client  *ShardKindClient
 }
 
 func (iter *ShardIterator) Cursor() (datastore.Cursor, error) {
@@ -980,22 +1069,21 @@ func (iter *ShardIterator) Next() (*datastore.Key, *Shard, error) {
 	if iter.viaKeys {
 		key, err := iter.iter.Next(nil)
 		if err != nil {
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
-		_, ent, err := shardKindInstance.Get(iter.ctx, key)
+		_, ent, err := iter.client.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
 		return key, ent, nil
-
 	}
 	var ent Shard
 	key, err := iter.iter.Next(&ent)
 	if err != nil {
-		if err == datastore.Done {
+		if err == iterator.Done {
 			return nil, nil, nil
 		}
 		return nil, nil, err
@@ -1008,5 +1096,3 @@ func (iter *ShardIterator) MustNext() (*datastore.Key, *Shard) {
 	xerrors.MustNil(err)
 	return key, ent
 }
-
-var shardKindInstance = &ShardKind{}

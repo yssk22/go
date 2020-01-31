@@ -31,7 +31,7 @@ func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 	s.Post(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		status, err := taskConfig.Prepare(req.Context(), req.Request.URL.Query())
 		xerrors.MustNil(err)
-		return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
+		return response.NewJSONWithStatus(req.Context(), status, response.HTTPStatusCreated)
 	}))
 
 	// Get the instance status
@@ -40,7 +40,7 @@ func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 		if status == nil {
 			return nil
 		}
-		return response.NewJSON(status)
+		return response.NewJSON(req.Context(), status)
 	}))
 
 	const TaskQueueHeader = "X-AppEngine-TaskName"
@@ -62,14 +62,14 @@ func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 			}).ToResponse()
 		}
 		if progress == nil {
-			return response.NewJSON(true)
+			return response.NewJSON(req.Context(), true)
 		}
-		return response.NewJSON(progress.Next)
+		return response.NewJSON(req.Context(), progress.Next)
 	}))
 
 	// Get Recent Tasks
 	s.Get(path, web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-		return response.NewJSON(taskConfig.GetRecentTasks(req.Context(), req.Query.GetIntOr("n", 5)))
+		return response.NewJSON(req.Context(), taskConfig.GetRecentTasks(req.Context(), req.Query.GetIntOr("n", 5)))
 	}))
 
 	if schedule := taskConfig.GetSchedule(); schedule != "" {
@@ -82,7 +82,7 @@ func (s *Service) AsyncTask(path string, options ...asynctask.Option) {
 			params.Set("cron", "true")
 			status, err := taskConfig.Prepare(req.Context(), params)
 			xerrors.MustNil(err)
-			return response.NewJSONWithStatus(status, response.HTTPStatusCreated)
+			return response.NewJSONWithStatus(req.Context(), status, response.HTTPStatusCreated)
 		}))
 	}
 	s.tasks = append(s.tasks, &Task{

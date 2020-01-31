@@ -22,7 +22,7 @@ func TestService(t *testing.T) {
 	s.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		svc, ok := req.Context().Value(ContextKey).(*Service)
 		if ok {
-			return response.NewText(svc.Key())
+			return response.NewText(req.Context(), svc.Key())
 		}
 		return next(req)
 	}))
@@ -38,7 +38,7 @@ func TestService_withHyphenInKey(t *testing.T) {
 	s.Get("/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		svc, ok := req.Context().Value(ContextKey).(*Service)
 		if ok {
-			return response.NewText(svc.Key())
+			return response.NewText(req.Context(), svc.Key())
 		}
 		return next(req)
 	}))

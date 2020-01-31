@@ -12,7 +12,7 @@ type middleware struct {
 }
 
 var defaultPreflight = web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
-	resp := response.NewText("OK")
+	resp := response.NewText(req.Context(), "OK")
 	return resp
 })
 

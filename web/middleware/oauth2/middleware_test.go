@@ -61,14 +61,15 @@ func prepareRouter(middleware *Middleware) web.Router {
 	router.Use(sessionMiddleware)
 	router.Use(middleware)
 	router.Get("/", web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
-		return response.NewText("OK")
+		return response.NewText(req.Context(), "OK")
 	}))
 	router.Post("/oauth2/callback", web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
 		token := FromContext(req.Context())
 		if token == nil {
-			return response.NewError(fmt.Errorf("token not found"))
+			return response.NewError(req.Context(), fmt.Errorf("token not found"))
 		}
 		return response.NewText(
+			req.Context(),
 			fmt.Sprintf(
 				"AccessToken: %s, RefreshToken: %s",
 				token.AccessToken, token.RefreshToken,

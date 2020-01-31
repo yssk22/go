@@ -4,14 +4,18 @@ package config
 
 import (
 	"context"
-	ds "github.com/yssk22/go/gae/datastore"
+
+	"cloud.google.com/go/datastore"
+	ds "github.com/yssk22/go/gcp/datastore"
 	"github.com/yssk22/go/x/xerrors"
 	"github.com/yssk22/go/x/xtime"
-	"google.golang.org/appengine/datastore"
+	"google.golang.org/api/iterator"
 )
 
 func (s *ServiceConfig) NewKey(ctx context.Context) *datastore.Key {
-	return ds.NewKey(ctx, "ServiceConfig", s.ID)
+	key := ds.NewKey("ServiceConfig", s.ID)
+	key.Namespace = ""
+	return key
 }
 
 type ServiceConfigReplacer interface {
@@ -24,31 +28,35 @@ func (f ServiceConfigReplacerFunc) Replace(old *ServiceConfig, new *ServiceConfi
 	return f(old, new)
 }
 
-type ServiceConfigKind struct{}
-
-func NewServiceConfigKind() *ServiceConfigKind {
-	return serviceConfigKindInstance
+type ServiceConfigKindClient struct {
+	client *ds.Client
 }
 
-func (d *ServiceConfigKind) Get(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *ServiceConfig, error) {
-	keys, ents, err := d.GetMulti(ctx, []interface{}{key}, options...)
+func NewServiceConfigKindClient(client *ds.Client) *ServiceConfigKindClient {
+	return &ServiceConfigKindClient{
+		client: client,
+	}
+}
+
+func (d *ServiceConfigKindClient) Get(ctx context.Context, key interface{}) (*datastore.Key, *ServiceConfig, error) {
+	keys, ents, err := d.GetMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, nil, err
 	}
 	return keys[0], ents[0], nil
 }
 
-func (d *ServiceConfigKind) MustGet(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, *ServiceConfig) {
-	k, v, e := d.Get(ctx, key, options...)
+func (d *ServiceConfigKindClient) MustGet(ctx context.Context, key interface{}) (*datastore.Key, *ServiceConfig) {
+	k, v, e := d.Get(ctx, key)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ServiceConfigKind) GetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*ServiceConfig, error) {
+func (d *ServiceConfigKindClient) GetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*ServiceConfig, error) {
 	var err error
 	var dsKeys []*datastore.Key
 	var ents []*ServiceConfig
-	if dsKeys, err = ds.NormalizeKeys(ctx, "ServiceConfig", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "ServiceConfig", ""); err != nil {
 		return nil, nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
@@ -56,122 +64,144 @@ func (d *ServiceConfigKind) GetMulti(ctx context.Context, keys interface{}, opti
 		return nil, nil, nil
 	}
 	ents = make([]*ServiceConfig, size, size)
-	if err = ds.GetMulti(ctx, dsKeys, ents, options...); err != nil {
+	if err = d.client.GetMulti(ctx, dsKeys, ents); err != nil {
 		return nil, nil, err
 	}
 	return dsKeys, ents, nil
 }
 
-func (d *ServiceConfigKind) MustGetMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, []*ServiceConfig) {
-	k, v, e := d.GetMulti(ctx, keys, options...)
+func (d *ServiceConfigKindClient) MustGetMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, []*ServiceConfig) {
+	k, v, e := d.GetMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ServiceConfigKind) Put(ctx context.Context, ent *ServiceConfig, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.PutMulti(ctx, []*ServiceConfig{ent}, options...)
+func (d *ServiceConfigKindClient) Put(ctx context.Context, ent *ServiceConfig) (*datastore.Key, error) {
+	keys, err := d.PutMulti(ctx, []*ServiceConfig{ent})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ServiceConfigKind) MustPut(ctx context.Context, ent *ServiceConfig, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Put(ctx, ent, options...)
+func (d *ServiceConfigKindClient) MustPut(ctx context.Context, ent *ServiceConfig) *datastore.Key {
+	k, e := d.Put(ctx, ent)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ServiceConfigKind) PutMulti(ctx context.Context, ents []*ServiceConfig, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ServiceConfigKindClient) PutMulti(ctx context.Context, ents []*ServiceConfig) ([]*datastore.Key, error) {
 	var err error
 	var size = len(ents)
 	var dsKeys []*datastore.Key
 	dsKeys = make([]*datastore.Key, size, size)
+	if size == 0 {
+		return nil, nil
+	}
+	_, hasBeforeSave := interface{}(ents[0]).(ds.BeforeSave)
+	_, hasAfterSave := interface{}(ents[0]).(ds.AfterSave)
+
+	if hasBeforeSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.BeforeSave).BeforeSave(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	for i := range ents {
 		dsKeys[i] = ents[i].NewKey(ctx)
 		ents[i].UpdatedAt = xtime.Now()
 	}
-	if dsKeys, err = ds.PutMulti(ctx, dsKeys, ents); err != nil {
+	if dsKeys, err = d.client.PutMulti(ctx, dsKeys, ents); err != nil {
 		return nil, err
+	}
+
+	if hasAfterSave {
+		for i := range ents {
+			if err := interface{}(ents[i]).(ds.AfterSave).AfterSave(ctx); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dsKeys, nil
 }
 
-func (d *ServiceConfigKind) MustPutMulti(ctx context.Context, ents []*ServiceConfig, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.PutMulti(ctx, ents, options...)
+func (d *ServiceConfigKindClient) MustPutMulti(ctx context.Context, ents []*ServiceConfig) []*datastore.Key {
+	keys, err := d.PutMulti(ctx, ents)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ServiceConfigKind) Delete(ctx context.Context, key interface{}, options ...ds.CRUDOption) (*datastore.Key, error) {
-	keys, err := d.DeleteMulti(ctx, []interface{}{key}, options...)
+func (d *ServiceConfigKindClient) Delete(ctx context.Context, key interface{}) (*datastore.Key, error) {
+	keys, err := d.DeleteMulti(ctx, []interface{}{key})
 	if err != nil {
 		return nil, err
 	}
 	return keys[0], nil
 }
 
-func (d *ServiceConfigKind) MustDelete(ctx context.Context, key interface{}, options ...ds.CRUDOption) *datastore.Key {
-	k, e := d.Delete(ctx, key, options...)
+func (d *ServiceConfigKindClient) MustDelete(ctx context.Context, key interface{}) *datastore.Key {
+	k, e := d.Delete(ctx, key)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ServiceConfigKind) DeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) ([]*datastore.Key, error) {
+func (d *ServiceConfigKindClient) DeleteMulti(ctx context.Context, keys interface{}) ([]*datastore.Key, error) {
 	var err error
 	var dsKeys []*datastore.Key
-	if dsKeys, err = ds.NormalizeKeys(ctx, "ServiceConfig", keys); err != nil {
+	if dsKeys, err = ds.NormalizeKeys(keys, "ServiceConfig", ""); err != nil {
 		return nil, xerrors.Wrap(err, "could not normalize keys: %v", keys)
 	}
 	size := len(dsKeys)
 	if size == 0 {
 		return nil, nil
 	}
-	if err = ds.DeleteMulti(ctx, dsKeys); err != nil {
+	if err = d.client.DeleteMulti(ctx, dsKeys); err != nil {
 		return nil, xerrors.Wrap(err, "datastore error")
 	}
 	return dsKeys, nil
 }
 
-func (d *ServiceConfigKind) MustDeleteMulti(ctx context.Context, keys interface{}, options ...ds.CRUDOption) []*datastore.Key {
-	k, e := d.DeleteMulti(ctx, keys, options...)
+func (d *ServiceConfigKindClient) MustDeleteMulti(ctx context.Context, keys interface{}) []*datastore.Key {
+	k, e := d.DeleteMulti(ctx, keys)
 	xerrors.MustNil(e)
 	return k
 }
 
-func (d *ServiceConfigKind) DeleteMatched(ctx context.Context, q *ServiceConfigQuery, options ...ds.CRUDOption) ([]*datastore.Key, error) {
-	keys, err := q.query.KeysOnly().GetAll(ctx, nil)
+func (d *ServiceConfigKindClient) DeleteMatched(ctx context.Context, q *ServiceConfigQuery) ([]*datastore.Key, error) {
+	keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.DeleteMulti(ctx, keys, options...)
+	_, err = d.DeleteMulti(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
 	return keys, nil
 }
 
-func (d *ServiceConfigKind) MustDeleteMatched(ctx context.Context, q *ServiceConfigQuery, options ...ds.CRUDOption) []*datastore.Key {
-	keys, err := d.DeleteMatched(ctx, q, options...)
+func (d *ServiceConfigKindClient) MustDeleteMatched(ctx context.Context, q *ServiceConfigQuery) []*datastore.Key {
+	keys, err := d.DeleteMatched(ctx, q)
 	xerrors.MustNil(err)
 	return keys
 }
 
-func (d *ServiceConfigKind) Replace(ctx context.Context, ent *ServiceConfig, replacer ServiceConfigReplacer, options ...ds.CRUDOption) (*datastore.Key, *ServiceConfig, error) {
-	keys, ents, err := d.ReplaceMulti(ctx, []*ServiceConfig{ent}, replacer, options...)
+func (d *ServiceConfigKindClient) Replace(ctx context.Context, ent *ServiceConfig, replacer ServiceConfigReplacer) (*datastore.Key, *ServiceConfig, error) {
+	keys, ents, err := d.ReplaceMulti(ctx, []*ServiceConfig{ent}, replacer)
 	if err != nil {
 		return nil, ents[0], err
 	}
 	return keys[0], ents[0], err
 }
 
-func (d *ServiceConfigKind) MustReplace(ctx context.Context, ent *ServiceConfig, replacer ServiceConfigReplacer, options ...ds.CRUDOption) (*datastore.Key, *ServiceConfig) {
-	k, v, e := d.Replace(ctx, ent, replacer, options...)
+func (d *ServiceConfigKindClient) MustReplace(ctx context.Context, ent *ServiceConfig, replacer ServiceConfigReplacer) (*datastore.Key, *ServiceConfig) {
+	k, v, e := d.Replace(ctx, ent, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
 
-func (d *ServiceConfigKind) ReplaceMulti(ctx context.Context, ents []*ServiceConfig, replacer ServiceConfigReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*ServiceConfig, error) {
+func (d *ServiceConfigKindClient) ReplaceMulti(ctx context.Context, ents []*ServiceConfig, replacer ServiceConfigReplacer) ([]*datastore.Key, []*ServiceConfig, error) {
 	var size = len(ents)
 	var dsKeys = make([]*datastore.Key, size, size)
 	if size == 0 {
@@ -193,8 +223,8 @@ func (d *ServiceConfigKind) ReplaceMulti(ctx context.Context, ents []*ServiceCon
 	return dsKeys, ents, err
 }
 
-func (d *ServiceConfigKind) MustReplaceMulti(ctx context.Context, ents []*ServiceConfig, replacer ServiceConfigReplacer, options ...ds.CRUDOption) ([]*datastore.Key, []*ServiceConfig) {
-	k, v, e := d.ReplaceMulti(ctx, ents, replacer, options...)
+func (d *ServiceConfigKindClient) MustReplaceMulti(ctx context.Context, ents []*ServiceConfig, replacer ServiceConfigReplacer) ([]*datastore.Key, []*ServiceConfig) {
+	k, v, e := d.ReplaceMulti(ctx, ents, replacer)
 	xerrors.MustNil(e)
 	return k, v
 }
@@ -206,7 +236,7 @@ type ServiceConfigQuery struct {
 
 func NewServiceConfigQuery() *ServiceConfigQuery {
 	return &ServiceConfigQuery{
-		query:   ds.NewQuery("ServiceConfig"),
+		query:   ds.NewQuery("ServiceConfig").Namespace(""),
 		viaKeys: false,
 	}
 }
@@ -291,86 +321,102 @@ func (d *ServiceConfigQuery) DescKey() *ServiceConfigQuery {
 	return d
 }
 
-func (d *ServiceConfigQuery) Start(s string) *ServiceConfigQuery {
-	d.query = d.query.Start(s)
-	return d
+func (q *ServiceConfigQuery) Start(s string) *ServiceConfigQuery {
+	q.query = q.query.Start(s)
+	return q
 }
 
-func (d *ServiceConfigQuery) End(s string) *ServiceConfigQuery {
-	d.query = d.query.End(s)
-	return d
+func (q *ServiceConfigQuery) End(s string) *ServiceConfigQuery {
+	q.query = q.query.End(s)
+	return q
 }
 
-func (d *ServiceConfigQuery) Limit(n int) *ServiceConfigQuery {
-	d.query = d.query.Limit(n)
-	return d
+func (q *ServiceConfigQuery) Limit(n int) *ServiceConfigQuery {
+	q.query = q.query.Limit(n)
+	return q
 }
 
-func (d *ServiceConfigQuery) ViaKeys() *ServiceConfigQuery {
-	d.viaKeys = true
-	return d
+func (q *ServiceConfigQuery) ViaKeys() *ServiceConfigQuery {
+	q.viaKeys = true
+	return q
 }
 
-func (d *ServiceConfigQuery) GetAll(ctx context.Context) ([]*datastore.Key, []ServiceConfig, error) {
-	if d.viaKeys {
-		keys, err := d.query.KeysOnly().GetAll(ctx, nil)
+func (d *ServiceConfigKindClient) GetAll(ctx context.Context, q *ServiceConfigQuery) ([]*datastore.Key, []ServiceConfig, error) {
+	if q.viaKeys {
+		keys, err := d.client.GetAll(ctx, q.query.KeysOnly(), nil)
 		if err != nil {
 			return nil, nil, err
 		}
-		_, ents, err := serviceConfigKindInstance.GetMulti(ctx, keys)
+		ents := make([]*ServiceConfig, len(keys))
+		err = d.client.GetMulti(ctx, keys, ents)
 		if err != nil {
 			return nil, nil, err
 		}
-		list := make([]ServiceConfig, len(ents))
-		for i, e := range ents {
-			list[i] = *e
+		result := make([]ServiceConfig, 0)
+		for _, e := range ents {
+			if e != nil {
+				result = append(result, *e)
+			}
 		}
-		return keys, list, nil
+		return keys, result, nil
+	} else {
+		var ent []ServiceConfig
+		keys, err := d.client.GetAll(ctx, q.query, &ent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return keys, ent, nil
 	}
-	var ent []ServiceConfig
-	keys, err := d.query.GetAll(ctx, &ent)
+}
+
+func (d *ServiceConfigKindClient) GetOne(ctx context.Context, q *ServiceConfigQuery) (*datastore.Key, *ServiceConfig, error) {
+	keys, ents, err := d.GetAll(ctx, q.Limit(1))
 	if err != nil {
 		return nil, nil, err
 	}
-	return keys, ent, nil
+	if len(keys) == 0 {
+		return nil, nil, nil
+	}
+	return keys[0], &(ents[0]), nil
 }
 
-func (d *ServiceConfigQuery) MustGetAll(ctx context.Context) ([]*datastore.Key, []ServiceConfig) {
-	keys, ents, err := d.GetAll(ctx)
+func (d *ServiceConfigKindClient) MustGetAll(ctx context.Context, q *ServiceConfigQuery) ([]*datastore.Key, []ServiceConfig) {
+	keys, ents, err := d.GetAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents
 }
 
-func (d *ServiceConfigQuery) Count(ctx context.Context) (int, error) {
-	return d.query.Count(ctx)
+func (d *ServiceConfigKindClient) Count(ctx context.Context, q *ServiceConfigQuery) (int, error) {
+	return d.client.Count(ctx, q.query)
 }
 
-func (d *ServiceConfigQuery) MustCount(ctx context.Context) int {
-	c, err := d.query.Count(ctx)
+func (d *ServiceConfigKindClient) MustCount(ctx context.Context, q *ServiceConfigQuery) int {
+	c, err := d.Count(ctx, q)
 	xerrors.MustNil(err)
 	return c
 }
 
-func (d *ServiceConfigQuery) Run(ctx context.Context) (*ServiceConfigIterator, error) {
-	iter, err := d.query.Run(ctx)
+func (d *ServiceConfigKindClient) Run(ctx context.Context, q *ServiceConfigQuery) (*ServiceConfigIterator, error) {
+	iter, err := d.client.Run(ctx, q.query)
 	if err != nil {
 		return nil, err
 	}
 	return &ServiceConfigIterator{
 		ctx:     ctx,
 		iter:    iter,
-		viaKeys: d.viaKeys,
+		viaKeys: q.viaKeys,
+		client:  d,
 	}, err
 }
 
-func (d *ServiceConfigQuery) MustRun(ctx context.Context) *ServiceConfigIterator {
-	iter, err := d.Run(ctx)
+func (d *ServiceConfigKindClient) MustRun(ctx context.Context, q *ServiceConfigQuery) *ServiceConfigIterator {
+	iter, err := d.Run(ctx, q)
 	xerrors.MustNil(err)
 	return iter
 }
 
-func (d *ServiceConfigQuery) RunAll(ctx context.Context) ([]datastore.Key, []ServiceConfig, string, error) {
-	iter, err := d.Run(ctx)
+func (d *ServiceConfigKindClient) RunAll(ctx context.Context, q *ServiceConfigQuery) ([]datastore.Key, []ServiceConfig, string, error) {
+	iter, err := d.Run(ctx, q)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -393,8 +439,8 @@ func (d *ServiceConfigQuery) RunAll(ctx context.Context) ([]datastore.Key, []Ser
 	}
 }
 
-func (d *ServiceConfigQuery) MustRunAll(ctx context.Context) ([]datastore.Key, []ServiceConfig, string) {
-	keys, ents, next, err := d.RunAll(ctx)
+func (d *ServiceConfigKindClient) MustRunAll(ctx context.Context, q *ServiceConfigQuery) ([]datastore.Key, []ServiceConfig, string) {
+	keys, ents, next, err := d.RunAll(ctx, q)
 	xerrors.MustNil(err)
 	return keys, ents, next
 }
@@ -403,6 +449,7 @@ type ServiceConfigIterator struct {
 	ctx     context.Context
 	iter    *datastore.Iterator
 	viaKeys bool
+	client  *ServiceConfigKindClient
 }
 
 func (iter *ServiceConfigIterator) Cursor() (datastore.Cursor, error) {
@@ -419,22 +466,21 @@ func (iter *ServiceConfigIterator) Next() (*datastore.Key, *ServiceConfig, error
 	if iter.viaKeys {
 		key, err := iter.iter.Next(nil)
 		if err != nil {
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
-		_, ent, err := serviceConfigKindInstance.Get(iter.ctx, key)
+		_, ent, err := iter.client.Get(iter.ctx, key)
 		if err != nil {
 			return nil, nil, err
 		}
 		return key, ent, nil
-
 	}
 	var ent ServiceConfig
 	key, err := iter.iter.Next(&ent)
 	if err != nil {
-		if err == datastore.Done {
+		if err == iterator.Done {
 			return nil, nil, nil
 		}
 		return nil, nil, err
@@ -447,5 +493,3 @@ func (iter *ServiceConfigIterator) MustNext() (*datastore.Key, *ServiceConfig) {
 	xerrors.MustNil(err)
 	return key, ent
 }
-
-var serviceConfigKindInstance = &ServiceConfigKind{}

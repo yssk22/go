@@ -51,7 +51,7 @@ func Test_CacheResponseWithExpire(t *testing.T) {
 	expires := 5 * time.Second
 	router.Get("/", CacheResponseWithExpire(lazy.New("myname"), 5*time.Second, web.HandlerFunc(func(req *web.Request, _ web.NextHandler) *response.Response {
 		now := xtime.Now()
-		return response.NewText(fmt.Sprintf("HelloWorld - %s", now))
+		return response.NewText(req.Context(), fmt.Sprintf("HelloWorld - %s", now))
 	})))
 	recorder := gaetest.NewRecorder(router)
 	resp := recorder.TestGet("/")
