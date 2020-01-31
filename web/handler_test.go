@@ -27,7 +27,7 @@ func Test_handlerPipeline(t *testing.T) {
 		}),
 		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int)
-			return response.NewText(fmt.Sprintf("%d", i))
+			return response.NewText(req.Context(), fmt.Sprintf("%d", i))
 		}),
 	)
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -74,7 +74,7 @@ func Test_handlerPipeline_Multi(t *testing.T) {
 	pipeline2.Append(
 		HandlerFunc(func(req *Request, n NextHandler) *response.Response {
 			i := req.Context().Value(contextKey).(int)
-			return response.NewText(fmt.Sprintf("%d", i))
+			return response.NewText(req.Context(), fmt.Sprintf("%d", i))
 		}),
 	)
 	r, _ := http.NewRequest("GET", "/", nil)

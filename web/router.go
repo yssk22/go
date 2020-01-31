@@ -46,7 +46,7 @@ func NewRouter(option *Option) Router {
 		r.printRoutes("POST", &buff)
 		r.printRoutes("PUT", &buff)
 		r.printRoutes("DELETE", &buff)
-		return response.NewText(buff.String())
+		return response.NewText(req.Context(), buff.String())
 	}))
 	return r
 }
@@ -181,10 +181,10 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	)
 	if res == nil {
 		logger.Debugf("No response is generated.")
-		NotFound.Render(request.Context(), w)
+		NotFound.Render(w)
 		return
 	}
-	res.Render(request.Context(), w)
+	res.Render(w)
 }
 
 type matchedRoute struct {

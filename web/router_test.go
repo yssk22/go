@@ -14,7 +14,7 @@ func ExampleRouter() {
 	router := NewRouter(nil)
 	router.Get("/path/to/:page.html",
 		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
-			return response.NewText(req.Params.GetStringOr("page", ""))
+			return response.NewText(req.Context(), req.Params.GetStringOr("page", ""))
 		}),
 	)
 	w := httptest.NewRecorder()
@@ -30,12 +30,12 @@ func TestRouter_multipleRoutes(t *testing.T) {
 	router := NewRouter(nil)
 	router.Get("/a.html",
 		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
-			return response.NewText("a.html")
+			return response.NewText(req.Context(), "a.html")
 		}),
 	)
 	router.Get("/b.html",
 		HandlerFunc(func(req *Request, _ NextHandler) *response.Response {
-			return response.NewText("b.html")
+			return response.NewText(req.Context(), "b.html")
 		}),
 	)
 	w := httptest.NewRecorder()
@@ -54,14 +54,14 @@ func ExampleRouter_multipleHandlerPipeline() {
 	router.Get("/path/to/:page.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			if req.Params.GetStringOr("page", "") == "first" {
-				return response.NewText("First Handler")
+				return response.NewText(req.Context(), "First Handler")
 			}
 			return next(req)
 		}),
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			// This handler is reached only when the first handler returns nil
 			if req.Params.GetStringOr("page", "") == "second" {
-				return response.NewText("Second Handler")
+				return response.NewText(req.Context(), "Second Handler")
 			}
 			return nil
 		}),
@@ -88,7 +88,7 @@ func ExampleRouter_Use() {
 	router.Get("/a.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			v, _ := req.Get("my-middleware-key")
-			return response.NewText(v.(string))
+			return response.NewText(req.Context(), v.(string))
 		}),
 	)
 	w := httptest.NewRecorder()
@@ -111,13 +111,13 @@ func ExampleRouter_multipleRoute() {
 	router.Get("/a.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			v, _ := req.Get("my-middleware-key")
-			return response.NewText(fmt.Sprintf("a-%s", v))
+			return response.NewText(req.Context(), fmt.Sprintf("a-%s", v))
 		}),
 	)
 	router.Get("/b.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
 			v, _ := req.Get("my-middleware-key")
-			return response.NewText(fmt.Sprintf("b-%s", v))
+			return response.NewText(req.Context(), fmt.Sprintf("b-%s", v))
 		}),
 	)
 
