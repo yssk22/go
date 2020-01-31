@@ -28,9 +28,9 @@ func SetupAPI(r web.Router) {
 			&sp,
 		)
 		if err != nil {
-			return api.NewErrorResponse(ctx, err)
+			return api.NewErrorResponse(req.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), obj)
 	}))
 	var _createExampleParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -49,9 +49,9 @@ func SetupAPI(r web.Router) {
 			&sp,
 		)
 		if err != nil {
-			return api.NewErrorResponse(ctx, err)
+			return api.NewErrorResponse(req.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), obj)
 	}))
 	var _updateExampleParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -70,9 +70,9 @@ func SetupAPI(r web.Router) {
 			&sp,
 		)
 		if err != nil {
-			return api.NewErrorResponse(err)
+			return api.NewErrorResponse(req.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), obj)
 	}))
 	var _getExampleWithExtraParamParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -91,9 +91,9 @@ func SetupAPI(r web.Router) {
 			&sp,
 		)
 		if err != nil {
-			return api.NewErrorResponse(err)
+			return api.NewErrorResponse(req.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), , obj)
 	}))
 	r.Get("/path/to/example/:param/:param2/", web.HandlerFunc(func(req *web.Request, next web.NextHandler) *response.Response {
 		ctx := req.Context()
@@ -103,9 +103,9 @@ func SetupAPI(r web.Router) {
 			req.Params.GetStringOr("param2", ""),
 		)
 		if err != nil {
-			return api.NewErrorResponse(err)
+			return api.NewErrorResponse(req.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), obj)
 	}))
 	var _createExample2ParameterParser api.ParameterParser
 	json.Unmarshal(
@@ -124,8 +124,8 @@ func SetupAPI(r web.Router) {
 			&sp,
 		)
 		if err != nil {
-			return api.NewErrorResponse(err)
+			return api.NewErrorResponsereq.Context(), err)
 		}
-		return response.NewJSON(ctx, obj)
+		return response.NewJSON(req.Context(), obj)
 	}))
 }
