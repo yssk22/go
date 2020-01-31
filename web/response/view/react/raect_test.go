@@ -19,7 +19,7 @@ func genResponse(p *Page) (*goquery.Document, *httptest.ResponseRecorder) {
 	r, err := http.NewRequest("GET", "/", nil)
 	xerrors.MustNil(err)
 	req := web.NewRequest(r, nil)
-	p.Render(req).Render(req.Context(), w)
+	p.Render(req).Render(w)
 	doc, err := goquery.NewDocumentFromReader(w.Body)
 	xerrors.MustNil(err)
 	return doc, w
