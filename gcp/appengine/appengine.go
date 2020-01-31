@@ -44,15 +44,15 @@ func (s *Server) ListenAndServe(h http.Handler) {
 	))
 }
 
-// GetAppLogSink returns xlog.Sink for app logs
-func (s *Server) GetAppLogSink() xlog.Sink {
+// NewLogSink returns xlog.Sink to write logs combined with request logs.
+func NewLogSink(projectID string) xlog.Sink {
 	return &logSink{
-		server: s,
+		projectID: projectID,
 	}
 }
 
 type logSink struct {
-	server *Server
+	projectID string
 }
 
 type appLog struct {
@@ -88,7 +88,7 @@ func (s *logSink) Write(r *xlog.Record) error {
 	if ctx != nil {
 		traceID := stackdriver.GetTraceID(ctx)
 		if traceID != "" {
-			obj.Trace = fmt.Sprintf("projects/%s/traces/%s", s.server.ProjectID, traceID)
+			obj.Trace = fmt.Sprintf("projects/%s/traces/%s", s.projectID, traceID)
 		}
 	}
 	line, _ := json.Marshal(obj)
