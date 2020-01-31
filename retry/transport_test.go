@@ -16,8 +16,8 @@ func Test_HTTPTransport_SuccessWithRetry(t *testing.T) {
 	a := assert.New(t)
 	prepareStubServer(
 		HTTPAnd(
-			HTTPMaxRetry(15),
-			HTTPServerErrorChecker(),
+			HTTPRetryUntil(15),
+			HTTPRetryOnServerError(),
 		),
 		HTTPConstBackoff(100*time.Millisecond),
 		func(c *http.Client) {
@@ -34,8 +34,8 @@ func Test_HTTPTransport_FailureWithRtries(t *testing.T) {
 	a := assert.New(t)
 	prepareStubServer(
 		HTTPAnd(
-			HTTPMaxRetry(3),
-			HTTPServerErrorChecker(),
+			HTTPRetryUntil(3),
+			HTTPRetryOnServerError(),
 		),
 		HTTPConstBackoff(100*time.Millisecond),
 		func(c *http.Client) {
@@ -48,7 +48,7 @@ func Test_HTTPTransport_FailureWithRtries(t *testing.T) {
 	)
 }
 
-func prepareStubServer(checker HTTPChecker, backoff HTTPBackoff, f func(*http.Client)) {
+func prepareStubServer(checker HTTPRetryCond, backoff HTTPBackoff, f func(*http.Client)) {
 	var i = 0
 	xhttptest.UseStubServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

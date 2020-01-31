@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-// HTTPTransport is a type for http.Transport with retry
-type HTTPTransport struct {
+// httpTransport is a type for http.Transport with retry
+type httpTransport struct {
 	Base    http.RoundTripper
-	Checker HTTPChecker
+	Cond    HTTPRetryCond
 	Backoff HTTPBackoff
 }
 
@@ -21,22 +21,22 @@ type HTTPBackoff interface {
 	Calc(int, *http.Request, *http.Response, error) time.Duration
 }
 
-// HTTPChecker is an http version of Checker
-type HTTPChecker interface {
+// HTTPRetryCond is an http version of Checker
+type HTTPRetryCond interface {
 	NeedRetry(int, *http.Request, *http.Response, error) bool
 }
 
 // NewHTTPTransport returns a new http.RoundTripper instance for given checker and backoff configurations on top of base http.RoundTripper
-func NewHTTPTransport(base http.RoundTripper, checker HTTPChecker, backoff HTTPBackoff) http.RoundTripper {
-	return &HTTPTransport{
+func NewHTTPTransport(base http.RoundTripper, cond HTTPRetryCond, backoff HTTPBackoff) http.RoundTripper {
+	return &httpTransport{
 		Base:    base,
-		Checker: checker,
+		Cond:    cond,
 		Backoff: backoff,
 	}
 }
 
 // RoundTrip implements http.Transport#RoundTrip
-func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *httpTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var attempt int
 	// request body should be buffered on memory since it is consumed by RoundTrip.
 	reqBody, err := t.bufferBody(req)
@@ -52,7 +52,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		res, err := t.Base.RoundTrip(req)
 		attempt++
-		if !t.Checker.NeedRetry(attempt, req, res, err) {
+		if !t.Cond.NeedRetry(attempt, req, res, err) {
 			return res, err
 		}
 		// discard body content for retry.
@@ -70,7 +70,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 }
 
-func (t *HTTPTransport) bufferBody(req *http.Request) (*bytes.Reader, error) {
+func (t *httpTransport) bufferBody(req *http.Request) (*bytes.Reader, error) {
 	if req.Body == nil {
 		return nil, nil
 	}
@@ -99,15 +99,15 @@ func (b *httpConstBackoff) Calc(int, *http.Request, *http.Response, error) time.
 	return b.interval
 }
 
-// HTTPAnd is a AND combination of multiple HTTPChecker instances.
-func HTTPAnd(checkers ...HTTPChecker) HTTPChecker {
+// HTTPAnd is a AND combination of multiple HTTPRetryCond instances.
+func HTTPAnd(checkers ...HTTPRetryCond) HTTPRetryCond {
 	return &httpAnd{
 		checkers: checkers,
 	}
 }
 
 type httpAnd struct {
-	checkers []HTTPChecker
+	checkers []HTTPRetryCond
 }
 
 func (and *httpAnd) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
@@ -121,42 +121,42 @@ func (and *httpAnd) NeedRetry(attempt int, req *http.Request, resp *http.Respons
 	return true
 }
 
-// HTTPMaxRetry is an http version of MaxRetry
-func HTTPMaxRetry(max int) HTTPChecker {
-	return &httpMaxRetry{
+// HTTPRetryUntil sets http request retries until max count
+func HTTPRetryUntil(max int) HTTPRetryCond {
+	return &httpRetryUntil{
 		max: max,
 	}
 }
 
-type httpMaxRetry struct {
+type httpRetryUntil struct {
 	max int
 }
 
-func (mr *httpMaxRetry) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
+func (mr *httpRetryUntil) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
 	return attempt < mr.max
 }
 
-// HTTPServerErrorChecker returns a HTTPChecker that needs retries when http status code >= 500
-func HTTPServerErrorChecker() HTTPChecker {
-	return HTTPResponseChecker(
+// HTTPRetryOnServerError returns a HTTPRetryCond that needs retries when http status code >= 500
+func HTTPRetryOnServerError() HTTPRetryCond {
+	return HTTPRetryIf(
 		func(resp *http.Response) bool {
 			return resp.StatusCode >= 500
 		},
 	)
 }
 
-// HTTPResponseChecker returns a HTTPChecker that checks *http.Response for retries
-func HTTPResponseChecker(f func(resp *http.Response) bool) HTTPChecker {
-	return &httpResponseChecker{
+// HTTPRetryIf returns a HTTPRetryCond that checks *http.Response for retries
+func HTTPRetryIf(f func(resp *http.Response) bool) HTTPRetryCond {
+	return &httpRetryIf{
 		F: f,
 	}
 }
 
-type httpResponseChecker struct {
+type httpRetryIf struct {
 	F func(resp *http.Response) bool
 }
 
-func (c *httpResponseChecker) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
+func (c *httpRetryIf) NeedRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
 	if err != nil || resp == nil {
 		return true
 	}
