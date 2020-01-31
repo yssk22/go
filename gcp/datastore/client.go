@@ -50,6 +50,11 @@ func NewClientFromClient(ctx context.Context, c *datastore.Client, options ...Op
 	}
 }
 
+// Close closes the connection
+func (c *Client) Close() error {
+	return c.inner.Close()
+}
+
 type clientConfig struct {
 	Cache     cache.Cache
 	Namespace *string
