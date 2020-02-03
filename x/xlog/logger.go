@@ -19,6 +19,7 @@ type Record struct {
 	Level Level // Log Levell
 
 	LoggerKey interface{}       // Logger Key
+	Prefix    string            // prefix set by xlog.WithContext(ctx, "prefix")
 	Stack     []*xruntime.Frame // Log Source BenchmarkLoggerFewStackCapture
 
 	ctx context.Context // used for application context
@@ -162,6 +163,7 @@ func (l *Logger) write(level Level, data interface{}) {
 		Timestamp: xtime.Now(),
 		LoggerKey: l.key,
 		ctx:       l.ctx,
+		Prefix:    l.prefix,
 	}
 	if l.MinStackCaptureOn <= r.Level {
 		r.Stack = xruntime.CaptureStackFrom(2, l.StackCaptureDepth)
