@@ -14,6 +14,12 @@ func MustNil(err error) {
 	}
 }
 
+// MustValue returns v if an err is nil, or panic.
+func MustValue(v interface{}, err error) interface{} {
+	MustNil(err)
+	return v
+}
+
 // MultiError is an error collection as a single error.
 // error[i] might be nil if there is no error.
 type MultiError []error
