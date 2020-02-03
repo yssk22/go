@@ -20,10 +20,15 @@ func Map(list interface{}, fun interface{}) (interface{}, error) {
 	}
 	l := a.Len()
 
+	shouldUsePtr := a.Type().Elem().Kind() == reflect.Struct
 	mapped := reflect.MakeSlice(reflect.SliceOf(fType.Out(0)), l, l)
 	err := xerrors.NewMultiError(l)
 	for i := 0; i < a.Len(); i++ {
-		out := f.Call([]reflect.Value{reflect.ValueOf(i), a.Index(i)})
+		v := a.Index(i)
+		if shouldUsePtr {
+			v = v.Addr()
+		}
+		out := f.Call([]reflect.Value{reflect.ValueOf(i), v})
 		mapped.Index(i).Set(out[0])
 		e := out[1].Interface()
 		if _, ok := e.(error); ok {
