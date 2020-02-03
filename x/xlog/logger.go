@@ -155,7 +155,7 @@ func (l *Logger) format(s string, v ...interface{}) string {
 
 func (l *Logger) write(level Level, data interface{}) {
 	if v, ok := data.(func(*Printer)); ok {
-		data = printerFunc(v)
+		data = printerFunc(v).String()
 	}
 	r := &Record{
 		Level:     level,
