@@ -19,9 +19,11 @@ var testClient *EntityKindClient
 
 func TestMain(m *testing.M) {
 	testEnv = datastore.MustNewTestEnv()
-	testClient = NewEntityKindClient(testEnv.GetClient())
+	client := testEnv.NewClient()
+	testClient = NewEntityKindClient(client)
 	var state int
 	defer func() {
+		client.Close()
 		err := testEnv.Shutdown()
 		if err != nil {
 			log.Println(err)

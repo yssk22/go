@@ -11,8 +11,8 @@ import (
 
 func TestClient(t *testing.T) {
 	ctx := context.Background()
-	c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
-
+	c := testEnv.NewClient()
+	defer c.Close()
 	t.Run("GetMulti", func(t *testing.T) {
 		a := assert.New(t)
 		a.Nil(testEnv.Reset())
@@ -49,8 +49,6 @@ func TestClient(t *testing.T) {
 	t.Run("PutMulti", func(t *testing.T) {
 		a := assert.New(t)
 		a.Nil(testEnv.Reset())
-		ctx := context.Background()
-		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 		keys := []*datastore.Key{
 			NewKey("Example", "example-a"),
 		}
@@ -67,7 +65,7 @@ func TestClient(t *testing.T) {
 		caches := make([]*Example, 1, 1)
 		a.NotNil(testEnv.memcache.GetMulti(ctx, []string{GetCacheKey(keys[0])}, caches))
 		stored = make([]*Example, 1, 1)
-		a.Nil(testEnv.client.GetMulti(ctx, keys, stored))
+		a.Nil(c.inner.GetMulti(ctx, keys, stored))
 		a.NotNil(stored[0])
 		a.EqStr("example-a", stored[0].ID)
 	})
@@ -76,9 +74,6 @@ func TestClient(t *testing.T) {
 		a := assert.New(t)
 		a.Nil(testEnv.Reset())
 		a.Nil(testEnv.LoadFixture("./fixtures/TestGetMulti.json"))
-
-		ctx := context.Background()
-		c := NewClientFromClient(ctx, testEnv.client, Cache(testEnv.memcache))
 
 		keys := []*datastore.Key{
 			NewKey("Example", "example-1"),

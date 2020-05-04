@@ -177,7 +177,6 @@ type TestEnv struct {
 	context  context.Context
 	memcache cache.Cache
 	emulator *emulator
-	client   *datastore.Client
 }
 
 // NewTestEnv returns a new TestEnv instance
@@ -195,19 +194,18 @@ func NewTestEnv() (*TestEnv, error) {
 	if err != nil {
 		return nil, err
 	}
-	client, err := datastore.NewClient(ctx, "testenvironment",
-		option.WithEndpoint(fmt.Sprintf("localhost:%d", emulator.port)),
-		option.WithoutAuthentication(),
-		option.WithGRPCDialOption(grpc.WithInsecure()),
-	)
-	if err != nil {
-		return nil, err
-	}
+	// client, err := datastore.NewClient(ctx, "testenvironment",
+	// 	option.WithEndpoint(fmt.Sprintf("localhost:%d", emulator.port)),
+	// 	option.WithoutAuthentication(),
+	// 	option.WithGRPCDialOption(grpc.WithInsecure()),
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return &TestEnv{
 		context:  ctx,
 		memcache: &cache.MemoryCache{},
 		emulator: emulator,
-		client:   client,
 	}, nil
 }
 
@@ -218,9 +216,16 @@ func MustNewTestEnv() *TestEnv {
 	return te
 }
 
-// GetClient returns *datastore.Client that sends requests to the test environment emulator
-func (te *TestEnv) GetClient() *Client {
-	return NewClientFromClient(context.Background(), te.client, Cache(te.memcache))
+// NewClient returns a *datastore.Client that sends requests to the test environment emulator
+func (te *TestEnv) NewClient() *Client {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "testenvironment",
+		option.WithEndpoint(fmt.Sprintf("localhost:%d", te.emulator.port)),
+		option.WithoutAuthentication(),
+		option.WithGRPCDialOption(grpc.WithInsecure()),
+	)
+	xerrors.MustNil(err)
+	return NewClientFromClient(context.Background(), client, Cache(te.memcache))
 }
 
 // GetCache returns a cache client
@@ -238,21 +243,22 @@ func (te *TestEnv) Reset() error {
 	ctx := context.Background()
 	te.memcache.Clear(ctx)
 	// datastore cleanup
-	client := te.client
+	client := te.NewClient()
+	defer client.Close()
 	q := datastore.NewQuery("__namespace__").KeysOnly()
-	namespaceKeys, err := client.GetAll(ctx, q, nil)
+	namespaceKeys, err := client.inner.GetAll(ctx, q, nil)
 	if err != nil {
 		return xerrors.Wrap(err, "cannot query namespaces")
 	}
 	return slice.Parallel(namespaceKeys, func(i int, nsKey *datastore.Key) error {
 		q := datastore.NewQuery("__kind__").KeysOnly().Namespace(nsKey.Name)
-		kindKeys, err := client.GetAll(ctx, q, nil)
+		kindKeys, err := client.inner.GetAll(ctx, q, nil)
 		if err != nil {
 			return xerrors.Wrap(err, "cannot find kind keys")
 		}
 		for _, kindKey := range kindKeys {
 			q := datastore.NewQuery(kindKey.Name).KeysOnly().Namespace(nsKey.Name)
-			entityKeys, err := client.GetAll(ctx, q, nil)
+			entityKeys, err := client.inner.GetAll(ctx, q, nil)
 			if err != nil {
 				return xerrors.Wrap(err, "cannot find entity keys")
 			}
@@ -401,6 +407,9 @@ func json2Properties(k string, v interface{}) []datastore.Property {
 
 func (te *TestEnv) json2Datastore(pkey *datastore.Key, data map[string]interface{}) error {
 	ctx, logger := xlog.WithContextAndKey(te.context, "", fixtureLoggerKey)
+	client := te.NewClient()
+	defer client.Close()
+
 	var kind string
 	var keyval interface{}
 	var key *datastore.Key
@@ -423,7 +432,7 @@ func (te *TestEnv) json2Datastore(pkey *datastore.Key, data map[string]interface
 		return fmt.Errorf("invalid `_key` type for %v", keyval)
 	}
 
-	if _, err := te.client.Put(ctx, key, jsonSaver(data)); err != nil {
+	if _, err := client.inner.Put(ctx, key, jsonSaver(data)); err != nil {
 		return err
 	}
 	if outputEnvironmentLogs() {
