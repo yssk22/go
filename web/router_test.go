@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/yssk22/go/web/response"
@@ -78,15 +79,20 @@ func ExampleRouter_multipleHandlerPipeline() {
 }
 
 func ExampleRouter_Use() {
+	var state []string
 	router := NewRouter(nil)
 	router.Use(HandlerFunc(func(req *Request, next NextHandler) *response.Response {
-		return next(req.WithValue(
+		state = append(state, "middleware-handler")
+		resp := next(req.WithValue(
 			"my-middleware-key",
 			"my-middleware-value",
 		))
+		state = append(state, "middleware-finalize")
+		return resp
 	}))
 	router.Get("/a.html",
 		HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+			state = append(state, "request-handler")
 			v, _ := req.Get("my-middleware-key")
 			return response.NewText(req.Context(), v.(string))
 		}),
@@ -95,9 +101,10 @@ func ExampleRouter_Use() {
 	req, _ := http.NewRequest("GET", "/a.html", nil)
 	router.ServeHTTP(w, req)
 	fmt.Printf("*response.Response: %q\n", w.Body)
-
+	fmt.Printf("state: %s", strings.Join(state, ">"))
 	// Output:
 	// *response.Response: "my-middleware-value"
+	// state: middleware-handler>request-handler>middleware-finalize
 }
 
 func ExampleRouter_multipleRoute() {
@@ -141,4 +148,34 @@ func ExampleRouter_multipleRoute() {
 	// *response.Response: "a-a"
 	// *response.Response: "b-b"
 	// *response.Response: "not found"
+}
+
+func TestRouter_middlewareBeforeAfter(t *testing.T) {
+	a := assert.New(t)
+	var state []string
+	router := NewRouter(nil)
+	router.Use(HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+		state = append(state, "middleware-before")
+		resp := next(req)
+		state = append(state, "middleware-after")
+		return resp
+	}))
+
+	router.Get("/", HandlerFunc(func(req *Request, next NextHandler) *response.Response {
+		return response.NewHandler(
+			req.Context(),
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				state = append(state, "app")
+			}),
+			req.Request,
+		)
+	}))
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+	router.ServeHTTP(w, req)
+
+	a.EqInt(3, len(state))
+	a.EqStr("middleware-before", state[0])
+	a.EqStr("app", state[1])
+	a.EqStr("middleware-after", state[2])
 }

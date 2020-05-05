@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -125,7 +126,7 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set(RequestIDHeader, request.ID.String())
 
 	// middleware always executed
-	res := r.middleware.Process(
+	r.middleware.Process(
 		request,
 		NextHandler(func(request *Request) *response.Response {
 			// then find a route to dispatch
@@ -143,7 +144,8 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						}
 					}
 				})
-				return response.NewTextWithStatus(request.Context(), "not found", response.HTTPStatusNotFound)
+				r.renderResponse(request.Context(), w, response.NewTextWithStatus(request.Context(), "not found", response.HTTPStatusNotFound))
+				return nil
 			}
 			if len(matched) == 1 {
 				route := matched[0].Route
@@ -155,7 +157,9 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					}
 				})
 				request.Params = pathParams
-				return route.pipeline.Process(request.WithValue(requestContextKey, request), nil)
+				res := route.pipeline.Process(request.WithValue(requestContextKey, request), nil)
+				r.renderResponse(req.Context(), w, res)
+				return nil
 			}
 			// dynamic creation of pipeline
 			var handlers []Handler
@@ -176,12 +180,22 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			var dynamic = &handlerPipeline{}
 			dynamic.Append(handlers...)
-			return dynamic.Process(request.WithValue(requestContextKey, request), nil)
+			res := dynamic.Process(request.WithValue(requestContextKey, request), nil)
+			r.renderResponse(req.Context(), w, res)
+			return nil
 		}),
 	)
+	// if res == nil {
+	// 	logger.Debugf("No response is generated.")
+	// 	response.NewTextWithStatus(req.Context(), "not found", response.HTTPStatusNotFound).Render(w)
+	// 	return
+	// }
+	// res.Render(w)
+}
+
+func (r *defaultRouter) renderResponse(ctx context.Context, w http.ResponseWriter, res *response.Response) {
 	if res == nil {
-		logger.Debugf("No response is generated.")
-		response.NewTextWithStatus(req.Context(), "not found", response.HTTPStatusNotFound).Render(w)
+		response.NewTextWithStatus(ctx, "not found", response.HTTPStatusNotFound).Render(w)
 		return
 	}
 	res.Render(w)
