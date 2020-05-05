@@ -185,12 +185,6 @@ func (r *defaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return nil
 		}),
 	)
-	// if res == nil {
-	// 	logger.Debugf("No response is generated.")
-	// 	response.NewTextWithStatus(req.Context(), "not found", response.HTTPStatusNotFound).Render(w)
-	// 	return
-	// }
-	// res.Render(w)
 }
 
 func (r *defaultRouter) renderResponse(ctx context.Context, w http.ResponseWriter, res *response.Response) {
